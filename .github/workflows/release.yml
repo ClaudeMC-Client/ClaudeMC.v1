@@ -64,7 +64,9 @@ jobs:
             -m "v1.2 - Meteor-style rewrite" --force
           git tag -a v1.3 e073e569cf1b55ef45302e4482cfc3c67922e7ee \
             -m "v1.3 - Packet-sniff VanishDetect" --force
-          git push origin refs/tags/v1.1 refs/tags/v1.2 refs/tags/v1.3 --force
+          git tag -a v1.4 1b1b53261c0fb54ca260133327411533cd057ed0 \
+            -m "v1.4 - AuctionDupe + Node24 workflow fix" --force
+          git push origin refs/tags/v1.1 refs/tags/v1.2 refs/tags/v1.3 refs/tags/v1.4 --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -158,5 +160,41 @@ jobs:
             1. `/gamemode creative` command
             2. Abilities-packet spoof (`creativeMode=true`, re-sent every 20 ticks)
             3. Client-side `currentGameMode` reflection spoof for local break-speed/reach
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release v1.4
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.4
+          name: "ClaudeMC v1.4 — AuctionDupe"
+          target_commitish: 1b1b53261c0fb54ca260133327411533cd057ed0
+          body: |
+            ## ClaudeMC v1.4
+
+            **Minecraft:** 1.21.1  |  **Fabric Loader:** 0.16.5  |  **Fabric API:** 0.100.7+1.21.1  |  **Java:** 21
+
+            ### New in v1.4
+
+            #### AuctionDupe
+            Automates auction-house race-condition exploits targeting unpatched AH plugins on Spigot/Bukkit.
+
+            Three techniques selectable in module settings (right-click AuctionDupe in GUI):
+
+            | Technique | How |
+            |---|---|
+            | **WindowClose** | Sends rapid `CloseHandledScreenC2SPacket`s while cancel-confirm screen is open — item returned before cancel finalises |
+            | **DoubleCancel** | N rapid slot-click packets on the confirm button in one tick — thread-unsafe plugins process multiple returns |
+            | **Reconnect** | Closes screen (triggers server-side item return) then disconnects immediately — item stays, listing may also be refunded |
+
+            **How to use:**
+            1. Open auction house → navigate to your listed item's Cancel / Retrieve screen
+            2. Enable **AuctionDupe** in Misc panel
+            3. Fires automatically after 3 ticks then self-disables
+
+            **Patched on:** AuctionHouse 1.3.6+, Paper-patched GUIs, plugins with synchronous atomic item commits.
+
+            #### Workflow fix
+            - GitHub Actions workflow updated to use Node.js 24 (`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`) — eliminates the Node.js 20 deprecation warning.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
