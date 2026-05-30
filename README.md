@@ -223,6 +223,7 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 |---|---|
 | **AutoRespawn** | Instantly respawns when you die |
 | **BookDupe** | Sends duplicate book-sign packets (dupedb.net) |
+| **AuctionDupe** | Automates auction-house dupe exploits — see below |
 | **VanishDetect** | Marks players in tab list with no world entity |
 | **RecordProof** | Hides window from Discord/OBS (Windows only) |
 | **NoPacketKick** | Suppresses invalid-packet kick attempts |
@@ -306,6 +307,28 @@ processes them, yielding a duplicate book for each extra packet.
 4. Some servers roll back your inventory but not the chest — you keep both.
 
 > Not automated because reliable detection of the correct disconnect timing is server-specific.
+
+### AuctionDupe
+
+**Works on:** Servers whose auction-house plugin has race-condition bugs (common on older Spigot AH plugins, unpatched EssentialsX market, early AuctionHouse by Kicjow).  
+**Three techniques** — select in settings:
+
+| Technique | How it works |
+|---|---|
+| **WindowClose** | Sends rapid `CloseHandledScreenC2SPacket`s while the cancel-confirm GUI is open. Race condition returns item before cancel is finalised — you keep the coins *and* receive the item back. |
+| **DoubleCancel** | Sends N rapid slot-click packets for the confirm button in the same tick. Thread-unsafe plugins process multiple cancels, returning the item multiple times. |
+| **Reconnect** | Closes the screen (triggering server-side item return), then disconnects immediately before the server persists the transaction. On reconnect: item is in your inventory, listing is gone / coins also returned. |
+
+**Steps:**
+1. Open the auction house and navigate to your listed item's **Cancel / Retrieve** screen.
+2. Enable **AuctionDupe** in the Misc panel (`.` → Misc → AuctionDupe).
+3. The exploit fires automatically after a short delay (default 3 ticks) then self-disables.
+4. Check inventory / balance for the duplicate.
+
+> Set **Technique** in the module settings (right-click AuctionDupe in the GUI). Default is `WindowClose`.  
+> Increase **Packets** (default 5) if the race window is narrow.
+
+**Patched on:** AuctionHouse 1.3.6+, paper-patched GUIs, any plugin with synchronous atomic item commits.
 
 ### TNT Dupe (setup guide)
 

@@ -65,6 +65,7 @@ public class ModuleManager {
         register(new NoPacketKick());
         register(new ForceOP());
         register(new ForceCreative());
+        register(new AuctionDupe());
     }
 
     private void register(Module m) { modules.add(m); }
