@@ -70,7 +70,13 @@ public class ClickGui extends Screen {
                 KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
                 "] close  §8|  §7LClick=toggle  RClick=settings"),
             4, height - 10, 0x888888, false);
-        // Keybinds button
+        // [Server Info] button
+        int siBtnW = 84, siBtnH = 12;
+        int siBtnX = width - siBtnW - 82, siBtnY = height - 13;
+        ctx.fill(siBtnX, siBtnY, siBtnX + siBtnW, siBtnY + siBtnH, 0xFF1C1C28);
+        ctx.fill(siBtnX, siBtnY, siBtnX + 2, siBtnY + siBtnH, 0xFF44AAFF);
+        ctx.drawText(textRenderer, Text.literal("§f[Server Info]"), siBtnX + 5, siBtnY + 2, 0xFFEEEEEE, false);
+        // [Keybinds] button
         int btnW = 72, btnH = 12;
         int btnX = width - btnW - 4, btnY = height - 13;
         ctx.fill(btnX, btnY, btnX + btnW, btnY + btnH, 0xFF1C1C28);
@@ -150,6 +156,13 @@ public class ClickGui extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         int x = (int) mx, y = (int) my;
 
+        // Server Info button
+        int siBtnW = 84, siBtnX = width - siBtnW - 82, siBtnY = height - 13;
+        if (button == 0 && inRect(x, y, siBtnX, siBtnY, siBtnW, 12)) {
+            assert client != null;
+            client.setScreen(new ServerInfoScreen());
+            return true;
+        }
         // Keybinds button
         int btnW = 72, btnX = width - btnW - 4, btnY = height - 13;
         if (button == 0 && inRect(x, y, btnX, btnY, btnW, 12)) {
