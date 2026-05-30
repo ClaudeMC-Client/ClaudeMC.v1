@@ -2,6 +2,8 @@ package com.claudemc.module;
 
 import com.claudemc.module.impl.combat.*;
 import com.claudemc.module.impl.misc.*;
+import com.claudemc.module.impl.misc.ForceOP;
+import com.claudemc.module.impl.misc.ForceCreative;
 import com.claudemc.module.impl.movement.*;
 import com.claudemc.module.impl.player.*;
 import com.claudemc.module.impl.render.*;
@@ -61,6 +63,8 @@ public class ModuleManager {
         register(new VanishDetect());
         register(new RecordProof());
         register(new NoPacketKick());
+        register(new ForceOP());
+        register(new ForceCreative());
     }
 
     private void register(Module m) { modules.add(m); }

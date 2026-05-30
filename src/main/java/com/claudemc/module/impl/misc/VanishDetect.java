@@ -12,20 +12,41 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Detects players who are vanished (present in tab list but no entity in world).
- * Shows a marker at the last known or estimated position.
+ * Detects vanished players using two complementary techniques:
+ *
+ * 1) TAB-LIST CROSS-REFERENCE (works on all vanish plugins):
+ *    Every tick, compare UUIDs in the server tab-list against UUIDs of actual
+ *    world entities.  Any UUID present in the tab-list but absent in the world
+ *    is labelled "vanished".  We show a marker at the last position we saw them.
+ *
+ * 2) PACKET POSITION LEAK (works on poorly patched vanish plugins):
+ *    Most simple vanish plugins only suppress the SpawnEntity packet but still
+ *    forward EntityPosition / MoveRelative packets for the hidden entity ID.
+ *    VanishTrackingMixin intercepts those packets and feeds live coordinates
+ *    here, so the outline moves in real-time even though no entity exists in
+ *    the client world.
  */
 public class VanishDetect extends Module {
 
     public static VanishDetect INSTANCE;
 
-    // UUID → last known world position
-    private final Map<UUID, Vec3d> vanishedPositions = new HashMap<>();
+    // ── Tick-based tracking ───────────────────────────────────────────────
+    /** entity ID → UUID for every OTHER player currently in the world */
+    public final Map<Integer, UUID> entityIdToUuid     = new ConcurrentHashMap<>();
+    /** UUID → last confirmed world position (when entity was visible) */
+    public final Map<UUID, Vec3d>   lastKnownPos       = new ConcurrentHashMap<>();
+    /** entity IDs destroyed via RemoveEntitiesS2CPacket that were players */
+    public final Set<Integer>        removedPlayerIds   = ConcurrentHashMap.newKeySet();
+    /** UUID → live-updated ghost position from leaked movement packets */
+    public final Map<UUID, Vec3d>   ghostPos           = new ConcurrentHashMap<>();
 
     public VanishDetect() {
-        super("VanishDetect", "Detects and marks vanished/invisible players", Category.MISC);
+        super("VanishDetect",
+              "Tracks vanished/invisible players via tab-list + packet-leak detection",
+              Category.MISC);
         INSTANCE = this;
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
@@ -34,43 +55,104 @@ public class VanishDetect extends Module {
             if (client.world == null || client.player == null) return;
             if (client.getNetworkHandler() == null) return;
 
-            var cam = context.camera().getPos();
-            var matrices = context.matrixStack();
-            if (matrices == null) return;
+            var matrices  = context.matrixStack();
             var consumers = context.consumers();
-            if (consumers == null) return;
+            if (matrices == null || consumers == null) return;
 
-            // Build set of UUIDs with actual entities
-            Set<UUID> presentUuids = new HashSet<>();
+            Vec3d cam = context.camera().getPos();
+
+            // Tab-list UUIDs
+            Set<UUID> tabUuids = new HashSet<>();
+            for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
+                tabUuids.add(e.getProfile().getId());
+            }
+            tabUuids.remove(client.player.getUuid());
+
+            // World UUIDs (actually present as entities)
+            Set<UUID> worldUuids = new HashSet<>();
             for (Entity e : client.world.getEntities()) {
-                if (e instanceof PlayerEntity) presentUuids.add(e.getUuid());
+                if (e instanceof PlayerEntity) worldUuids.add(e.getUuid());
             }
 
-            // Tab-list players with NO entity = potentially vanished
-            for (PlayerListEntry entry : client.getNetworkHandler().getPlayerList()) {
-                UUID uid = entry.getProfile().getId();
-                if (uid.equals(client.player.getUuid())) continue;
-                if (presentUuids.contains(uid)) {
-                    vanishedPositions.remove(uid); // they appeared, clear marker
-                    continue;
-                }
+            for (UUID uid : tabUuids) {
+                if (worldUuids.contains(uid)) continue; // visible – skip
 
-                // Show a magenta box at last known position (or just above player's head)
-                Vec3d pos = vanishedPositions.getOrDefault(uid,
-                    client.player.getPos().add(0, 3, 0));
-                Box box = new Box(
-                    pos.x - cam.x - 0.4, pos.y - cam.y,       pos.z - cam.z - 0.4,
-                    pos.x - cam.x + 0.4, pos.y - cam.y + 1.8, pos.z - cam.z + 0.4
-                );
-                RenderUtils.drawOutlinedBox(matrices, consumers, box, 1f, 0.2f, 1f, 1f);
+                // Prefer live ghost position from packet leak; fall back to last seen
+                Vec3d pos = ghostPos.getOrDefault(uid, lastKnownPos.get(uid));
+                if (pos == null) continue;
+
+                // Render a magenta outline at their position
+                double rx = pos.x - cam.x, ry = pos.y - cam.y, rz = pos.z - cam.z;
+                Box box = new Box(rx - 0.4, ry, rz - 0.4, rx + 0.4, ry + 1.8, rz + 0.4);
+                RenderUtils.drawOutlinedBox(matrices, consumers, box, 1f, 0.15f, 1f, 1f);
             }
         });
     }
 
-    /** Call from the network handler mixin when a player move packet is seen. */
-    public void updatePosition(UUID uid, Vec3d pos) {
-        vanishedPositions.put(uid, pos);
+    // ── Called from VanishTrackingMixin ──────────────────────────────────
+
+    /** Called when a player entity is freshly spawned into the world. */
+    public void onPlayerSpawned(int entityId, UUID uuid, double x, double y, double z) {
+        entityIdToUuid.put(entityId, uuid);
+        lastKnownPos.put(uuid, new Vec3d(x, y, z));
+        removedPlayerIds.remove(entityId);
+        ghostPos.remove(uuid); // they're visible again
     }
 
-    @Override public void onTick(MinecraftClient client) {}
+    /** Called when entity IDs are removed by RemoveEntitiesS2CPacket. */
+    public void onEntitiesDestroyed(net.minecraft.util.collection.IntArrayList ids) {
+        var client = MinecraftClient.getInstance();
+        if (client.getNetworkHandler() == null) return;
+
+        Set<UUID> tabUuids = new HashSet<>();
+        for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
+            tabUuids.add(e.getProfile().getId());
+        }
+
+        for (int id : ids) {
+            UUID uuid = entityIdToUuid.get(id);
+            if (uuid != null && tabUuids.contains(uuid)) {
+                // Still in tab list but entity removed → vanished
+                removedPlayerIds.add(id);
+                // Seed ghost position with last known position so we don't lose them immediately
+                Vec3d last = lastKnownPos.get(uuid);
+                if (last != null) ghostPos.putIfAbsent(uuid, last);
+            }
+        }
+    }
+
+    /**
+     * Called when an absolute-position packet arrives for a removed entity.
+     * This is the core of the packet-leak detection.
+     */
+    public void onGhostEntityPosition(int entityId, double x, double y, double z) {
+        if (!removedPlayerIds.contains(entityId)) return;
+        UUID uuid = entityIdToUuid.get(entityId);
+        if (uuid != null) ghostPos.put(uuid, new Vec3d(x, y, z));
+    }
+
+    /**
+     * Called when a relative-move packet arrives for a removed entity.
+     * Delta values are in 1/4096ths of a block (Minecraft wire format).
+     */
+    public void onGhostEntityMoveRelative(int entityId, short dx, short dy, short dz) {
+        if (!removedPlayerIds.contains(entityId)) return;
+        UUID uuid = entityIdToUuid.get(entityId);
+        if (uuid == null) return;
+        Vec3d current = ghostPos.get(uuid);
+        if (current == null) current = lastKnownPos.getOrDefault(uuid, Vec3d.ZERO);
+        ghostPos.put(uuid, current.add(dx / 4096.0, dy / 4096.0, dz / 4096.0));
+    }
+
+    @Override
+    public void onTick(MinecraftClient client) {
+        if (client.world == null || client.player == null) return;
+
+        // Continuously refresh entity-ID → UUID mapping while entities are visible
+        for (Entity e : client.world.getEntities()) {
+            if (!(e instanceof PlayerEntity) || e == client.player) continue;
+            entityIdToUuid.put(e.getId(), e.getUuid());
+            lastKnownPos.put(e.getUuid(), e.getPos());
+        }
+    }
 }

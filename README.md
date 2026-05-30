@@ -1,4 +1,4 @@
-# ClaudeMC v2
+# ClaudeMC v1.3
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, survival flight, combat assists, dupe exploits, and more.
 
@@ -226,6 +226,8 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **VanishDetect** | Marks players in tab list with no world entity |
 | **RecordProof** | Hides window from Discord/OBS (Windows only) |
 | **NoPacketKick** | Suppresses invalid-packet kick attempts |
+| **ForceOP** | Fires multiple OP-grant techniques on vulnerable servers |
+| **ForceCreative** | Spoofs abilities packet + client game-mode for Creative |
 
 ---
 
@@ -323,6 +325,58 @@ Not automated due to world-edit requirements. See [dupedb.net/tnt](https://duped
 | TPS shows 0.0 | Not connected to a server |
 | Build fails with "Plugin not found" | You need internet access to `maven.fabricmc.net` |
 | `java.lang.foreign` errors | You must run Java 21 (not Java 17) |
+
+---
+
+---
+
+## ForceOP (v1.3)
+
+**Works on:** Servers with misconfigured permissions, old Spigot builds without validation, outdated BungeeCord proxies.  
+**Patched on:** Paper 1.19+, Purpur, modern Spigot with a current build.
+
+Three techniques are tried simultaneously:
+
+| Technique | How |
+|---|---|
+| **Command** | Sends `/op <name>` as a chat command — instant if you already have permissions |
+| **CommandBlock packet** | Sends `UpdateCommandBlockC2SPacket` to pos 0,0,0 with `/op <name>` — exploits servers that don't validate the sender has OP before processing command-block updates |
+| **BungeeCord plugin-message** | Sends a `ConnectOther` plugin-message on the `BungeeCord` channel — old Bungee proxies allow any client to issue this if the hub server has console-forwarding plugins installed |
+
+The module **auto-disables after one attempt**. Watch chat for the server's response. If you see `Unknown command` or `You do not have permission`, the server is patched.
+
+---
+
+## ForceCreative (v1.3)
+
+Three techniques, all run simultaneously:
+
+| Technique | What it does | Works when |
+|---|---|---|
+| **Command** | `/gamemode creative` | You have OP or a permissions plugin grants it |
+| **Abilities spoof** | Sets `creativeMode=true`, `allowFlying=true`, `invulnerable=true` in the abilities packet, re-sent every second | Server doesn't validate game mode before accepting ability flags |
+| **Client spoof** | Overrides the local `currentGameMode` field to `CREATIVE` via reflection | Always — gives you creative block-break speed / reach client-side regardless of server |
+
+**What you get on a vulnerable server:** flight, no fall damage, no hunger, instant block break, infinite items from the creative inventory.  
+**What you get on a patched server:** client-side spoof only (local break speed / reach) — the server will reset your actual game mode.
+
+---
+
+## VanishDetect — Packet Leak Tracking (v1.3)
+
+Improved in v1.3 to use two detection layers:
+
+### Layer 1 — Tab-list cross-reference (always works)
+Every tick we compare the tab-list UUIDs against UUIDs of actual world entities. Any player in the tab list with no world entity is shown with a **magenta ESP box** at their last seen position.
+
+### Layer 2 — EntityPosition packet leak (works on simple vanish plugins)
+Most vanish plugins (e.g. vanilla `vanish`, EssX old builds, simple home-brew plugins) work by suppressing the **SpawnEntity** packet for non-OP players. However they often **still forward**:
+- `EntityPositionS2CPacket` — absolute teleport updates
+- `EntityS2CPacket.MoveRelative` / `RotateAndMoveRelative` — walking movement deltas
+
+`VanishTrackingMixin` intercepts all four packet types. When we receive a position/move packet for an entity ID that was previously removed (via `RemoveEntitiesS2CPacket`) but whose UUID is still in the tab list, we update the ghost position map. The ESP box **follows the vanished player in real-time** as they walk around.
+
+Premium vanish plugins (PremiumVanish, advanced EssX) suppress these movement packets correctly, so only Layer 1 applies there.
 
 ---
 

@@ -8,7 +8,8 @@
     "ClientPlayerEntityMixin",
     "EntityMixin",
     "GameRendererMixin",
-    "MinecraftClientMixin"
+    "MinecraftClientMixin",
+    "VanishTrackingMixin"
   ],
   "injectors": {
     "defaultRequire": 1
