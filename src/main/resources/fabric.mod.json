@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "claudemc",
+  "version": "${version}",
+  "name": "ClaudeMC",
+  "description": "A Lunar-style client mod with ESP, Flight, AimAssist, FPS/TPS display.",
+  "authors": ["ClaudeMC"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/claudemc/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["com.claudemc.ClaudeMCMod"],
+    "client": ["com.claudemc.ClaudeMCClient"]
+  },
+  "mixins": ["claudemc.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.20.1",
+    "java": ">=17"
+  }
+}
