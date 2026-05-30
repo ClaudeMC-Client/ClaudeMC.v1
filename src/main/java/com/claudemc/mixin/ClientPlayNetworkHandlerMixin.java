@@ -1,6 +1,7 @@
 package com.claudemc.mixin;
 
-import com.claudemc.hud.HudOverlay;
+import com.claudemc.hud.HudManager;
+import com.claudemc.module.impl.misc.NoPacketKick;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ClientPlayNetworkHandlerMixin {
 
     @Inject(method = "onWorldTimeUpdate", at = @At("HEAD"))
-    private void claudemc$onWorldTimeUpdate(WorldTimeUpdateS2CPacket packet, CallbackInfo ci) {
-        HudOverlay.onWorldTimeUpdate();
+    private void claudemc$onTimeUpdate(WorldTimeUpdateS2CPacket packet, CallbackInfo ci) {
+        HudManager.onWorldTimeUpdate();
     }
 }

@@ -1,0 +1,24 @@
+package com.claudemc.module.impl.render;
+
+import com.claudemc.module.Category;
+import com.claudemc.module.Module;
+import net.minecraft.client.MinecraftClient;
+
+/**
+ * Shows enhanced nametags for players (health, ping, distance).
+ * Rendering is done via the Nametag mixin in ClientPlayerEntityMixin.
+ */
+public class Nametags extends Module {
+
+    public static Nametags INSTANCE;
+
+    public Nametags() {
+        super("Nametags", "Show player health, ping and distance above their heads", Category.RENDER);
+        addSetting("Health", "true");
+        addSetting("Ping",   "true");
+        addSetting("Dist",   "true");
+        INSTANCE = this;
+    }
+
+    @Override public void onTick(MinecraftClient client) {}
+}
