@@ -1,4 +1,4 @@
-# ClaudeMC v1.4
+# ClaudeMC v1.5
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, survival flight, combat assists, dupe exploits, and more.
 
@@ -85,13 +85,30 @@ Copy the output jar into your `mods/` folder.
 
 | Key | Action |
 |---|---|
-| **`.`** (full stop) | Open / close the ClickGUI |
-| **Esc** | Close the ClickGUI |
+| **`.`** (full stop, rebindable) | Open / close the ClickGUI |
+| **Esc** | Close the ClickGUI / cancel keybind listen |
 | **Left-click module** | Toggle module on / off |
 | **Right-click module** | Expand / collapse module settings |
 | **Drag panel header** | Move that category panel |
+| **Module hotkey** | Toggle that module instantly (set in Keybinds screen) |
 
 > Tip: Panels remember their positions across sessions (stored per-run).
+
+---
+
+## Custom Keybinds
+
+Press **`.`** → click **[Keybinds]** in the bottom-right corner of the GUI.
+
+| Action | How |
+|---|---|
+| Set a module hotkey | Click the module row, then press any key |
+| Change the GUI open key | Click the **Open GUI** row (top, marked orange), then press any key |
+| Clear a bind | Click the row, then press **Delete** or **Backspace** |
+| Cancel without changing | Press **Esc** while a row is listening |
+
+Bound keys are shown as a small grey `[KEY]` hint next to each module name in the panels.  
+All binds are saved to `.minecraft/config/claudemc/keybinds.json` automatically.
 
 ---
 

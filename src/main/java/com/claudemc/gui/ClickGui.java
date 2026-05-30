@@ -1,6 +1,7 @@
 package com.claudemc.gui;
 
 import com.claudemc.ClaudeMCClient;
+import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.gui.DrawContext;
@@ -63,9 +64,18 @@ public class ClickGui extends Screen {
         for (Category cat : Category.values()) {
             drawPanel(ctx, mx, my, cat);
         }
-        // tooltip help text
-        ctx.drawText(textRenderer, Text.literal("§7[.] to close  |  LClick=toggle  RClick=settings"),
+        // Footer bar
+        ctx.fill(0, height - 14, width, height, 0xFF18181F);
+        ctx.drawText(textRenderer, Text.literal("§7[" +
+                KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
+                "] close  §8|  §7LClick=toggle  RClick=settings"),
             4, height - 10, 0x888888, false);
+        // Keybinds button
+        int btnW = 72, btnH = 12;
+        int btnX = width - btnW - 4, btnY = height - 13;
+        ctx.fill(btnX, btnY, btnX + btnW, btnY + btnH, 0xFF1C1C28);
+        ctx.fill(btnX, btnY, btnX + 2,   btnY + btnH, 0xFF4ADE80);
+        ctx.drawText(textRenderer, Text.literal("§f[Keybinds]"), btnX + 5, btnY + 2, 0xFFEEEEEE, false);
     }
 
     private void drawPanel(DrawContext ctx, int mx, int my, Category cat) {
@@ -109,10 +119,13 @@ public class ClickGui extends Screen {
 
             // Name
             String name = m.getName();
-            if (textRenderer.getWidth(name) > pw - 20) {
-                name = textRenderer.trimToWidth(name, pw - 20) + "…";
+            int bind = KeybindManager.INSTANCE.getModuleBind(m.getName());
+            String bindHint = (bind != -1) ? " §8[" + KeybindManager.keyName(bind) + "]" : "";
+            int maxNameW = pw - 20 - textRenderer.getWidth(bindHint.replaceAll("§.", ""));
+            if (textRenderer.getWidth(name) > maxNameW) {
+                name = textRenderer.trimToWidth(name, maxNameW) + "…";
             }
-            ctx.drawText(textRenderer, Text.literal((m.isEnabled() ? "§f" : "§7") + name),
+            ctx.drawText(textRenderer, Text.literal((m.isEnabled() ? "§f" : "§7") + name + bindHint),
                 px + 10, my_ + 2, C_TEXT, false);
 
             my_ += 12;
@@ -136,6 +149,14 @@ public class ClickGui extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         int x = (int) mx, y = (int) my;
+
+        // Keybinds button
+        int btnW = 72, btnX = width - btnW - 4, btnY = height - 13;
+        if (button == 0 && inRect(x, y, btnX, btnY, btnW, 12)) {
+            assert client != null;
+            client.setScreen(new KeybindScreen());
+            return true;
+        }
 
         for (Category cat : Category.values()) {
             int[] pos = panelPos.get(cat);
