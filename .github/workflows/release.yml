@@ -1,0 +1,120 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish release for ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read tag message
+        id: tag_msg
+        run: |
+          # Extract the annotated tag message as release body
+          TAG="${{ github.ref_name }}"
+          BODY=$(git tag -l --format='%(contents)' "$TAG" | tail -n +2)
+          # Fallback to generic notes if empty
+          if [ -z "$BODY" ]; then
+            BODY="ClaudeMC $TAG — see README.md for full details."
+          fi
+          # Write to a temp file to handle multi-line safely
+          echo "$BODY" > /tmp/release_body.md
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build notes per version
+        id: notes
+        run: |
+          TAG="${{ github.ref_name }}"
+          case "$TAG" in
+            v1.1)
+              cat >> /tmp/release_body.md << 'EOF'
+
+## ClaudeMC v1.1 — Lunar-style UI
+
+**Minecraft:** 1.20.1 · **Fabric Loader:** 0.15.11 · **Fabric API:** 0.92.2+1.20.1
+
+### Features
+- Lunar Client-inspired dark-themed menu (`[.]` to open)
+- ESP — coloured entity outlines through walls (players/hostile/all filter)
+- Flight — creative-style flight in survival
+- AimAssist — smooth auto-aim at selected entity types
+- HUD overlay — live FPS + TPS (server-side, via packet timing) + active module list
+EOF
+              ;;
+            v1.2)
+              cat >> /tmp/release_body.md << 'EOF'
+
+## ClaudeMC v1.2 — Meteor-style rewrite
+
+**Minecraft:** 1.21.1 · **Fabric Loader:** 0.16.5 · **Fabric API:** 0.100.7+1.21.1 · **Java:** 21
+
+### 30 Modules across 6 categories
+| Category | Modules |
+|---|---|
+| Combat | KillAura, Velocity, AutoTotem, Criticals |
+| Movement | Flight, Speed, NoFall, Jesus, Step, Sprint, Scaffold, SafeWalk |
+| Player | AutoEat, FastBreak, ChestStealer, AntiHunger, AutoArmor |
+| Render | ESP, BlockESP, StorageESP, Tracers, Fullbright, FreeCam, Nametags, AntiInvis |
+| World | Nuker, Timer, VeinMiner |
+| Misc | AutoRespawn, BookDupe, VanishDetect, RecordProof, NoPacketKick |
+
+### Highlights
+- Meteor Client-style ClickGUI with draggable category panels
+- Meteor-style right-side HUD (module list, FPS/TPS/Ping, XYZ coords, armour)
+- BlockESP — all 16 shulker box colours + chests + spawners through walls
+- AntiInvis — forces invisible/vanished players to render
+- RecordProof — hides window from Discord/OBS screen share (Windows 10+)
+- BookDupe (dupedb.net) — packet-spam book duplication
+EOF
+              ;;
+            v1.3)
+              cat >> /tmp/release_body.md << 'EOF'
+
+## ClaudeMC v1.3
+
+**Minecraft:** 1.21.1 · **Fabric Loader:** 0.16.5 · **Fabric API:** 0.100.7+1.21.1 · **Java:** 21
+
+### New in v1.3
+
+#### VanishDetect — packet-leak position tracking
+Two-layer detection:
+1. **Tab-list cross-reference** — works on all vanish plugins
+2. **EntityPosition packet leak** — intercepts position/move packets for removed
+   entity IDs that are still in the tab list; outline follows the vanished player
+   in real-time as they move
+
+#### ForceOP
+Three techniques fired simultaneously: chat command, `UpdateCommandBlockC2SPacket`
+exploit (unvalidated servers), BungeeCord plugin-message.
+Works on misconfigured/outdated servers. Auto-disables after one attempt.
+
+#### ForceCreative
+Three techniques: `/gamemode creative` command, abilities-packet spoof
+(`creativeMode=true`, re-sent every second), client-side game-mode reflection
+spoof for local break-speed/reach.
+EOF
+              ;;
+          esac
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "ClaudeMC ${{ github.ref_name }}"
+          body_path: /tmp/release_body.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
