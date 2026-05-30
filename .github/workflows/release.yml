@@ -1,200 +1,70 @@
-name: Create GitHub Release
+name: Auto Release
 
 on:
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      create_all:
-        description: 'Create all three historical releases (v1.1, v1.2, v1.3)'
-        required: false
-        default: 'true'
-        type: boolean
+    branches:
+      - claude/serene-volta-eY5Oe
+    paths:
+      - 'VERSION'
 
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
-  # ── Triggered by tag push ──────────────────────────────────────────────
-  release-from-tag:
-    name: Release ${{ github.ref_name }}
+  release:
+    name: Create release for version in VERSION file
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Build release notes
-        id: notes
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          bash .github/scripts/release-notes.sh "$TAG" > /tmp/notes.md
-
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.notes.outputs.tag }}
-          name: "ClaudeMC ${{ steps.notes.outputs.tag }}"
-          body_path: /tmp/notes.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-  # ── Manual dispatch: create all three historical releases at once ──────
-  release-all:
-    name: Create all releases (v1.1, v1.2, v1.3)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create tags pointing to correct commits
+      - name: Read version
+        id: ver
         run: |
+          VERSION="v$(cat VERSION | tr -d '[:space:]')"
+          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
           git config user.email "actions@github.com"
           git config user.name  "GitHub Actions"
-          git tag -a v1.1 52d048215993f73ecd3cce2d2fd562e0b88f9479 \
-            -m "v1.1 - Lunar-style UI" --force
-          git tag -a v1.2 6453166d22458fda9baa78dd1b9d3fcf5b4f6117 \
-            -m "v1.2 - Meteor-style rewrite" --force
-          git tag -a v1.3 e073e569cf1b55ef45302e4482cfc3c67922e7ee \
-            -m "v1.3 - Packet-sniff VanishDetect" --force
-          git tag -a v1.4 1b1b53261c0fb54ca260133327411533cd057ed0 \
-            -m "v1.4 - AuctionDupe + Node24 workflow fix" --force
-          git push origin refs/tags/v1.1 refs/tags/v1.2 refs/tags/v1.3 refs/tags/v1.4 --force
+          # Only create if it doesn't already exist
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping tag creation."
+          else
+            git tag -a "$TAG" -m "$TAG"
+            git push origin "refs/tags/$TAG"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create release v1.1
+      - name: Read release notes
+        id: notes
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          NOTES_FILE=".github/release-notes/${TAG}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            cp "$NOTES_FILE" /tmp/release_body.md
+          else
+            echo "## ClaudeMC $TAG" > /tmp/release_body.md
+            echo "" >> /tmp/release_body.md
+            echo "**Minecraft:** 1.21.1 · **Fabric Loader:** 0.16.5 · **Fabric API:** 0.100.7+1.21.1 · **Java:** 21" >> /tmp/release_body.md
+          fi
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1
-          name: "ClaudeMC v1.1 — Lunar-style UI"
-          target_commitish: 52d048215993f73ecd3cce2d2fd562e0b88f9479
-          body: |
-            ## ClaudeMC v1.1 — Lunar-style UI
-
-            **Minecraft:** 1.20.1  |  **Fabric Loader:** 0.15.11  |  **Fabric API:** 0.92.2+1.20.1
-
-            ### Features
-            - Lunar Client-inspired dark-themed menu (`[.]` to open)
-            - **ESP** — coloured entity outlines through walls (players / hostile / all)
-            - **Flight** — creative-style flight with configurable speed
-            - **AimAssist** — smooth auto-aim at selected entity types with range + smoothing
-            - **HUD overlay** — live FPS, server TPS (via packet timing), active module list
-
-            ### Install
-            1. Install [Fabric Loader 0.15.11](https://fabricmc.net/use/) for MC 1.20.1
-            2. Drop `fabric-api-0.92.2+1.20.1.jar` and `claudemc-1.0.0.jar` into `mods/`
-            3. Launch and press **`.`** to open the module menu
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: "ClaudeMC ${{ steps.ver.outputs.tag }}"
+          body_path: /tmp/release_body.md
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create release v1.2
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.2
-          name: "ClaudeMC v1.2 — Meteor-style rewrite"
-          target_commitish: 6453166d22458fda9baa78dd1b9d3fcf5b4f6117
-          body: |
-            ## ClaudeMC v1.2 — Full Meteor Client-style rewrite
-
-            **Minecraft:** 1.21.1  |  **Fabric Loader:** 0.16.5  |  **Fabric API:** 0.100.7+1.21.1  |  **Java:** 21
-
-            ### 30 Modules across 6 categories
-            | Category | Modules |
-            |---|---|
-            | Combat | KillAura, Velocity, AutoTotem, Criticals |
-            | Movement | Flight, Speed, NoFall, Jesus, Step, Sprint, Scaffold, SafeWalk |
-            | Player | AutoEat, FastBreak, ChestStealer, AntiHunger, AutoArmor |
-            | Render | ESP, BlockESP, StorageESP, Tracers, Fullbright, FreeCam, Nametags, AntiInvis |
-            | World | Nuker, Timer, VeinMiner |
-            | Misc | AutoRespawn, BookDupe, VanishDetect, RecordProof, NoPacketKick |
-
-            ### Highlights
-            - **Meteor ClickGUI** — draggable panels, left-click toggle, right-click settings
-            - **Meteor HUD** — right-side module list (coloured by category), FPS/TPS/Ping, XYZ + nether coords, armour durability
-            - **BlockESP** — all 16 shulker box colours + chests + spawners + custom block IDs
-            - **AntiInvis** — forces invisible/vanished players to render (EntityMixin)
-            - **RecordProof** — hides window from Discord/OBS screen share (Windows 10 2004+, Java 21 FFM API, no JNA needed)
-            - **BookDupe** — packet-spam book dupe from [dupedb.net](https://dupedb.net)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create release v1.3
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.3
-          name: "ClaudeMC v1.3 — Packet-sniff VanishDetect + ForceOP + ForceCreative"
-          target_commitish: e073e569cf1b55ef45302e4482cfc3c67922e7ee
-          body: |
-            ## ClaudeMC v1.3
-
-            **Minecraft:** 1.21.1  |  **Fabric Loader:** 0.16.5  |  **Fabric API:** 0.100.7+1.21.1  |  **Java:** 21
-
-            ### New in v1.3
-
-            #### VanishDetect — two-layer packet-sniffing
-            **Layer 1 – Tab-list cross-reference** (works on all vanish plugins):
-            Every tick, compare tab-list UUIDs vs world entity UUIDs. Show magenta ESP box at last known position.
-
-            **Layer 2 – EntityPosition packet leak** (works on simple vanish plugins):
-            Most basic vanish plugins suppress the SpawnEntity packet but still
-            forward `EntityPositionS2CPacket` and `EntityS2CPacket.MoveRelative`.
-            `VanishTrackingMixin` intercepts these four packet types and tracks
-            ghost positions — the ESP outline **follows the vanished player in real-time**.
-
-            #### ForceOP
-            Three techniques fired simultaneously on enable (auto-disables after attempt):
-            1. `/op <name>` chat command
-            2. `UpdateCommandBlockC2SPacket` to (0,0,0) — exploits servers without OP validation
-            3. BungeeCord plugin-message `ConnectOther` — works on old proxy setups
-
-            #### ForceCreative
-            Three simultaneous techniques:
-            1. `/gamemode creative` command
-            2. Abilities-packet spoof (`creativeMode=true`, re-sent every 20 ticks)
-            3. Client-side `currentGameMode` reflection spoof for local break-speed/reach
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create release v1.4
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.4
-          name: "ClaudeMC v1.4 — AuctionDupe"
-          target_commitish: 1b1b53261c0fb54ca260133327411533cd057ed0
-          body: |
-            ## ClaudeMC v1.4
-
-            **Minecraft:** 1.21.1  |  **Fabric Loader:** 0.16.5  |  **Fabric API:** 0.100.7+1.21.1  |  **Java:** 21
-
-            ### New in v1.4
-
-            #### AuctionDupe
-            Automates auction-house race-condition exploits targeting unpatched AH plugins on Spigot/Bukkit.
-
-            Three techniques selectable in module settings (right-click AuctionDupe in GUI):
-
-            | Technique | How |
-            |---|---|
-            | **WindowClose** | Sends rapid `CloseHandledScreenC2SPacket`s while cancel-confirm screen is open — item returned before cancel finalises |
-            | **DoubleCancel** | N rapid slot-click packets on the confirm button in one tick — thread-unsafe plugins process multiple returns |
-            | **Reconnect** | Closes screen (triggers server-side item return) then disconnects immediately — item stays, listing may also be refunded |
-
-            **How to use:**
-            1. Open auction house → navigate to your listed item's Cancel / Retrieve screen
-            2. Enable **AuctionDupe** in Misc panel
-            3. Fires automatically after 3 ticks then self-disables
-
-            **Patched on:** AuctionHouse 1.3.6+, Paper-patched GUIs, plugins with synchronous atomic item commits.
-
-            #### Workflow fix
-            - GitHub Actions workflow updated to use Node.js 24 (`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`) — eliminates the Node.js 20 deprecation warning.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
