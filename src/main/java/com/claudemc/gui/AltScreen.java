@@ -49,7 +49,7 @@ public class AltScreen extends Screen {
         super(Text.literal("ClaudeMC — Alt Manager"));
     }
 
-    @Override public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() { return false; }
 
     @Override
     public void render(DrawContext ctx, int mx, int my, float delta) {

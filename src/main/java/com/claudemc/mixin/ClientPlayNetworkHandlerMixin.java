@@ -34,7 +34,6 @@ public class ClientPlayNetworkHandlerMixin {
             // Brand packet: "minecraft:brand"
             if ("minecraft:brand".equals(id)) {
                 // Payload bytes: VarInt length-prefixed UTF-8 string
-                var buf = net.minecraft.network.PacketByteBuf.EMPTY;
                 // Use reflection to get the raw bytes from the payload
                 try {
                     var clazz = payload.getClass();

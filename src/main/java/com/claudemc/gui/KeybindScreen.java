@@ -63,8 +63,6 @@ public class KeybindScreen extends Screen {
             rows.add(new BindRow(m.getName(), m.getName()));
         }
     }
-
-    @Override
     public boolean isPauseScreen() { return false; }
 
     // ── Render ────────────────────────────────────────────────────────────

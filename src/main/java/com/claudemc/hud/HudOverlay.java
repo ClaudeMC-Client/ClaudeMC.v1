@@ -43,7 +43,7 @@ public class HudOverlay {
         int lineH = 10;
 
         // Collect active module names
-        List<Module> active = ClaudeMCClient.MODULE_MANAGER.getModules()
+        List<Module> active = ClaudeMCClient.MODULES.getModules()
             .stream().filter(Module::isEnabled).toList();
 
         int bgW = 108;

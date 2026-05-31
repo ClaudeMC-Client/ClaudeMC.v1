@@ -42,7 +42,7 @@ public class FlightModule extends Module {
         if (!ab.allowFlying) {
             ab.allowFlying = true;
         }
-        ab.flySpeed = flySpeed;
+        try { var f = ab.getClass().getDeclaredField("flySpeed"); f.setAccessible(true); f.setFloat(ab, flySpeed); } catch (Exception ignored) {}
     }
 
     public float getFlySpeed() { return flySpeed; }

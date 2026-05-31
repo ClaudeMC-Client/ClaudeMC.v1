@@ -55,7 +55,7 @@ public class ClickGui extends Screen {
         super(Text.literal("ClaudeMC"));
     }
 
-    @Override public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() { return false; }
 
     // ── Render ────────────────────────────────────────────────────────────
 

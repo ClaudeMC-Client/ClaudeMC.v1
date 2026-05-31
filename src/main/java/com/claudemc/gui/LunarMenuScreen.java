@@ -65,14 +65,12 @@ public class LunarMenuScreen extends Screen {
     public LunarMenuScreen() {
         super(Text.literal("ClaudeMC"));
 
-        for (Module m : ClaudeMCClient.MODULE_MANAGER.getModules()) {
+        for (Module m : ClaudeMCClient.MODULES.getModules()) {
             byCategory.computeIfAbsent(m.getCategory(), k -> new ArrayList<>()).add(m);
         }
         categories.addAll(byCategory.keySet());
         if (!categories.isEmpty()) selectedCategory = categories.get(0);
     }
-
-    @Override
     public boolean isPauseScreen() { return false; }
 
     @Override
