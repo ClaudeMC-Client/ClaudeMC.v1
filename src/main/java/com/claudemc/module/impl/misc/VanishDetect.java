@@ -100,7 +100,7 @@ public class VanishDetect extends Module {
     }
 
     /** Called when entity IDs are removed by RemoveEntitiesS2CPacket. */
-    public void onEntitiesDestroyed(net.minecraft.util.collection.IntArrayList ids) {
+    public void onEntitiesDestroyed(it.unimi.dsi.fastutil.ints.IntList ids) {
         var client = MinecraftClient.getInstance();
         if (client.getNetworkHandler() == null) return;
 
