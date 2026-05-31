@@ -4,6 +4,7 @@ import com.claudemc.ClaudeMCClient;
 import com.claudemc.chat.ChatOverlay;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
+import com.claudemc.module.impl.render.Radar;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -53,6 +54,7 @@ public class HudManager {
         renderCoords(ctx, client);
         renderStats(ctx, client);
         renderArmor(ctx, client);
+        if (Radar.INSTANCE != null) Radar.INSTANCE.render(ctx, client);
         ChatOverlay.INSTANCE.render(ctx, client);
     }
 

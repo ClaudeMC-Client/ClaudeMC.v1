@@ -1,4 +1,4 @@
-# ClaudeMC v1.11.1
+# ClaudeMC v1.12.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -6,7 +6,7 @@
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, and more.
 
-> **What's new in v1.11:** **AimAssist** module (smooth camera interpolation toward the nearest target, fully GUI-editable), **ForceOP BungeeCord fix** (plugin-message now actually fires), and dead-code cleanup. See [v1.10.0] for Trajectories and editable settings.
+> **What's new in v1.12:** Massive module expansion — 33 new modules added across Combat, Movement, Render, Player, World, and Misc categories. Highlights: **AutoCrystal**, **OreESP (Xray)**, **HoleESP**, **Zoom**, **Radar**, **InventoryMove**, **ElytraFlight**, **AutoReply** (AFK-check auto-response), and **AntiAFK** (staff-detection with vanish/TP detection + human look-around). See the full changelog in [v1.12.0 release notes].
 
 ---
 
@@ -263,6 +263,11 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **Velocity** | Reduces knockback received when hit | H-Mult (0=none), V-Mult (1=normal) |
 | **AutoTotem** | Moves Totem of Undying to offhand automatically | — |
 | **Criticals** | Makes every swing a critical hit (tiny hop) | Mode (Jump/Packet) |
+| **AutoCrystal** | Places and detonates end crystals on nearby players | Range, MinDamage, AutoSwitch, AntiSuicide |
+| **Surround** | Places obsidian around your feet against crystal explosions | Material, Center |
+| **TriggerBot** | Attacks when crosshair is on a valid target | Target, Delay |
+| **Reach** | Extends melee and block interaction range | AttackReach, BlockReach |
+| **AntiBot** | Filters bot entities from targeting | FilterTablist, FilterNoPing, FilterInvalid |
 
 ### Movement Modules
 
@@ -276,6 +281,10 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **Sprint** | Always sprint, even sideways | Mode (Forward/Omni) |
 | **Scaffold** | Places blocks under your feet automatically | — |
 | **SafeWalk** | Prevents walking off edges | — |
+| **ElytraFlight** | Boost/Packet/Pitch elytra flight control | Mode, Speed |
+| **PacketFly** | Bypasses basic anti-fly via alternating ground-state packets | Speed, Height |
+| **InventoryMove** | WASD movement while GUI is open | Sprint, Jump |
+| **BunnyHop** | Auto-jumps on landing to keep sprint speed | SpeedBoost |
 
 ### Player Modules
 
@@ -286,20 +295,35 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **ChestStealer** | Shift-clicks all items from open chests | Delay (ticks) |
 | **AntiHunger** | Prevents sprint-exhaustion hunger drain | — |
 | **AutoArmor** | Equips the best armour from your inventory | — |
+| **AutoFish** | Reels in and recasts on fish bite automatically | RecastDelay |
+| **AutoFarm** | Harvests mature crops and replants seeds | Radius |
+| **FastPlace** | Removes the 4-tick block placement cooldown | — |
+| **NoMiningFatigue** | Removes Mining Fatigue effect client-side | — |
+| **InvManager** | Auto-drops junk items from inventory | DropJunk, Delay |
 
 ### Render / ESP Modules
 
 | Module | Description | Key Settings |
 |---|---|---|
 | **ESP** | Coloured entity outlines through walls | Filter (All/Players/Hostile) |
-| **BlockESP** | Highlights shulkers, chests, spawners + your custom blocks | Radius (managed via the [BlockESP] GUI / **B** key) |
+| **BlockESP** | Highlights shulkers, chests, spawners + custom blocks | Radius |
 | **StorageESP** | Shows container fill level through walls | Radius, ShowFull, ShowEmpty |
 | **Tracers** | Lines from screen centre to entities | Filter, Range |
-| **Trajectories** | Predicts arrow/throwable flight paths (yours + enemies') | Self, Others |
-| **Fullbright** | Maximum light everywhere (no torch needed) | — |
+| **Trajectories** | Predicts arrow/throwable flight paths | Self, Others |
+| **Fullbright** | Maximum light everywhere | — |
 | **FreeCam** | Detach camera from body | Speed |
-| **Nametags** | Shows health/ping/distance above player heads | Health, Ping, Dist |
+| **Nametags** | Health/ping/distance above player heads | Health, Ping, Dist |
 | **AntiInvis** | Renders invisible and vanished players | Opacity |
+| **HoleESP** | Highlights safe holes for crystal combat | Radius, BedrockOnly |
+| **OreESP** | X-ray ore scanner | Radius, Tier (All/Valuable/Diamond+/AncientDebris) |
+| **Chams** | Entity hitboxes through walls with solid tint | Filter, Alpha |
+| **Breadcrumbs** | Position trail showing your path | MaxPoints, MinDist |
+| **LogoutSpots** | Marks where players logged out | — |
+| **Zoom** | Scrollable camera zoom | Factor (1.5–20×) |
+| **Radar** | HUD minimap with player/mob dots | Range, Size, Anchor |
+| **TimeChanger** | Locks client-side time (visual only) | Time (Day/Noon/Sunset/Night/Midnight/Custom) |
+| **WeatherChanger** | Locks client-side weather (visual only) | Weather (Clear/Rain/Thunder) |
+| **NoRender** | Suppress HUD elements | Totem, Fire, BossBar, Scoreboard, PotionHUD, Particles |
 
 #### Colours
 
@@ -320,6 +344,8 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **Nuker** | Breaks blocks around you automatically | Radius, Mode (All/Flat/Above) |
 | **Timer** | Speed up or slow down game time | Speed (1.0=normal, 2.0=double) |
 | **VeinMiner** | Breaks entire ore veins when you mine one block | MaxBlocks |
+| **PacketMine** | Instant mine attempt via simultaneous start/stop packets | OnlyInstant |
+| **AutoBuild** | Places blocks in Floor/Bridge/Column shapes | Shape, Radius |
 
 ### Misc / Exploit Modules
 
@@ -333,6 +359,13 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **NoPacketKick** | Suppresses invalid-packet kick attempts |
 | **ForceOP** | Fires multiple OP-grant techniques on vulnerable servers |
 | **ForceCreative** | Spoofs abilities packet + client game-mode for Creative |
+| **AutoReply** | Auto-replies to AFK-check / DM messages with configurable responses |
+| **AntiAFK** | Detects vanished staff nearby, sudden TPs, and AFK-check DMs — triggers human-like look-around and notification |
+| **NameSpoof** | Client-side display name override (cosmetic) |
+| **ChatSpammer** | Sends a message or command on a tick interval |
+| **PacketLogger** | Logs incoming chat/game packets to the mod logger |
+| **AntiSpam** | Filters duplicate and ad messages from chat |
+| **FakePlayer** | Spawns a client-side fake player entity at your position |
 
 ---
 

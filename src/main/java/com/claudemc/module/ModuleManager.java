@@ -26,6 +26,11 @@ public class ModuleManager {
         register(new Velocity());
         register(new AutoTotem());
         register(new Criticals());
+        register(new AutoCrystal());
+        register(new Surround());
+        register(new TriggerBot());
+        register(new Reach());
+        register(new AntiBot());
 
         // Movement
         register(new Flight());
@@ -36,6 +41,10 @@ public class ModuleManager {
         register(new Sprint());
         register(new Scaffold());
         register(new SafeWalk());
+        register(new ElytraFlight());
+        register(new PacketFly());
+        register(new InventoryMove());
+        register(new BunnyHop());
 
         // Player
         register(new AutoEat());
@@ -43,6 +52,11 @@ public class ModuleManager {
         register(new ChestStealer());
         register(new AntiHunger());
         register(new AutoArmor());
+        register(new AutoFish());
+        register(new AutoFarm());
+        register(new FastPlace());
+        register(new NoMiningFatigue());
+        register(new InvManager());
 
         // Render
         register(new ESP());
@@ -54,11 +68,23 @@ public class ModuleManager {
         register(new Nametags());
         register(new AntiInvis());
         register(new Trajectories());
+        register(new HoleESP());
+        register(new OreESP());
+        register(new Chams());
+        register(new Breadcrumbs());
+        register(new LogoutSpots());
+        register(new Zoom());
+        register(new Radar());
+        register(new TimeChanger());
+        register(new WeatherChanger());
+        register(new NoRender());
 
         // World
         register(new Nuker());
         register(new Timer());
         register(new VeinMiner());
+        register(new PacketMine());
+        register(new AutoBuild());
 
         // Misc
         register(new AutoRespawn());
@@ -71,6 +97,13 @@ public class ModuleManager {
         register(new AuctionDupe());
         register(new MiniMessageExploit());
         register(new ServerCrash());
+        register(new AutoReply());
+        register(new AntiAFK());
+        register(new NameSpoof());
+        register(new ChatSpammer());
+        register(new PacketLogger());
+        register(new AntiSpam());
+        register(new FakePlayer());
     }
 
     private void register(Module m) { modules.add(m); }
