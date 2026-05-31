@@ -58,6 +58,8 @@ public class KeybindScreen extends Screen {
         rows.clear();
         // GUI key row (moduleNameOrNull == null signals the gui key)
         rows.add(new BindRow("Open GUI", null));
+        // BlockESP add-key row
+        rows.add(new BindRow("BlockESP: Add block", "__blockespAdd__"));
         // One row per module
         for (Module m : ClaudeMCClient.MODULES.getModules()) {
             rows.add(new BindRow(m.getName(), m.getName()));
@@ -102,14 +104,18 @@ public class KeybindScreen extends Screen {
             int bg = listen ? C_LISTEN : (hover ? C_HOV : C_ROW);
             ctx.fill(rx, ry, rx + COL_W, ry + ROW_H, bg);
 
-            // Accent stripe for GUI key row
+            // Accent stripes for special rows
             if (row.moduleNameOrNull() == null) {
                 ctx.fill(rx, ry, rx + 2, ry + ROW_H, C_WARN);
+            } else if ("__blockespAdd__".equals(row.moduleNameOrNull())) {
+                ctx.fill(rx, ry, rx + 2, ry + ROW_H, 0xFFFF88FF);
             }
 
             String currentKey;
             if (row.moduleNameOrNull() == null) {
                 currentKey = KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey());
+            } else if ("__blockespAdd__".equals(row.moduleNameOrNull())) {
+                currentKey = KeybindManager.keyName(KeybindManager.INSTANCE.getBlockEspAddKey());
             } else {
                 currentKey = KeybindManager.keyName(
                     KeybindManager.INSTANCE.getModuleBind(row.moduleNameOrNull()));
@@ -185,6 +191,8 @@ public class KeybindScreen extends Screen {
 
             if (row.moduleNameOrNull() == null) {
                 KeybindManager.INSTANCE.setGuiKey(newKey == -1 ? GLFW.GLFW_KEY_PERIOD : newKey);
+            } else if ("__blockespAdd__".equals(row.moduleNameOrNull())) {
+                KeybindManager.INSTANCE.setBlockEspAddKey(newKey == -1 ? GLFW.GLFW_KEY_B : newKey);
             } else {
                 KeybindManager.INSTANCE.setModuleBind(row.moduleNameOrNull(), newKey);
             }

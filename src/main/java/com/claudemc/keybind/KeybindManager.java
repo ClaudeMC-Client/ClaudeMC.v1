@@ -27,7 +27,8 @@ public class KeybindManager {
 
     // module name → GLFW key code (-1 = no bind)
     private final Map<String, Integer> moduleBind = new HashMap<>();
-    private int guiKey = GLFW.GLFW_KEY_PERIOD;
+    private int guiKey           = GLFW.GLFW_KEY_PERIOD;
+    private int blockEspAddKey   = GLFW.GLFW_KEY_B;
 
     private KeybindManager() {}
 
@@ -41,8 +42,11 @@ public class KeybindManager {
             Object gk = data.get("__gui__");
             if (gk instanceof Number n) guiKey = n.intValue();
 
+            Object bk = data.get("__blockespAdd__");
+            if (bk instanceof Number n) blockEspAddKey = n.intValue();
+
             for (Map.Entry<String, Object> e : data.entrySet()) {
-                if (!e.getKey().equals("__gui__") && e.getValue() instanceof Number n) {
+                if (!e.getKey().startsWith("__") && e.getValue() instanceof Number n) {
                     moduleBind.put(e.getKey(), n.intValue());
                 }
             }
@@ -56,6 +60,7 @@ public class KeybindManager {
             Files.createDirectories(CONFIG_PATH.getParent());
             Map<String, Integer> data = new HashMap<>(moduleBind);
             data.put("__gui__", guiKey);
+            data.put("__blockespAdd__", blockEspAddKey);
             try (Writer w = Files.newBufferedWriter(CONFIG_PATH)) {
                 GSON.toJson(data, w);
             }
@@ -82,6 +87,13 @@ public class KeybindManager {
 
     public void setGuiKey(int glfwKey) {
         guiKey = (glfwKey == -1) ? GLFW.GLFW_KEY_PERIOD : glfwKey;
+        save();
+    }
+
+    public int getBlockEspAddKey() { return blockEspAddKey; }
+
+    public void setBlockEspAddKey(int glfwKey) {
+        blockEspAddKey = (glfwKey == -1) ? GLFW.GLFW_KEY_B : glfwKey;
         save();
     }
 

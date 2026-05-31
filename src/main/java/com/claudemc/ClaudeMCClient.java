@@ -8,6 +8,7 @@ import com.claudemc.hud.HudManager;
 import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Module;
 import com.claudemc.module.ModuleManager;
+import com.claudemc.module.impl.render.BlockESP;
 import com.claudemc.server.ExploitFetcher;
 import com.claudemc.server.ExploitMatcher;
 import com.claudemc.server.ServerInfo;
@@ -17,6 +18,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import org.lwjgl.glfw.GLFW;
 
 public class ClaudeMCClient implements ClientModInitializer {
@@ -39,6 +42,7 @@ public class ClaudeMCClient implements ClientModInitializer {
         KeybindManager.INSTANCE.load();
         MacroManager.INSTANCE.load();
         AltManager.INSTANCE.load();
+        if (BlockESP.INSTANCE != null) BlockESP.INSTANCE.loadCustomBlocksFull();
 
         ExploitFetcher.INSTANCE.fetchAsync();
 
@@ -85,6 +89,27 @@ public class ClaudeMCClient implements ClientModInitializer {
                 if (macro.keybind != -1 && isKeyJustPressed(window, macro.keybind)) {
                     fireMacro(client, macro.command);
                 }
+            }
+        }
+
+        // BlockESP crosshair-add keybind (B key, no screen open)
+        int addBlockKey = KeybindManager.INSTANCE.getBlockEspAddKey();
+        if (client.currentScreen == null && isKeyJustPressed(window, addBlockKey)) {
+            if (client.crosshairTarget instanceof BlockHitResult bhr
+                    && bhr.getType() == HitResult.Type.BLOCK
+                    && client.world != null
+                    && BlockESP.INSTANCE != null) {
+                var state = client.world.getBlockState(bhr.getBlockPos());
+                String id = net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).toString();
+                boolean wasTracked = BlockESP.INSTANCE.getTargets().contains(id);
+                if (wasTracked) {
+                    BlockESP.INSTANCE.removeTarget(id);
+                    client.player.sendMessage(Text.literal("§c[BlockESP] Removed: §7" + id), true);
+                } else {
+                    BlockESP.INSTANCE.addTarget(id);
+                    client.player.sendMessage(Text.literal("§a[BlockESP] Added: §7" + id), true);
+                }
+                BlockESP.INSTANCE.saveCustomBlocks();
             }
         }
 

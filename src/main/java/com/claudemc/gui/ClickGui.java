@@ -5,6 +5,7 @@ import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.gui.AltScreen;
+import com.claudemc.gui.BlockESPScreen;
 import com.claudemc.gui.MacroScreen;
 import com.claudemc.gui.ServerInfoScreen;
 import net.minecraft.client.gui.DrawContext;
@@ -80,6 +81,7 @@ public class ClickGui extends Screen {
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Macros]",     0xFFFFAA44) - 4;
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Alts]",       0xFF44AAFF) - 4;
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Server Info]",0xFF44AAFF) - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[BlockESP]",   0xFFFF88FF) - 4;
     }
 
     private void drawPanel(DrawContext ctx, int mx, int my, Category cat) {
@@ -174,6 +176,10 @@ public class ClickGui extends Screen {
             // [Server Info]
             int siW  = textRenderer.getWidth("[Server Info]")+ 10; bX -= siW;
             if (x >= bX && x < bX + siW)  { client.setScreen(new ServerInfoScreen()); return true; }
+            bX -= 4;
+            // [BlockESP]
+            int beW  = textRenderer.getWidth("[BlockESP]")  + 10; bX -= beW;
+            if (x >= bX && x < bX + beW)  { client.setScreen(new BlockESPScreen());   return true; }
         }
 
         for (Category cat : Category.values()) {
