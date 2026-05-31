@@ -7,7 +7,10 @@
     "ClientPlayNetworkHandlerMixin",
     "ClientPlayerEntityMixin",
     "EntityMixin",
+    "FastPlaceMixin",
     "GameRendererMixin",
+    "InGameHudMixin",
+    "KeyboardInputMixin",
     "MinecraftClientMixin",
     "ScreenMixin",
     "VanishTrackingMixin"
