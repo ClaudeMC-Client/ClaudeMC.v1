@@ -152,10 +152,14 @@ public class HudManager {
             var stack = armorItems.get(i);
             if (!stack.isEmpty()) {
                 ctx.drawItem(stack, x, y);
-                int dur = stack.getMaxDamage() - stack.getDamage();
-                int pct = (int)(100.0 * dur / stack.getMaxDamage());
-                int color = pct > 50 ? 0x44FF44 : (pct > 20 ? 0xFFAA00 : 0xFF4444);
-                ctx.drawText(client.textRenderer, Text.literal("§r" + pct + "%"), x, y + 10, color, false);
+                // Non-damageable items (carved pumpkin, mob/player heads) have maxDamage 0 —
+                // skip the durability % so we don't render a misleading "0%".
+                if (stack.getMaxDamage() > 0) {
+                    int dur = stack.getMaxDamage() - stack.getDamage();
+                    int pct = (int)(100.0 * dur / stack.getMaxDamage());
+                    int color = pct > 50 ? 0x44FF44 : (pct > 20 ? 0xFFAA00 : 0xFF4444);
+                    ctx.drawText(client.textRenderer, Text.literal("§r" + pct + "%"), x, y + 10, color, false);
+                }
                 x += 22;
             }
         }

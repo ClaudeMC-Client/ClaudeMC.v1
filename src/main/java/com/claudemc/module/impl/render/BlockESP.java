@@ -42,9 +42,19 @@ public class BlockESP extends Module {
     // Key the user can press while looking at a block to add it (default: B)
     public static final int DEFAULT_ADD_KEY = org.lwjgl.glfw.GLFW.GLFW_KEY_B;
 
+    // Scanning the world is expensive, so we do it on a throttled tick rather than
+    // on every rendered frame. The render event only draws this cached snapshot.
+    private static final int SCAN_INTERVAL_TICKS = 8;   // rescan ~2.5x/second
+    private static final int MAX_RADIUS          = 64;  // hard cap to bound scan cost
+    private int scanCooldown = 0;
+    private volatile List<Found> found = Collections.emptyList();
+
+    /** A matched block position with its precomputed highlight colour. */
+    private record Found(int x, int y, int z, float r, float g, float b) {}
+
     public BlockESP() {
         super("BlockESP", "Highlights shulkers, chests, spawners through walls", Category.RENDER);
-        addSetting("Radius", "64");
+        addSetting("Radius", "32");
         INSTANCE = this;
 
         loadCustomBlocks();
@@ -60,25 +70,11 @@ public class BlockESP extends Module {
             var consumers = context.consumers();
             if (consumers == null) return;
 
-            int radius    = INSTANCE.parseInt(INSTANCE.getSetting("Radius"), 64);
-            var playerPos = client.player.getBlockPos();
-
-            for (int x = playerPos.getX() - radius; x <= playerPos.getX() + radius; x++) {
-                for (int y = Math.max(client.world.getBottomY(), playerPos.getY() - radius);
-                         y <= Math.min(client.world.getTopY(), playerPos.getY() + radius); y++) {
-                    for (int z = playerPos.getZ() - radius; z <= playerPos.getZ() + radius; z++) {
-                        var pos   = new BlockPos(x, y, z);
-                        var state = client.world.getBlockState(pos);
-                        if (state.isAir()) continue;
-                        String id = net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).toString();
-                        if (!INSTANCE.targets.contains(id)) continue;
-
-                        float[] col = colorForBlock(state.getBlock());
-                        double bx = pos.getX() - cam.x, by = pos.getY() - cam.y, bz = pos.getZ() - cam.z;
-                        Box box = new Box(bx, by, bz, bx + 1, by + 1, bz + 1).expand(0.01);
-                        RenderUtils.drawOutlinedBox(matrices, consumers, box, col[0], col[1], col[2], 1f);
-                    }
-                }
+            // Draw the cached snapshot only — no world scanning on the render path.
+            for (Found f : INSTANCE.found) {
+                double bx = f.x() - cam.x, by = f.y() - cam.y, bz = f.z() - cam.z;
+                Box box = new Box(bx, by, bz, bx + 1, by + 1, bz + 1).expand(0.01);
+                RenderUtils.drawOutlinedBox(matrices, consumers, box, f.r(), f.g(), f.b(), 1f);
             }
         });
     }
@@ -161,6 +157,36 @@ public class BlockESP extends Module {
         return new float[]{0.5f, 1.0f, 1.0f};
     }
 
-    @Override public void onTick(MinecraftClient client) {}
+    @Override
+    public void onTick(MinecraftClient client) {
+        if (client.world == null || client.player == null) return;
+        if (--scanCooldown > 0) return;
+        scanCooldown = SCAN_INTERVAL_TICKS;
+
+        int radius    = Math.min(MAX_RADIUS, parseInt(getSetting("Radius"), 32));
+        var playerPos = client.player.getBlockPos();
+        var registry  = net.minecraft.registry.Registries.BLOCK;
+
+        List<Found> results = new ArrayList<>();
+        BlockPos.Mutable pos = new BlockPos.Mutable();
+        int minY = Math.max(client.world.getBottomY(), playerPos.getY() - radius);
+        int maxY = Math.min(client.world.getTopY(),    playerPos.getY() + radius);
+
+        for (int x = playerPos.getX() - radius; x <= playerPos.getX() + radius; x++) {
+            for (int z = playerPos.getZ() - radius; z <= playerPos.getZ() + radius; z++) {
+                for (int y = minY; y <= maxY; y++) {
+                    pos.set(x, y, z);
+                    var state = client.world.getBlockState(pos);
+                    if (state.isAir()) continue;
+                    String id = registry.getId(state.getBlock()).toString();
+                    if (!targets.contains(id)) continue;
+                    float[] col = colorForBlock(state.getBlock());
+                    results.add(new Found(x, y, z, col[0], col[1], col[2]));
+                }
+            }
+        }
+        found = results;   // publish snapshot for the render path
+    }
+
     int parseInt(String s, int d) { try { return Integer.parseInt(s); } catch (Exception e) { return d; } }
 }

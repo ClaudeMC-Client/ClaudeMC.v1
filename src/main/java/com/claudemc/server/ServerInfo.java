@@ -10,8 +10,11 @@ public class ServerInfo {
 
     public static final ServerInfo INSTANCE = new ServerInfo();
 
-    private String brand = "Unknown";
-    private final Set<String> pluginChannels = new LinkedHashSet<>();
+    // Brand/channels are written from the network thread (packet handlers) and read
+    // from the render thread (HUD / ServerInfoScreen), so access must be thread-safe.
+    private volatile String brand = "Unknown";
+    private final Set<String> pluginChannels =
+        Collections.synchronizedSet(new LinkedHashSet<>());
 
     private ServerInfo() {}
 
@@ -34,7 +37,13 @@ public class ServerInfo {
     public String getBrand() { return brand; }
 
     /** Returns the deduplicated list of detected plugin namespaces/names. */
-    public List<String> getPlugins() { return new ArrayList<>(pluginChannels); }
+    public List<String> getPlugins() {
+        // Copy under the set's monitor to avoid ConcurrentModificationException
+        // if a packet arrives mid-iteration.
+        synchronized (pluginChannels) {
+            return new ArrayList<>(pluginChannels);
+        }
+    }
 
     private static String namespace(String channel) {
         if (channel == null) return null;

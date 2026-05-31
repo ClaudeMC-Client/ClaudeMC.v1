@@ -41,7 +41,8 @@ public class FreeCam extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        float spd = Float.parseFloat(getSetting("Speed"));
+        float spd;
+        try { spd = Float.parseFloat(getSetting("Speed")); } catch (Exception e) { spd = 0.2f; }
         var opts = client.options;
         float yaw = (float) Math.toRadians(client.player.getYaw());
         float pitch = (float) Math.toRadians(client.player.getPitch());

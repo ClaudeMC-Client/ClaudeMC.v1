@@ -33,7 +33,7 @@ public class Tracers extends Module {
             if (consumers == null) return;
 
             String filter = INSTANCE.getSetting("Filter");
-            double range  = Double.parseDouble(INSTANCE.getSetting("Range"));
+            double range  = parseDouble(INSTANCE.getSetting("Range"), 64);
 
             Vec3d origin = Vec3d.ZERO; // relative to camera in world-space render
 
@@ -63,6 +63,10 @@ public class Tracers extends Module {
         if (e instanceof PlayerEntity)  return new float[]{1f, 0.2f, 0.2f};
         if (e instanceof HostileEntity) return new float[]{1f, 0.6f, 0f};
         return new float[]{0.2f, 1f, 0.2f};
+    }
+
+    private static double parseDouble(String s, double d) {
+        try { return Double.parseDouble(s); } catch (Exception e) { return d; }
     }
 
     @Override public void onTick(MinecraftClient client) {}
