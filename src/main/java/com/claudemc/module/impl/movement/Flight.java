@@ -50,8 +50,7 @@ public class Flight extends Module {
             f.setAccessible(true);
             f.setFloat(ab, speed);
         } catch (Exception ignored) {
-            // fallback: field may be public in this MC version
-            try { ab.flySpeed = speed; } catch (Exception ignored2) {}
+
         }
     }
 

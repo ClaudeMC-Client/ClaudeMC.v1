@@ -1,6 +1,7 @@
 package com.claudemc.gui;
 
 import com.claudemc.ClaudeMCClient;
+import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.module.impl.AimAssistModule;
 import com.claudemc.module.impl.EspModule;
@@ -49,10 +50,10 @@ public class LunarMenuScreen extends Screen {
 
     private int px, py; // panel top-left corner
 
-    private final Map<String, List<Module>> byCategory = new LinkedHashMap<>();
-    private final List<String> categories = new ArrayList<>();
+    private final Map<Category, List<Module>> byCategory = new LinkedHashMap<>();
+    private final List<Category> categories = new ArrayList<>();
 
-    private String selectedCategory;
+    private Category selectedCategory;
     private Module selectedModule;
 
     // Clickable regions (rebuilt each render)
@@ -150,7 +151,7 @@ public class LunarMenuScreen extends Screen {
             int bg = sel ? C_ACCENT_DIM : (hov ? 0x331A1A40 : 0x00000000);
             ctx.fill(sx, y - 2, sx + SIDEBAR_W - 1, y + 14, bg);
             if (sel) ctx.fill(sx, y - 2, sx + 2, y + 14, C_ACCENT); // accent strip
-            ctx.drawText(textRenderer, Text.literal((sel ? "§f" : "§7") + cat), sx + 10, y + 2, C_TEXT, false);
+            ctx.drawText(textRenderer, Text.literal((sel ? "§f" : "§7") + cat.displayName), sx + 10, y + 2, C_TEXT, false);
 
             categoryRects.add(new int[]{sx, y - 2, SIDEBAR_W - 1, 16, categories.indexOf(cat)});
             y += 20;

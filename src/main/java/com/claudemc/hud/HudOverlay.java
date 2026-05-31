@@ -34,9 +34,9 @@ public class HudOverlay {
     }
 
     private static void render(DrawContext ctx, MinecraftClient client) {
-        if (client.player == null || client.options.debugEnabled) return;
+        if (client.player == null || client.inGameHud.getDebugHud().shouldShowDebugHud()) return;
 
-        int fps = MinecraftClient.getCurrentFps();
+        int fps = MinecraftClient.getInstance().getCurrentFps();
         String tpsStr = String.format("%.1f", estimatedTps);
 
         int x = 4, y = 4;

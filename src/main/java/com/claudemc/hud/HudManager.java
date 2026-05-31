@@ -46,7 +46,7 @@ public class HudManager {
 
     private void render(DrawContext ctx, RenderTickCounter tickCounter) {
         var client = MinecraftClient.getInstance();
-        if (client.player == null || client.options.debugEnabled) return;
+        if (client.player == null || client.inGameHud.getDebugHud().shouldShowDebugHud()) return;
 
         renderWatermark(ctx, client);
         renderModuleList(ctx, client);
@@ -128,7 +128,7 @@ public class HudManager {
         int screenH = client.getWindow().getScaledHeight();
         int x = 4, y = screenH - 60;
 
-        int fps = MinecraftClient.currentFps;
+        int fps = MinecraftClient.getInstance().getCurrentFps();
         String tps = String.format("§7TPS §f%.1f", smoothedTps);
         int ping = getPing(client);
 
