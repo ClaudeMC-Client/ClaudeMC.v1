@@ -145,7 +145,7 @@ public class LunarMenuScreen extends Screen {
         ctx.drawText(textRenderer, Text.literal("§7MODULES"), sx + 8, y, C_SUBTEXT, false);
         y += 14;
 
-        for (String cat : categories) {
+        for (Category cat : categories) {
             boolean sel = cat.equals(selectedCategory);
             boolean hov = inRect(mx, my, sx, y - 2, SIDEBAR_W - 1, 16);
             int bg = sel ? C_ACCENT_DIM : (hov ? 0x331A1A40 : 0x00000000);

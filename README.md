@@ -65,59 +65,91 @@ A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full i
 
 ## Building from Source
 
-You only need to do this if you want to modify the code. Otherwise, just download the `.jar` from the Releases page.
+> **You don't need to do this to use the mod.** Just download the `.jar` from the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases) and drop it in `mods/`. The steps below are only needed if you want to modify the code and compile it yourself.
 
-### Prerequisites
+### What you need
 
-| Tool | Version |
-|---|---|
-| Git | Any recent version |
-| JDK (Java Development Kit) | **21 or newer** — NOT a JRE, must be a full JDK |
-| Internet access | Required to download Fabric dependencies on first build |
+| Tool | Where to get it | Notes |
+|---|---|---|
+| **JDK 21** (full kit, not JRE) | [adoptium.net](https://adoptium.net/) | Must be 21 — Java 17 or 22 won't work |
+| **Git** | [git-scm.com](https://git-scm.com/) | To clone the repo |
+| Internet connection | — | Downloads ~250 MB of Fabric + Minecraft on first build |
 
-You do **not** need to install Gradle — the repository includes a Gradle wrapper (`gradlew`) that downloads the correct version automatically.
+You do **not** need to install Gradle separately. The repo includes `gradlew` / `gradlew.bat` which auto-downloads the right Gradle version.
 
-### Steps
+### Step-by-step
+
+**1. Install JDK 21**
+
+Download the Temurin 21 installer from [adoptium.net](https://adoptium.net/). Run it and make sure `JAVA_HOME` is set (the Temurin installer does this automatically on Windows).
+
+Verify:
+```
+java -version
+```
+You should see `openjdk 21`.
+
+**2. Clone the repo and switch branch**
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/l0azathkamil/ClaudeMC.v1.git
 cd ClaudeMC.v1
-
-# 2. Switch to the development branch
 git checkout claude/serene-volta-eY5Oe
+```
 
-# 3. Build (first run downloads ~200 MB of Fabric/MC dependencies)
-#    Windows:
+**3. Build**
+
+The first build downloads all Minecraft and Fabric dependencies (~250 MB). This takes 5–10 minutes on a normal connection. Subsequent builds are fast.
+
+```bash
+# Windows (Command Prompt or PowerShell):
 gradlew.bat build
-#    macOS / Linux:
+
+# macOS / Linux:
 ./gradlew build
-
-# 4. The compiled mod JAR is here (ignore the -sources.jar):
-#    build/libs/claudemc-1.8.0.jar
 ```
 
-### Copy to mods folder
-
+If Gradle complains about permissions on macOS/Linux:
+```bash
+chmod +x gradlew
+./gradlew build
 ```
+
+**4. Find the compiled JAR**
+
+After a successful build, your file is at:
+```
+build/libs/claudemc-1.3.0.jar
+```
+(There will also be a `claudemc-1.3.0-sources.jar` — ignore that one.)
+
+**5. Install it**
+
+Copy the JAR to your mods folder:
+
+```bash
 # Windows
-copy build\libs\claudemc-1.8.0.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.3.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.8.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.3.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.8.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.3.0.jar ~/.minecraft/mods/
 ```
+
+Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
 
 ### Common build errors
 
-| Error | Fix |
-|---|---|
-| `JAVA_HOME` not set / wrong version | Install JDK 21+ and set `JAVA_HOME` to it |
-| `Plugin not found: fabric-loom` | No internet access — Fabric plugin must be downloadable from Gradle Plugin Portal |
-| `java.lang.foreign` errors at runtime | You launched with a JRE or Java 17/18 — must be JDK **21** |
-| `Could not resolve net.fabricmc:yarn` | Temporary network issue — retry; or check `maven.fabricmc.net` is reachable |
+| Error message | Cause | Fix |
+|---|---|---|
+| `'java' is not recognized` / `java: not found` | JDK not installed or not on PATH | Install JDK 21 from adoptium.net; restart your terminal |
+| `JAVA_HOME is set to an invalid directory` | Wrong JDK path | Update `JAVA_HOME` to point to JDK 21 (e.g. `C:\Program Files\Eclipse Adoptium\jdk-21...`) |
+| `Plugin not found: fabric-loom` | Blocked internet or Maven outage | Check you can reach `maven.fabricmc.net`; try again |
+| `Could not resolve net.fabricmc:yarn` | Same — Maven unreachable | Retry; check network/firewall |
+| `error: release version 21 not supported` | You ran build with Java 17 or older | Set `JAVA_HOME` to JDK 21 |
+| `BUILD SUCCESSFUL` but no JAR found | Very unlikely — check `build/libs/` | Run `gradlew build --info` for detail |
 
 ---
 
