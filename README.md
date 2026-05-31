@@ -1,4 +1,8 @@
-# ClaudeMC v1.11.0
+# ClaudeMC v1.11.1
+
+<p align="center">
+  <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
+</p>
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, and more.
 
