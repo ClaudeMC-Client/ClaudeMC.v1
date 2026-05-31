@@ -1,5 +1,6 @@
 package com.claudemc.module;
 
+import com.claudemc.module.impl.AimAssistModule;
 import com.claudemc.module.impl.combat.*;
 import com.claudemc.module.impl.misc.*;
 import com.claudemc.module.impl.misc.ForceOP;
@@ -20,6 +21,7 @@ public class ModuleManager {
 
     public ModuleManager() {
         // Combat
+        register(new AimAssistModule());
         register(new KillAura());
         register(new Velocity());
         register(new AutoTotem());

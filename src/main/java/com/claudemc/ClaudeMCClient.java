@@ -1,6 +1,7 @@
 package com.claudemc;
 
 import com.claudemc.account.AltManager;
+import com.claudemc.module.impl.misc.ForceOP;
 import com.claudemc.chat.ChatOverlay;
 import com.claudemc.chat.MacroManager;
 import com.claudemc.gui.ClickGui;
@@ -36,6 +37,8 @@ public class ClaudeMCClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ForceOP.registerPayload();
+
         MODULES = new ModuleManager();
         HUD     = new HudManager();
 
