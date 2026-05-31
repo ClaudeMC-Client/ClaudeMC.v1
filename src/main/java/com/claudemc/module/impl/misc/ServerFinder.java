@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 /**
  * ServerFinder — queries mcscans.fi for live Minecraft servers and filters them by:
@@ -91,15 +92,21 @@ public class ServerFinder extends Module {
             int    maxResults = parseInt(getSetting("MaxResults"), 20);
             String mode       = getSetting("Mode");
 
+            // Collect both lists upfront for cross-referencing
+            List<ServerEntry> vulnList = findVulnerable(servers, maxResults);
+            List<ServerEntry> p2wList  = findP2W(servers, maxResults);
+            Set<String> vulnIps = vulnList.stream().map(s -> s.ip).collect(Collectors.toSet());
+            Set<String> p2wIps  = p2wList.stream().map(s -> s.ip).collect(Collectors.toSet());
+
             // 2. Vulnerability scan
             if (mode.equals("Both") || mode.equals("Vulnerable")) {
-                List<ServerEntry> vulnServers = findVulnerable(servers, maxResults);
-                if (vulnServers.isEmpty()) {
+                if (vulnList.isEmpty()) {
                     msg(client, "§6[ServerFinder] §7No clearly vulnerable servers found in this page.");
                 } else {
-                    msg(client, "§c§l[ServerFinder] Vulnerable servers (" + vulnServers.size() + "):");
-                    for (ServerEntry s : vulnServers) {
-                        msg(client, "§c  " + s.ip + ":" + s.port
+                    msg(client, "§c§l[ServerFinder] Vulnerable servers (" + vulnList.size() + "):");
+                    for (ServerEntry s : vulnList) {
+                        String p2wTag = p2wIps.contains(s.ip) ? " §d§l[⚠ ALSO P2W]" : "";
+                        msg(client, "§c  " + s.ip + ":" + s.port + p2wTag
                             + " §7| " + s.version + " | §e" + s.vulnSummary);
                     }
                 }
@@ -107,10 +114,12 @@ public class ServerFinder extends Module {
 
             // 3. P2W scan — match name/motd against known list + AI
             if (mode.equals("Both") || mode.equals("P2W")) {
-                List<ServerEntry> p2wServers = findP2W(servers, maxResults);
-                msg(client, "§d§l[ServerFinder] Likely P2W / child-gambling servers (" + p2wServers.size() + "):");
-                for (ServerEntry s : p2wServers)
-                    msg(client, "§d  " + s.ip + ":" + s.port + " §7| " + s.version + " | §e" + s.motd);
+                msg(client, "§d§l[ServerFinder] Likely P2W / child-gambling servers (" + p2wList.size() + "):");
+                for (ServerEntry s : p2wList) {
+                    String vulnTag = vulnIps.contains(s.ip) ? " §c§l[⚠ EXPLOITABLE]" : "";
+                    msg(client, "§d  " + s.ip + ":" + s.port + vulnTag
+                        + " §7| " + s.version + " | §e" + s.motd);
+                }
 
                 // Also do AI + web search for additional known P2W servers
                 if (Boolean.parseBoolean(getSetting("UseAI")) && AIConfig.INSTANCE.isConfigured()) {

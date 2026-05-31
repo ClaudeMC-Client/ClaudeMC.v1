@@ -1,4 +1,4 @@
-# ClaudeMC v1.15.0
+# ClaudeMC v1.17.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -24,7 +24,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.15:** **AutoMine** — human-like strip miner with automatic branching, ore targeting, deliberate misses (so it looks like a real player), and full staff-detection integration (freezes when AntiAFK detects a vanish/TP check). v1.14 added WebSearch + active ServerProbe to ExploitAdvisor. v1.13 added the full AI layer. v1.12 added 33 modules including AutoCrystal, OreESP, HoleESP, Zoom, Radar, AutoReply, and AntiAFK.
+> **What's new in v1.17:** **ServerFinder cross-reference** — vulnerable servers are now tagged `[⚠ ALSO P2W]` when they're also P2W, and P2W servers are tagged `[⚠ EXPLOITABLE]` when they run vulnerable software. v1.16 added AutoMine evasion overhaul (random break + ore-spawn detection), ServerFinder (mcscans.fi scanner with Vulnerable/P2W/Both modes), 14 new VulnDb entries, and four new anti-P2W modules: ForeachCmd, AutoAuth, BookColors, AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
 
 ---
 
@@ -49,13 +49,14 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
    - [ExploitAdvisor](#exploitadvisor)
    - [AIAssist](#aiassist)
 9. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
-10. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
-11. [Editing Module Settings](#editing-module-settings)
-12. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-13. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-14. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-15. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-16. [Troubleshooting](#troubleshooting)
+10. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
+11. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
+12. [Editing Module Settings](#editing-module-settings)
+13. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+14. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+15. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+16. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+17. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -152,7 +153,7 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.14.0.jar
+build/libs/claudemc-1.17.0.jar
 ```
 (There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
@@ -165,10 +166,10 @@ Copy the JAR to your mods folder:
 copy build\libs\claudemc-1.14.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.14.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.17.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.14.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.17.0.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -394,7 +395,12 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **SmartReply** | AI-generated AFK / DM replies that sound human; falls back to canned response if no key is set |
 | **ExploitAdvisor** | Probes server software + plugins, searches web for recent CVEs/dupes, and asks AI to produce verbatim macro-ready exploit instructions |
 | **AIAssist** | `!ai <question>` chat helper (intercepted locally) + optional packet narration via PacketLogger |
-| **AutoMine** | Human-like strip miner: mines forward, branches left/right, collects ores with deliberate misses, freezes on staff detection |
+| **AutoMine** | Human-like strip miner: mines forward, branches left/right, collects ores with deliberate misses, randomised break on staff detection with elevated miss rate |
+| **ServerFinder** | Queries mcscans.fi for live servers; filters by vulnerability (VulnDb) and/or P2W/gambling status; cross-tags servers that are both exploitable and P2W |
+| **ForeachCmd** | Runs a configurable command once per online player (`%player%`) or N times (`%i%`) with random tick delays |
+| **AutoAuth** | Auto-sends your password on AuthMe / NLogin / FastLogin / JPremium login prompts |
+| **BookColors** | Translates `&x` colour codes to `§x` Minecraft format in book text |
+| **AutoReconnect** | Reconnects to the last server after disconnect, after a random configurable delay; optionally rotates to an offline alt first |
 
 ---
 
@@ -526,6 +532,55 @@ When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-ch
 
 ---
 
+## ServerFinder — Scan for Vulnerable / P2W Servers
+
+**Module:** Misc → `ServerFinder`
+
+Queries the public [mcscans.fi](https://mcscans.fi) server list and filters results two ways, then cross-references the two lists so you can see when a target is both technically exploitable *and* predatory.
+
+### Modes
+
+| Mode | What it scans |
+|---|---|
+| **Both** (default) | Runs both Vulnerable and P2W scans |
+| **Vulnerable** | Only flags servers with exploitable software |
+| **P2W** | Only flags servers with pay-to-win / gambling mechanics |
+
+### Vulnerable scan
+
+Matches each server's version string and MOTD against **VulnDb** — ClaudeMC's built-in database of vulnerable plugin versions and unpatched server software. Unpatched Spigot, CraftBukkit, BungeeCord, Waterfall, Mohist, and Magma builds are also flagged by software name.
+
+Each result shows: `IP:PORT | version | SEVERITY: Plugin — description`
+
+### P2W / gambling scan
+
+Matches IP and MOTD against a curated list of servers publicly identified on p2w.report and anti-P2W communities as selling gameplay advantages and/or gambling mechanics targeting minors (crate keys, OP spawners for purchase, `/fly` for money, etc.).
+
+With `UseAI` on and an API key configured, the AI is also asked (backed by a DuckDuckGo web search) to produce a broader list of currently-active P2W/gambling servers.
+
+### Cross-reference tags
+
+When both lists are collected, servers that appear in both are tagged:
+
+| Tag | Meaning |
+|---|---|
+| `§d[⚠ ALSO P2W]` | Shown on vulnerable servers that are also P2W — exploitable *and* predatory |
+| `§c[⚠ EXPLOITABLE]` | Shown on P2W servers that also run vulnerable software |
+
+Cross-tags appear regardless of which `Mode` you are viewing, because both lists are always collected internally.
+
+### Settings
+
+| Setting | Default | Effect |
+|---|---|---|
+| `Mode` | Both | Both / Vulnerable / P2W |
+| `UseAI` | on | Use AI + web search for extra P2W server context |
+| `MaxResults` | 20 | Max servers shown per category (5–100) |
+
+The module is trigger-only — enable it once to fire a scan, then it disables itself. Results appear in local chat only; no data is sent anywhere except mcscans.fi.
+
+---
+
 ## Cracked Minecraft (TLauncher etc.)
 
 **Short answer: yes.** ClaudeMC is a standard Fabric client mod — it works on any Minecraft installation regardless of how the game was launched, including TLauncher, MultiMC in offline mode, PolyMC, ATLauncher, and any other launcher.
@@ -550,7 +605,7 @@ When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-ch
    - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
 4. **Drop in the JARs:**
    - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
-   - `claudemc-1.15.0.jar` (from the Releases page)
+   - `claudemc-1.17.0.jar` (from the Releases page)
 5. Launch the **Fabric 1.21.1** profile in TLauncher.
 6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
 
