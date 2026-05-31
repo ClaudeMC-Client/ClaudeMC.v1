@@ -4,8 +4,8 @@ import com.claudemc.ClaudeMCClient;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.module.impl.AimAssistModule;
-import com.claudemc.module.impl.EspModule;
-import com.claudemc.module.impl.FlightModule;
+import com.claudemc.module.impl.movement.Flight;
+import com.claudemc.module.impl.render.ESP;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -240,102 +240,98 @@ public class LunarMenuScreen extends Screen {
 
         int y = sy + 18;
 
-        if (selectedModule instanceof FlightModule fm) drawFlightSettings(ctx, mx, my, sx, y, sw, fm);
-        else if (selectedModule instanceof EspModule em) drawEspSettings(ctx, mx, my, sx, y, sw, em);
-        else if (selectedModule instanceof AimAssistModule am) drawAimSettings(ctx, mx, my, sx, y, sw, am);
+        if (selectedModule instanceof Flight)         drawFlightSettings(ctx, mx, my, sx, y, sw, selectedModule);
+        else if (selectedModule instanceof ESP)       drawEspSettings(ctx, mx, my, sx, y, sw, selectedModule);
+        else if (selectedModule instanceof AimAssistModule) drawAimSettings(ctx, mx, my, sx, y, sw, selectedModule);
     }
 
     // ── Flight settings ──────────────────────────────────────────────────
 
-    private void drawFlightSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, FlightModule fm) {
-        ctx.drawText(textRenderer, Text.literal("§7Speed: §f" + String.format("%.3f", fm.getFlySpeed())), sx + 8, sy, C_TEXT, false);
+    private void drawFlightSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, Module fm) {
+        float curSpeed = parseFloat(fm.getSetting("Speed"), 0.10f);
+        ctx.drawText(textRenderer, Text.literal("§7Speed: §f" + String.format("%.3f", curSpeed)), sx + 8, sy, C_TEXT, false);
         sy += 12;
 
         float[] speeds = {0.01f, 0.05f, 0.10f, 0.20f, 0.50f};
         String[] labels = {"Slow", "Normal", "Fast", "Faster", "Ultra"};
         int bx = sx + 8;
         for (int i = 0; i < speeds.length; i++) {
-            boolean sel = Math.abs(fm.getFlySpeed() - speeds[i]) < 0.001f;
+            boolean sel = Math.abs(curSpeed - speeds[i]) < 0.001f;
             boolean hov = inRect(mx, my, bx, sy, 48, 14);
             ctx.fill(bx, sy, bx + 48, sy + 14, sel ? C_BTN_ACT : (hov ? C_BTN_HOV : C_BTN));
             drawBorder(ctx, bx, sy, 48, 14, sel ? C_ACCENT : C_DIVIDER);
             ctx.drawText(textRenderer, Text.literal(labels[i]), bx + 4, sy + 3, C_TEXT, false);
-            final float s = speeds[i];
+            final String sv = String.valueOf(speeds[i]);
             settingRects.add(new int[]{bx, sy, 48, 14});
-            settingActions.add(() -> fm.setFlySpeed(s));
+            settingActions.add(() -> fm.setSetting("Speed", sv));
             bx += 54;
         }
     }
 
     // ── ESP settings ─────────────────────────────────────────────────────
 
-    private void drawEspSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, EspModule em) {
+    private void drawEspSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, Module em) {
         ctx.drawText(textRenderer, Text.literal("§7Show:"), sx + 8, sy, C_TEXT, false);
         sy += 12;
 
-        EspModule.EspFilter[] filters = EspModule.EspFilter.values();
+        String[] filters = {"All", "Players", "Hostile"};
         String[] fLabels = {"All Entities", "Players Only", "Hostiles Only"};
+        String curFilter = em.getSetting("Filter");
         int bx = sx + 8;
         for (int i = 0; i < filters.length; i++) {
-            boolean sel = em.getFilter() == filters[i];
+            boolean sel = filters[i].equals(curFilter);
             boolean hov = inRect(mx, my, bx, sy, 78, 14);
             ctx.fill(bx, sy, bx + 78, sy + 14, sel ? C_BTN_ACT : (hov ? C_BTN_HOV : C_BTN));
             drawBorder(ctx, bx, sy, 78, 14, sel ? C_ACCENT : C_DIVIDER);
             ctx.drawText(textRenderer, Text.literal(fLabels[i]), bx + 4, sy + 3, C_TEXT, false);
-            final EspModule.EspFilter f = filters[i];
+            final String f = filters[i];
             settingRects.add(new int[]{bx, sy, 78, 14});
-            settingActions.add(() -> em.setFilter(f));
+            settingActions.add(() -> em.setSetting("Filter", f));
             bx += 84;
         }
     }
 
     // ── AimAssist settings ───────────────────────────────────────────────
 
-    private void drawAimSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, AimAssistModule am) {
-        // Target entity type toggles
-        ctx.drawText(textRenderer, Text.literal("§7Target entities:"), sx + 8, sy, C_TEXT, false);
+    private void drawAimSettings(DrawContext ctx, int mx, int my, int sx, int sy, int sw, Module am) {
+        // Target mode buttons
+        ctx.drawText(textRenderer, Text.literal("§7Target:"), sx + 8, sy, C_TEXT, false);
         sy += 12;
 
-        String[][] targets = {
-            {"minecraft:player",   "Player"},
-            {"minecraft:zombie",   "Zombie"},
-            {"minecraft:skeleton", "Skeleton"},
-            {"minecraft:spider",   "Spider"},
-            {"minecraft:creeper",  "Creeper"},
-            {"minecraft:enderman", "Enderman"},
-        };
-
+        String[] targets = {"Players", "Hostile+Players", "Hostile", "All"};
+        String[] tLabels = {"Players", "Hostile+P.", "Hostile", "All"};
+        String curTarget = am.getSetting("Target");
         int bx = sx + 8;
-        for (String[] t : targets) {
-            String id = t[0], label = t[1];
-            boolean active = am.hasTarget(id);
-            boolean hov = inRect(mx, my, bx, sy, 56, 14);
-            ctx.fill(bx, sy, bx + 56, sy + 14, active ? C_BTN_ACT : (hov ? C_BTN_HOV : C_BTN));
-            drawBorder(ctx, bx, sy, 56, 14, active ? C_ACCENT : C_DIVIDER);
-            ctx.drawText(textRenderer, Text.literal((active ? "§a" : "§7") + label), bx + 4, sy + 3, C_TEXT, false);
-            settingRects.add(new int[]{bx, sy, 56, 14});
-            settingActions.add(() -> { if (am.hasTarget(id)) am.removeTarget(id); else am.addTarget(id); });
-            bx += 62;
-            if (bx + 56 > sx + sw - 10) { bx = sx + 8; sy += 18; }
+        for (int i = 0; i < targets.length; i++) {
+            boolean sel = targets[i].equals(curTarget);
+            boolean hov = inRect(mx, my, bx, sy, 62, 14);
+            ctx.fill(bx, sy, bx + 62, sy + 14, sel ? C_BTN_ACT : (hov ? C_BTN_HOV : C_BTN));
+            drawBorder(ctx, bx, sy, 62, 14, sel ? C_ACCENT : C_DIVIDER);
+            ctx.drawText(textRenderer, Text.literal(tLabels[i]), bx + 4, sy + 3, C_TEXT, false);
+            final String t = targets[i];
+            settingRects.add(new int[]{bx, sy, 62, 14});
+            settingActions.add(() -> am.setSetting("Target", t));
+            bx += 68;
         }
 
         sy += 20;
-        // Smoothing label
-        ctx.drawText(textRenderer, Text.literal("§7Smooth: §f" + String.format("%.2f", am.getSmoothing())),
+        // Smoothing preset buttons
+        double curSmooth = parseDouble(am.getSetting("Smoothing"), 0.15);
+        ctx.drawText(textRenderer, Text.literal("§7Smooth: §f" + String.format("%.2f", curSmooth)),
             sx + 8, sy, C_TEXT, false);
         sy += 12;
         float[] smoothVals = {0.05f, 0.10f, 0.20f, 0.40f, 1.00f};
         String[] smoothLabels = {"Silky", "Slow", "Med", "Fast", "Snap"};
         bx = sx + 8;
         for (int i = 0; i < smoothVals.length; i++) {
-            boolean sel = Math.abs(am.getSmoothing() - smoothVals[i]) < 0.01f;
+            boolean sel = Math.abs((float) curSmooth - smoothVals[i]) < 0.01f;
             boolean hov = inRect(mx, my, bx, sy, 40, 14);
             ctx.fill(bx, sy, bx + 40, sy + 14, sel ? C_BTN_ACT : (hov ? C_BTN_HOV : C_BTN));
             drawBorder(ctx, bx, sy, 40, 14, sel ? C_ACCENT : C_DIVIDER);
             ctx.drawText(textRenderer, Text.literal(smoothLabels[i]), bx + 4, sy + 3, C_TEXT, false);
-            final float sv = smoothVals[i];
+            final String sv = String.valueOf(smoothVals[i]);
             settingRects.add(new int[]{bx, sy, 40, 14});
-            settingActions.add(() -> am.setSmoothing(sv));
+            settingActions.add(() -> am.setSetting("Smoothing", sv));
             bx += 46;
         }
     }
@@ -413,5 +409,13 @@ public class LunarMenuScreen extends Screen {
         ctx.fill(x,         y + h - 1, x + w, y + h,     color); // bottom
         ctx.fill(x,         y,         x + 1, y + h,     color); // left
         ctx.fill(x + w - 1, y,         x + w, y + h,     color); // right
+    }
+
+    private float parseFloat(String s, float def) {
+        try { return Float.parseFloat(s); } catch (Exception e) { return def; }
+    }
+
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
     }
 }
