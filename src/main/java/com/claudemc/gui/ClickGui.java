@@ -4,6 +4,7 @@ import com.claudemc.ClaudeMCClient;
 import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
+import com.claudemc.gui.AISettingsScreen;
 import com.claudemc.gui.AltScreen;
 import com.claudemc.gui.BlockESPScreen;
 import com.claudemc.gui.MacroScreen;
@@ -82,6 +83,7 @@ public class ClickGui extends Screen {
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Alts]",       0xFF44AAFF) - 4;
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Server Info]",0xFF44AAFF) - 4;
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[BlockESP]",   0xFFFF88FF) - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[AI]",         0xFF88FFFF) - 4;
     }
 
     private void drawPanel(DrawContext ctx, int mx, int my, Category cat) {
@@ -182,6 +184,10 @@ public class ClickGui extends Screen {
             // [BlockESP]
             int beW  = textRenderer.getWidth("[BlockESP]")  + 10; bX -= beW;
             if (x >= bX && x < bX + beW)  { client.setScreen(new BlockESPScreen());   return true; }
+            bX -= 4;
+            // [AI]
+            int aiW  = textRenderer.getWidth("[AI]")        + 10; bX -= aiW;
+            if (x >= bX && x < bX + aiW)  { client.setScreen(new AISettingsScreen()); return true; }
         }
 
         for (Category cat : Category.values()) {

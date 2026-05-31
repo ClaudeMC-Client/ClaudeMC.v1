@@ -104,6 +104,10 @@ public class ModuleManager {
         register(new PacketLogger());
         register(new AntiSpam());
         register(new FakePlayer());
+        // AI modules
+        register(new SmartReply());
+        register(new ExploitAdvisor());
+        register(new AIAssist());
     }
 
     private void register(Module m) { modules.add(m); }
