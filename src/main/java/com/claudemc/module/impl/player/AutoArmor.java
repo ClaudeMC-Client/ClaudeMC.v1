@@ -3,6 +3,7 @@ package com.claudemc.module.impl.player;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.SlotActionType;
@@ -28,10 +29,18 @@ public class AutoArmor extends Module {
             ItemStack stack = inv.main.get(i);
             if (!(stack.getItem() instanceof ArmorItem armor)) continue;
 
-            int armorSlot = 36 + (3 - armor.getMaterial().layers().size()); // rough slot mapping
-            int screenSlot = i < 9 ? i + 36 : i;
+            EquipmentSlot slot = armor.getType().getEquipmentSlot();
+            int armorIndex = switch (slot) {
+                case HEAD  -> 3;
+                case CHEST -> 2;
+                case LEGS  -> 1;
+                case FEET  -> 0;
+                default    -> -1;
+            };
+            if (armorIndex < 0) continue;
 
-            ItemStack current = client.player.getInventory().getArmorStack(3 - armor.getMaterial().layers().size());
+            int screenSlot = i < 9 ? i + 36 : i;
+            ItemStack current = client.player.getInventory().getArmorStack(armorIndex);
             if (current.isEmpty() || getArmorPoints(stack) > getArmorPoints(current)) {
                 client.interactionManager.clickSlot(syncId, screenSlot, 0, SlotActionType.QUICK_MOVE, client.player);
                 return;

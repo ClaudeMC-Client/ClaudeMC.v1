@@ -161,7 +161,7 @@ public class LunarMenuScreen extends Screen {
         // Stats at bottom
         int statY = sy + sh - 36;
         ctx.fill(sx, statY - 4, sx + SIDEBAR_W - 1, statY - 3, C_DIVIDER);
-        int fps = net.minecraft.client.MinecraftClient.getCurrentFps();
+        int fps = net.minecraft.client.MinecraftClient.getInstance().getCurrentFps();
         double tps = com.claudemc.hud.HudOverlay.getEstimatedTps();
         ctx.drawText(textRenderer, Text.literal("§7FPS §f" + fps), sx + 8, statY, C_TEXT, false);
         ctx.drawText(textRenderer, Text.literal("§7TPS §f" + String.format("%.1f", tps)), sx + 8, statY + 12, C_TEXT, false);

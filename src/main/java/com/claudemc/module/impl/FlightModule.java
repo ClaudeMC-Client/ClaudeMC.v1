@@ -1,6 +1,7 @@
 package com.claudemc.module.impl;
 
 import com.claudemc.module.Module;
+import com.claudemc.module.Category;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerAbilities;
 
@@ -9,7 +10,7 @@ public class FlightModule extends Module {
     private float flySpeed = 0.05f;
 
     public FlightModule() {
-        super("Flight", "Creative-style flight in survival mode", "Movement");
+        super("Flight", "Creative-style flight in survival mode", Category.MOVEMENT);
     }
 
     @Override

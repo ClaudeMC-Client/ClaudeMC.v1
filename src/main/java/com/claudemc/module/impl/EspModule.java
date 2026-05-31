@@ -1,6 +1,7 @@
 package com.claudemc.module.impl;
 
 import com.claudemc.module.Module;
+import com.claudemc.module.Category;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
@@ -24,7 +25,7 @@ public class EspModule extends Module {
     private static EspModule INSTANCE;
 
     public EspModule() {
-        super("ESP", "Renders coloured outlines around entities through walls", "Visual");
+        super("ESP", "Renders coloured outlines around entities through walls", Category.RENDER);
         INSTANCE = this;
 
         // Registered once; guarded by isEnabled() at runtime

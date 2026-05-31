@@ -1,6 +1,7 @@
 package com.claudemc.module.impl;
 
 import com.claudemc.module.Module;
+import com.claudemc.module.Category;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -19,7 +20,7 @@ public class AimAssistModule extends Module {
     private double range = 20.0;
 
     public AimAssistModule() {
-        super("AimAssist", "Smoothly aims at selected nearby entities", "Combat");
+        super("AimAssist", "Smoothly aims at selected nearby entities", Category.COMBAT);
         targetTypes.add("minecraft:player"); // default target
     }
 
