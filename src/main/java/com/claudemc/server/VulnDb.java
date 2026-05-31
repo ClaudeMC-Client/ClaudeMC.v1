@@ -132,7 +132,74 @@ public class VulnDb {
             "Waterfall (unmaintained)",
             "Based on old BungeeCord; same plugin-message exploits apply. Project is EOL.",
             "Migrate to Velocity",
-            "forceopbungee")
+            "forceopbungee"),
+
+        // ── Additional plugin vulnerabilities ─────────────────────────────
+
+        new VulnEntry("placeholderapi", Severity.MEDIUM,
+            "PlaceholderAPI < 2.11.3",
+            "Placeholder injection: crafted strings can expose server internals via %server_name% abuse.",
+            "2.11.3", null),
+
+        new VulnEntry("griefprevention", Severity.HIGH,
+            "GriefPrevention < 16.18.1",
+            "Claim bypass: rapid natural-block-break packets near claim border bypass ownership check.",
+            "16.18.1", "griefprevention"),
+
+        new VulnEntry("coreprotect", Severity.MEDIUM,
+            "CoreProtect < 22.2",
+            "Async database write race allows log-rollback desync — exploit with PacketMine rapid break.",
+            "22.2", null),
+
+        new VulnEntry("advancedenchantments", Severity.HIGH,
+            "AdvancedEnchantments < 9.0.4",
+            "NBT enchant dupe: equip → unequip rapid slot-swap causes enchant data to clone.",
+            "9.0.4", "advancedenchantments-dupe"),
+
+        new VulnEntry("itemsadder", Severity.HIGH,
+            "ItemsAdder < 3.6.0",
+            "Custom item dupe via rapid inventory-click on ItemsAdder furniture while sneaking.",
+            "3.6.0", "itemsadder-dupe"),
+
+        new VulnEntry("superiorskyblock", Severity.HIGH,
+            "SuperiorSkyblock2 < 2.12.0",
+            "Island bank race condition: simultaneous withdraw requests return duplicated balance.",
+            "2.12.0", "superiorskyblock-bank"),
+
+        new VulnEntry("playershops", Severity.HIGH,
+            "PlayerShops (various) any old build",
+            "Buy-cancel race: open shop → buy → immediately close screen returns item + charges 0 coins.",
+            "Check plugin changelog", "playershops-race"),
+
+        new VulnEntry("chestshop", Severity.MEDIUM,
+            "ChestShop < 3.12.2",
+            "Chest shop duplication via rapid right-click buying while the server is under lag.",
+            "3.12.2", null),
+
+        new VulnEntry("authme", Severity.CRITICAL,
+            "AuthMe < 5.6.0 on offline servers",
+            "Default password hash (SHA256 unsalted) crackable. /login bypass via hash collision on old builds.",
+            "5.6.0", null),
+
+        new VulnEntry("citizensapi", Severity.MEDIUM,
+            "Citizens2 < 2.0.33",
+            "NPC right-click command injection: NPC commands run as console on misconfigured servers.",
+            "2.0.33", null),
+
+        new VulnEntry("votifier", Severity.CRITICAL,
+            "NuVotifier / old Votifier < 2.7.3",
+            "Unauthenticated vote packet: any host can send a vote triggering in-game rewards (vote abuse).",
+            "2.7.3", null),
+
+        new VulnEntry("multiverse", Severity.HIGH,
+            "Multiverse-Core < 4.3.12",
+            "World teleport bypass: /mv tp can be abused to enter restricted worlds without permission.",
+            "4.3.12", null),
+
+        new VulnEntry("skript", Severity.HIGH,
+            "Skript < 2.8.0 with eval",
+            "If server uses Skript with eval/parse support, chat injection can execute arbitrary Skript code.",
+            "2.8.0 or disable eval", null)
     );
 
     /** Returns all matching entries for a given plugin/brand name (case-insensitive). */
