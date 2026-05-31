@@ -1,6 +1,7 @@
 package com.claudemc;
 
 import com.claudemc.account.AltManager;
+import com.claudemc.ai.AIConfig;
 import com.claudemc.module.impl.misc.ForceOP;
 import com.claudemc.chat.ChatOverlay;
 import com.claudemc.chat.MacroManager;
@@ -42,6 +43,7 @@ public class ClaudeMCClient implements ClientModInitializer {
         MODULES = new ModuleManager();
         HUD     = new HudManager();
 
+        AIConfig.load();
         KeybindManager.INSTANCE.load();
         MacroManager.INSTANCE.load();
         AltManager.INSTANCE.load();
