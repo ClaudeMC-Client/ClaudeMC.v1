@@ -109,6 +109,11 @@ public class ModuleManager {
         register(new ExploitAdvisor());
         register(new AIAssist());
         register(new AutoMine());
+        register(new ServerFinder());
+        register(new ForeachCmd());
+        register(new AutoAuth());
+        register(new BookColors());
+        register(new AutoReconnect());
     }
 
     private void register(Module m) { modules.add(m); }

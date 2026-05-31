@@ -15,65 +15,51 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
-/**
- * AutoMine — human-like strip miner.
- *
- * Pattern:
- *   1. Mines a 1×2 corridor straight forward (main tunnel).
- *   2. Every BranchEvery blocks it turns left/right 90° and mines a
- *      BranchLen-block side branch, then returns to the main tunnel.
- *   3. Branches alternate sides (left → right → left → …).
- *   4. While mining it scans the surrounding radius for target ores and
- *      deviates to collect them.  A configurable MissChance skips some
- *      ores entirely, so it looks like a real player.
- *   5. On staff detection (via AntiAFK) the module freezes, lets AntiAFK
- *      do its human-like look-around, then resumes when safe.
- *   6. Optional AI tip every ~32 forward blocks (requires API key).
- */
 public class AutoMine extends Module {
 
     public static AutoMine INSTANCE;
 
-    // ── Phases ────────────────────────────────────────────────────────────
-
     public enum Phase { IDLE, FORWARD, BRANCH, RETURNING }
     private volatile Phase phase = Phase.IDLE;
 
-    // Spatial tracking
-    private float mainYaw;          // cardinal yaw at start
-    private float branchYaw;        // current branch direction
-    private int   blocksForward;    // blocks advanced along main tunnel
-    private int   blocksBranch;     // blocks advanced on current branch
-    private int   returnBlocksLeft; // blocks to walk back on return trip
-    private int   branchSide = 1;   // +1 = left (yaw−90°),  −1 = right (yaw+90°)
+    private float mainYaw, branchYaw;
+    private int   blocksForward, blocksBranch, returnBlocksLeft;
+    private int   branchSide = 1;
 
-    // Mining target
     private BlockPos mineTarget;
     private boolean  miningOre;
+    private boolean  prevMineWasAir = true;
 
-    // Randomisation
     private final Random rng = new Random();
     private int pauseTicksLeft;
+
+    // ── Ore tracking ──────────────────────────────────────────────────────
     private final Set<BlockPos> seenOres    = new HashSet<>();
     private final Set<BlockPos> skippedOres = new HashSet<>();
+    private final Set<BlockPos> ignoredOres = new HashSet<>(); // staff-spawned off-path ores
+    private final Set<BlockPos> knownOres   = new HashSet<>(); // ore snapshot for spawn detection
+    private boolean oreSnapInit = false;
+    private int     oreSnapTimer = 0;
 
-    // Staff-pause tracking
-    private boolean wasPaused;
+    // ── Vein surprise ─────────────────────────────────────────────────────
+    private int consecutiveOres = 0;
+    private int surpriseTicks   = 0;
 
-    // Movement flags — read by KeyboardInputMixin on the same tick
-    public volatile boolean wantForward;
-    public volatile boolean wantBack;
+    // ── Staff detection ───────────────────────────────────────────────────
+    private boolean wasPaused        = false;
+    private int     staffBreakLeft   = 0;   // random break after detection
+    private int     elevatedMissTicks = 0;  // elevated miss chance window (ticks)
 
-    // AI hints
+    // ── Movement flags read by KeyboardInputMixin ─────────────────────────
+    public volatile boolean wantForward, wantBack;
+
     private final AtomicBoolean aiPending = new AtomicBoolean(false);
     private int aiTimer;
-
-    // Position from the previous tick — used to count block advances
     private BlockPos lastPos;
 
     // ── Ore catalogue ─────────────────────────────────────────────────────
-
     private static final Map<String, Set<Block>> ORE_GROUPS = new LinkedHashMap<>();
     static {
         ORE_GROUPS.put("Diamond",       Set.of(Blocks.DIAMOND_ORE,   Blocks.DEEPSLATE_DIAMOND_ORE));
@@ -87,42 +73,35 @@ public class AutoMine extends Module {
         ORE_GROUPS.put("Copper",        Set.of(Blocks.COPPER_ORE,    Blocks.DEEPSLATE_COPPER_ORE));
     }
 
-    // ── Constructor ───────────────────────────────────────────────────────
-
     public AutoMine() {
-        super("AutoMine",
-              "Human-like strip miner: branches, ore targeting with deliberate misses, staff-aware",
-              Category.MISC);
-        addMode("Ores",          "Diamond+Iron",
-                "Diamond+Iron", "Diamond", "Iron", "All Valuable", "Everything");
-        addNumber("BranchEvery", 16,  4,  64,  4,  true);
-        addNumber("BranchLen",    8,  2,  32,  2,  true);
-        addNumber("OreRadius",    3,  1,   5,  1,  true);
-        addNumber("MissChance",  15,  0,  60,  5,  true);
-        addNumber("PauseChance", 20,  0,  60,  5,  true);
-        addNumber("MaxPause",    30,  5, 100,  5,  true);
-        addBool("UseAI",         false);
+        super("AutoMine", "Human-like strip miner with staff-aware evasion", Category.MISC);
+        addMode("Ores", "Diamond+Iron", "Diamond+Iron", "Diamond", "Iron", "All Valuable", "Everything");
+        addNumber("BranchEvery", 16,  4,  64,  4, true);
+        addNumber("BranchLen",    8,  2,  32,  2, true);
+        addNumber("OreRadius",    3,  1,   5,  1, true);
+        addNumber("MissChance",  15,  0,  60,  5, true);
+        addNumber("PauseChance", 20,  0,  60,  5, true);
+        addNumber("MaxPause",    30,  5, 100,  5, true);
+        addBool("UseAI", false);
         INSTANCE = this;
     }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────
 
     @Override
     public void onEnable() {
         phase = Phase.IDLE;
         blocksForward = blocksBranch = returnBlocksLeft = 0;
         branchSide = 1;
-        mineTarget = null; miningOre = false;
-        pauseTicksLeft = aiTimer = 0;
-        seenOres.clear(); skippedOres.clear();
+        mineTarget = null; miningOre = false; prevMineWasAir = true;
+        pauseTicksLeft = aiTimer = oreSnapTimer = 0;
+        consecutiveOres = surpriseTicks = staffBreakLeft = elevatedMissTicks = 0;
+        seenOres.clear(); skippedOres.clear(); ignoredOres.clear();
+        knownOres.clear(); oreSnapInit = false;
         wasPaused = wantForward = wantBack = false;
         lastPos = null;
     }
 
     @Override
-    public void onDisable() {
-        wantForward = wantBack = false;
-    }
+    public void onDisable() { wantForward = wantBack = false; }
 
     // ── Main tick ─────────────────────────────────────────────────────────
 
@@ -131,50 +110,58 @@ public class AutoMine extends Module {
         if (client.player == null || client.world == null) return;
         wantForward = wantBack = false;
 
-        // Staff detection: if AntiAFK is reacting to a check, freeze entirely
-        if (AntiAFK.INSTANCE != null && AntiAFK.INSTANCE.isEnabled()
-                && AntiAFK.INSTANCE.isEvading()) {
-            if (!wasPaused) {
-                wasPaused  = true;
-                mineTarget = null;
-                client.player.sendMessage(
-                    Text.literal("§6[AutoMine] §7Paused — staff check detected"), false);
+        // ── Staff detection ───────────────────────────────────────────────
+        boolean staffActive = AntiAFK.INSTANCE != null && AntiAFK.INSTANCE.isEnabled()
+                              && AntiAFK.INSTANCE.isEvading();
+        if (staffActive && !wasPaused) {
+            wasPaused         = true;
+            staffBreakLeft    = 20 + rng.nextInt(1180);   // 1–60 s random break
+            elevatedMissTicks = 12000;                    // 10 min elevated miss
+            mineTarget        = null;
+            seenOres.clear();  // re-roll all miss decisions after detection
+        }
+        if (!staffActive && wasPaused) wasPaused = false;
+
+        if (staffBreakLeft > 0) {
+            staffBreakLeft--;
+            lastPos = client.player.getBlockPos();
+            return;   // sit still during break (AntiAFK drives look-around)
+        }
+
+        if (elevatedMissTicks > 0) elevatedMissTicks--;
+
+        // ── Surprise look after big vein ──────────────────────────────────
+        if (surpriseTicks > 0) {
+            surpriseTicks--;
+            if (surpriseTicks % 6 == 0) {
+                client.player.setYaw(client.player.getYaw() + (rng.nextFloat() - 0.5f) * 40f);
+                client.player.setPitch(Math.max(-30f, Math.min(30f,
+                    client.player.getPitch() + (rng.nextFloat() - 0.5f) * 20f)));
             }
             lastPos = client.player.getBlockPos();
             return;
         }
-        if (wasPaused) {
-            wasPaused = false;
-            client.player.sendMessage(Text.literal("§a[AutoMine] §7Resuming"), false);
-        }
 
-        // Random human-like pause between actions
-        if (pauseTicksLeft > 0) {
-            pauseTicksLeft--;
-            lastPos = client.player.getBlockPos();
-            return;
-        }
+        // ── Random pause ──────────────────────────────────────────────────
+        if (pauseTicksLeft > 0) { pauseTicksLeft--; lastPos = client.player.getBlockPos(); return; }
 
-        // Initialise on the first active tick
+        // ── Init ──────────────────────────────────────────────────────────
         if (phase == Phase.IDLE) {
             mainYaw = snapToCardinal(client.player.getYaw());
             client.player.setYaw(mainYaw);
-            blocksForward = blocksBranch = 0;
-            branchSide    = 1;
-            lastPos       = client.player.getBlockPos();
-            seenOres.clear(); skippedOres.clear();
+            blocksForward = blocksBranch = 0; branchSide = 1;
+            lastPos = client.player.getBlockPos();
+            seenOres.clear(); skippedOres.clear(); ignoredOres.clear();
+            knownOres.clear(); oreSnapInit = false;
             phase = Phase.FORWARD;
             client.player.sendMessage(
-                Text.literal("§a[AutoMine] §7Starting — facing "
-                    + dirName(yawToDir(mainYaw))), false);
+                Text.literal("§a[AutoMine] §7Starting — " + dirName(yawToDir(mainYaw))), false);
         }
 
-        // Periodic AI tip (roughly every 32 forward blocks, counted in ticks)
+        checkOreSpawns(client);
+
         if (Boolean.parseBoolean(getSetting("UseAI")) && AIConfig.INSTANCE.isConfigured()
-                && !aiPending.get() && ++aiTimer >= 640) {
-            aiTimer = 0;
-            requestAIHint(client);
-        }
+                && !aiPending.get() && ++aiTimer >= 640) { aiTimer = 0; requestAIHint(client); }
 
         switch (phase) {
             case FORWARD   -> tickForward(client);
@@ -182,151 +169,151 @@ public class AutoMine extends Module {
             case RETURNING -> tickReturn(client);
             default        -> {}
         }
-
         lastPos = client.player.getBlockPos();
     }
 
-    // ── FORWARD phase ─────────────────────────────────────────────────────
+    // ── Ore spawn detection ───────────────────────────────────────────────
 
-    private void tickForward(MinecraftClient client) {
-        ClientPlayerEntity p     = client.player;
-        var                world = client.world;
-        Direction          dir   = yawToDir(mainYaw);
+    private void checkOreSpawns(MinecraftClient client) {
+        if (++oreSnapTimer < 20) return;
+        oreSnapTimer = 0;
+        int r = parseInt(getSetting("OreRadius"), 3) + 3;
+        BlockPos p = client.player.getBlockPos();
+        Set<BlockPos> current = new HashSet<>();
+        for (int x = p.getX()-r; x <= p.getX()+r; x++)
+        for (int y = p.getY()-r; y <= p.getY()+r; y++)
+        for (int z = p.getZ()-r; z <= p.getZ()+r; z++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            if (isTargetOre(client.world.getBlockState(pos).getBlock())) current.add(pos);
+        }
+        if (!oreSnapInit) { oreSnapInit = true; knownOres.addAll(current); return; }
 
-        // Trigger branch when we've walked BranchEvery blocks
-        int interval = parseInt(getSetting("BranchEvery"), 16);
-        if (blocksForward > 0 && blocksForward % interval == 0) {
-            startBranch(p);
-            return;
-        }
+        // Find ores that appeared this second (potential staff /setblock)
+        List<BlockPos> newOres = current.stream()
+            .filter(pos -> !knownOres.contains(pos) && !seenOres.contains(pos))
+            .collect(Collectors.toList());
 
-        // Collect nearby ores (with miss chance)
-        BlockPos ore = scanForOre(client, dir);
-        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir())) {
-            mineTarget = ore;
-            miningOre  = true;
+        if (newOres.size() >= 3) { // 3+ ores appearing at once = suspicious
+            for (BlockPos pos : newOres) {
+                if (isOffPath(client.player, pos)) {
+                    // Off to the side — a normal player with no xray wouldn't notice
+                    ignoredOres.add(pos);
+                    seenOres.add(pos);
+                    skippedOres.add(pos);
+                }
+                // In-path ores: let the tunnel mine them naturally — mark as seen
+                // so scanForOre won't actively deviate toward them either
+                else {
+                    seenOres.add(pos); // mine if in path, but don't seek
+                    skippedOres.add(pos);
+                }
+            }
         }
-        if (miningOre && mineTarget != null && !world.getBlockState(mineTarget).isAir()) {
-            lookAt(p, mineTarget);
-            client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget));
-            return;
-        }
-        miningOre = false;
-
-        // Mine the 2-tall forward path
-        BlockPos ahead = p.getBlockPos().offset(dir);
-        BlockPos above = ahead.up();
-        if (!world.getBlockState(ahead).isAir()
-                && world.getBlockState(ahead).getHardness(world, ahead) >= 0) {
-            lookAt(p, ahead);
-            client.interactionManager.attackBlock(ahead, dir.getOpposite());
-            return;
-        }
-        if (!world.getBlockState(above).isAir()
-                && world.getBlockState(above).getHardness(world, above) >= 0) {
-            lookAt(p, above);
-            client.interactionManager.attackBlock(above, dir.getOpposite());
-            return;
-        }
-
-        // Path clear — walk forward
-        wantForward = true;
-        smoothYaw(p, mainYaw);
-        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) {
-            blocksForward++;
-            maybeRandomPause();
-        }
+        knownOres.clear(); knownOres.addAll(current);
     }
 
-    // ── BRANCH phase ──────────────────────────────────────────────────────
+    private boolean isOffPath(ClientPlayerEntity p, BlockPos ore) {
+        Direction dir = yawToDir(phase == Phase.BRANCH ? branchYaw : mainYaw);
+        BlockPos diff = ore.subtract(p.getBlockPos());
+        int perp = switch (dir) {
+            case NORTH, SOUTH -> Math.abs(diff.getX());
+            case EAST,  WEST  -> Math.abs(diff.getZ());
+            default           -> 0;
+        };
+        return perp > 2;
+    }
+
+    // ── FORWARD ───────────────────────────────────────────────────────────
+
+    private void tickForward(MinecraftClient client) {
+        var p = client.player; var world = client.world;
+        Direction dir = yawToDir(mainYaw);
+        int interval = parseInt(getSetting("BranchEvery"), 16);
+        if (blocksForward > 0 && blocksForward % interval == 0) { startBranch(p); return; }
+
+        // Seek nearby ore
+        BlockPos ore = scanForOre(client, dir);
+        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir()))
+            { mineTarget = ore; miningOre = true; }
+
+        if (miningOre && mineTarget != null) {
+            boolean isAir = world.getBlockState(mineTarget).isAir();
+            if (!prevMineWasAir && isAir) onOreMined(); // just mined one
+            prevMineWasAir = isAir;
+            if (!isAir) {
+                lookAt(p, mineTarget);
+                client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget));
+                return;
+            }
+            miningOre = false;
+        } else { consecutiveOres = 0; }
+
+        // Mine 2-tall forward path
+        BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
+        if (!world.getBlockState(ahead).isAir() && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
+            { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
+        if (!world.getBlockState(above).isAir() && world.getBlockState(above).getHardness(world, above) >= 0)
+            { lookAt(p, above); client.interactionManager.attackBlock(above, dir.getOpposite()); return; }
+
+        wantForward = true; smoothYaw(p, mainYaw);
+        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { blocksForward++; maybeRandomPause(); }
+    }
+
+    // ── BRANCH ────────────────────────────────────────────────────────────
 
     private void startBranch(ClientPlayerEntity p) {
-        // branchSide +1 = left = subtract 90° from yaw; −1 = right = add 90°
-        branchYaw    = normalYaw(mainYaw - branchSide * 90f);
-        blocksBranch = 0;
-        phase        = Phase.BRANCH;
-        p.setYaw(branchYaw);
+        branchYaw = normalYaw(mainYaw - branchSide * 90f);
+        blocksBranch = 0; phase = Phase.BRANCH; p.setYaw(branchYaw);
     }
 
     private void tickBranch(MinecraftClient client) {
-        ClientPlayerEntity p     = client.player;
-        var                world = client.world;
-        Direction          dir   = yawToDir(branchYaw);
+        var p = client.player; var world = client.world;
+        Direction dir = yawToDir(branchYaw);
+        if (blocksBranch >= parseInt(getSetting("BranchLen"), 8))
+            { returnBlocksLeft = blocksBranch; phase = Phase.RETURNING; p.setYaw(normalYaw(branchYaw+180f)); return; }
 
-        int branchLen = parseInt(getSetting("BranchLen"), 8);
-        if (blocksBranch >= branchLen) {
-            returnBlocksLeft = blocksBranch;
-            phase            = Phase.RETURNING;
-            p.setYaw(normalYaw(branchYaw + 180f));
-            return;
-        }
+        BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
+        if (!world.getBlockState(ahead).isAir() && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
+            { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
+        if (!world.getBlockState(above).isAir() && world.getBlockState(above).getHardness(world, above) >= 0)
+            { lookAt(p, above); client.interactionManager.attackBlock(above, dir.getOpposite()); return; }
 
-        // Mine branch tunnel
-        BlockPos ahead = p.getBlockPos().offset(dir);
-        BlockPos above = ahead.up();
-        if (!world.getBlockState(ahead).isAir()
-                && world.getBlockState(ahead).getHardness(world, ahead) >= 0) {
-            lookAt(p, ahead);
-            client.interactionManager.attackBlock(ahead, dir.getOpposite());
-            return;
-        }
-        if (!world.getBlockState(above).isAir()
-                && world.getBlockState(above).getHardness(world, above) >= 0) {
-            lookAt(p, above);
-            client.interactionManager.attackBlock(above, dir.getOpposite());
-            return;
-        }
-
-        // Side ores while branching
         BlockPos ore = scanForOre(client, dir);
-        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir())) {
-            mineTarget = ore; miningOre = true;
+        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir()))
+            { mineTarget = ore; miningOre = true; }
+        if (miningOre && mineTarget != null) {
+            boolean isAir = world.getBlockState(mineTarget).isAir();
+            if (!prevMineWasAir && isAir) onOreMined();
+            prevMineWasAir = isAir;
+            if (!isAir) { lookAt(p, mineTarget); client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget)); return; }
+            miningOre = false;
         }
-        if (miningOre && mineTarget != null && !world.getBlockState(mineTarget).isAir()) {
-            lookAt(p, mineTarget);
-            client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget));
-            return;
-        }
-        miningOre = false;
 
-        wantForward = true;
-        smoothYaw(p, branchYaw);
-        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) {
-            blocksBranch++;
-            maybeRandomPause();
-        }
+        wantForward = true; smoothYaw(p, branchYaw);
+        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { blocksBranch++; maybeRandomPause(); }
     }
 
-    // ── RETURNING phase ───────────────────────────────────────────────────
+    // ── RETURNING ─────────────────────────────────────────────────────────
 
     private void tickReturn(MinecraftClient client) {
-        ClientPlayerEntity p       = client.player;
-        var                world   = client.world;
-        float              retYaw  = normalYaw(branchYaw + 180f);
-        Direction          dir     = yawToDir(retYaw);
-
-        if (returnBlocksLeft <= 0) {
-            branchSide = -branchSide;   // alternate left/right
-            phase      = Phase.FORWARD;
-            p.setYaw(mainYaw);
-            return;
-        }
-
-        // Path was already mined going out; mine anything that regenerated (rare)
+        var p = client.player; var world = client.world;
+        float retYaw = normalYaw(branchYaw + 180f); Direction dir = yawToDir(retYaw);
+        if (returnBlocksLeft <= 0) { branchSide = -branchSide; phase = Phase.FORWARD; p.setYaw(mainYaw); return; }
         BlockPos ahead = p.getBlockPos().offset(dir);
-        if (!world.getBlockState(ahead).isAir()
-                && !isTargetOre(world.getBlockState(ahead).getBlock())
-                && world.getBlockState(ahead).getHardness(world, ahead) >= 0) {
-            lookAt(p, ahead);
-            client.interactionManager.attackBlock(ahead, dir.getOpposite());
-            return;
-        }
+        if (!world.getBlockState(ahead).isAir() && !isTargetOre(world.getBlockState(ahead).getBlock())
+                && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
+            { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
+        wantForward = true; smoothYaw(p, retYaw);
+        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { returnBlocksLeft--; maybeRandomPause(); }
+    }
 
-        wantForward = true;
-        smoothYaw(p, retYaw);
-        if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) {
-            returnBlocksLeft--;
-            maybeRandomPause();
+    // ── Vein surprise ─────────────────────────────────────────────────────
+
+    private void onOreMined() {
+        consecutiveOres++;
+        if (consecutiveOres >= 3 && rng.nextFloat() < 0.65f) {
+            surpriseTicks   = 25 + rng.nextInt(40); // 1.25–3.25 s look-around
+            consecutiveOres = 0;
         }
     }
 
@@ -334,52 +321,40 @@ public class AutoMine extends Module {
 
     private void requestAIHint(MinecraftClient client) {
         aiPending.set(true);
-        int y = client.player.getBlockY();
-        String prompt = "Strip mining in Minecraft at Y=" + y + ", " + blocksForward
-            + " blocks deep, targeting: " + getSetting("Ores")
-            + ". One sentence tip to maximise ore yield.";
-        String savedSys = AIConfig.INSTANCE.systemPrompt;
-        AIConfig.INSTANCE.systemPrompt = "You are a Minecraft mining advisor. One sentence, no markdown.";
-        AIClient.INSTANCE.ask(prompt,
-            resp -> {
-                AIConfig.INSTANCE.systemPrompt = savedSys;
-                aiPending.set(false);
+        String saved = AIConfig.INSTANCE.systemPrompt;
+        AIConfig.INSTANCE.systemPrompt = "Minecraft mining advisor. One sentence, no markdown.";
+        AIClient.INSTANCE.ask(
+            "Strip mining at Y=" + client.player.getBlockY() + ", " + blocksForward
+            + " blocks deep, ore target=" + getSetting("Ores") + ". One tip.",
+            resp -> { AIConfig.INSTANCE.systemPrompt = saved; aiPending.set(false);
                 var mc = MinecraftClient.getInstance();
-                if (mc.player != null)
-                    mc.player.sendMessage(Text.literal("§b[AutoMine AI] §7" + resp), false);
-            },
-            err -> { AIConfig.INSTANCE.systemPrompt = savedSys; aiPending.set(false); }
+                if (mc.player != null) mc.player.sendMessage(Text.literal("§b[AutoMine AI] §7" + resp), false); },
+            err  -> { AIConfig.INSTANCE.systemPrompt = saved; aiPending.set(false); }
         );
     }
 
     // ── Ore scanning ─────────────────────────────────────────────────────
 
     private BlockPos scanForOre(MinecraftClient client, Direction mainDir) {
-        int   radius     = parseInt(getSetting("OreRadius"), 3);
-        float missChance = parseFloat(getSetting("MissChance"), 15f) / 100f;
+        int   radius = parseInt(getSetting("OreRadius"), 3);
+        // Elevated miss after staff detection: at least 55%, up to configured max
+        float miss = elevatedMissTicks > 0
+            ? Math.max(0.55f, parseFloat(getSetting("MissChance"), 15f) / 100f)
+            : parseFloat(getSetting("MissChance"), 15f) / 100f;
         BlockPos p = client.player.getBlockPos();
         List<BlockPos> candidates = new ArrayList<>();
-
-        for (int x = p.getX() - radius; x <= p.getX() + radius; x++) {
-            for (int y = p.getY() - radius; y <= p.getY() + radius; y++) {
-                for (int z = p.getZ() - radius; z <= p.getZ() + radius; z++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (skippedOres.contains(pos)) continue;
-                    Block block = client.world.getBlockState(pos).getBlock();
-                    if (!isTargetOre(block)) continue;
-                    if (p.getSquaredDistance(pos) > 16.0) continue; // stay within reach
-
-                    // Roll miss chance exactly once per ore
-                    if (!seenOres.contains(pos)) {
-                        seenOres.add(pos);
-                        if (rng.nextFloat() < missChance) {
-                            skippedOres.add(pos);
-                            continue;
-                        }
-                    }
-                    candidates.add(pos);
-                }
+        for (int x = p.getX()-radius; x <= p.getX()+radius; x++)
+        for (int y = p.getY()-radius; y <= p.getY()+radius; y++)
+        for (int z = p.getZ()-radius; z <= p.getZ()+radius; z++) {
+            BlockPos pos = new BlockPos(x, y, z);
+            if (skippedOres.contains(pos) || ignoredOres.contains(pos)) continue;
+            if (!isTargetOre(client.world.getBlockState(pos).getBlock())) continue;
+            if (p.getSquaredDistance(pos) > 16.0) continue;
+            if (!seenOres.contains(pos)) {
+                seenOres.add(pos);
+                if (rng.nextFloat() < miss) { skippedOres.add(pos); continue; }
             }
+            candidates.add(pos);
         }
         if (candidates.isEmpty()) return null;
         candidates.sort(Comparator.comparingDouble(p::getSquaredDistance));
@@ -387,89 +362,77 @@ public class AutoMine extends Module {
     }
 
     private boolean isTargetOre(Block block) {
-        String mode = getSetting("Ores");
-        Set<Block> d = ORE_GROUPS.get("Diamond"), i = ORE_GROUPS.get("Iron"),
-                   g = ORE_GROUPS.get("Gold"),    e = ORE_GROUPS.get("Emerald"),
-                   a = ORE_GROUPS.get("AncientDebris");
-        return switch (mode) {
-            case "Diamond"        -> d.contains(block);
-            case "Iron"           -> i.contains(block);
-            case "Diamond+Iron"   -> d.contains(block) || i.contains(block);
-            case "All Valuable"   -> d.contains(block) || i.contains(block) || g.contains(block)
-                                     || e.contains(block) || a.contains(block);
-            default /* Everything */ -> ORE_GROUPS.values().stream().anyMatch(s -> s.contains(block));
+        String m = getSetting("Ores");
+        var d=ORE_GROUPS.get("Diamond"); var i=ORE_GROUPS.get("Iron");
+        var g=ORE_GROUPS.get("Gold");   var e=ORE_GROUPS.get("Emerald");
+        var a=ORE_GROUPS.get("AncientDebris");
+        return switch(m) {
+            case "Diamond"      -> d.contains(block);
+            case "Iron"         -> i.contains(block);
+            case "Diamond+Iron" -> d.contains(block)||i.contains(block);
+            case "All Valuable" -> d.contains(block)||i.contains(block)||g.contains(block)||e.contains(block)||a.contains(block);
+            default             -> ORE_GROUPS.values().stream().anyMatch(s->s.contains(block));
         };
     }
 
-    // ── Geometry / utility ────────────────────────────────────────────────
+    // ── Geometry ─────────────────────────────────────────────────────────
 
-    private void lookAt(ClientPlayerEntity p, BlockPos target) {
-        Vec3d eye  = p.getEyePos();
-        Vec3d diff = Vec3d.ofCenter(target).subtract(eye);
-        double h   = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
-        p.setYaw((float) Math.toDegrees(Math.atan2(-diff.x, diff.z)));
-        p.setPitch((float) Math.max(-89.9, Math.min(89.9, Math.toDegrees(-Math.atan2(diff.y, h)))));
+    private void lookAt(ClientPlayerEntity p, BlockPos t) {
+        Vec3d diff = Vec3d.ofCenter(t).subtract(p.getEyePos());
+        double h = Math.sqrt(diff.x*diff.x+diff.z*diff.z);
+        p.setYaw((float)Math.toDegrees(Math.atan2(-diff.x,diff.z)));
+        p.setPitch((float)Math.max(-89.9,Math.min(89.9,Math.toDegrees(-Math.atan2(diff.y,h)))));
     }
 
     private Direction faceTo(BlockPos from, BlockPos target) {
-        // Direction of the face on 'target' that is closest to 'from'
-        BlockPos d  = from.subtract(target);
-        int ax = Math.abs(d.getX()), ay = Math.abs(d.getY()), az = Math.abs(d.getZ());
-        if (ax >= ay && ax >= az) return d.getX() > 0 ? Direction.EAST  : Direction.WEST;
-        if (ay >= ax && ay >= az) return d.getY() > 0 ? Direction.UP    : Direction.DOWN;
-        return d.getZ() > 0 ? Direction.SOUTH : Direction.NORTH;
+        BlockPos d=from.subtract(target); int ax=Math.abs(d.getX()),ay=Math.abs(d.getY()),az=Math.abs(d.getZ());
+        if(ax>=ay&&ax>=az) return d.getX()>0?Direction.EAST:Direction.WEST;
+        if(ay>=ax&&ay>=az) return d.getY()>0?Direction.UP:Direction.DOWN;
+        return d.getZ()>0?Direction.SOUTH:Direction.NORTH;
     }
 
     private Direction yawToDir(float yaw) {
-        float y = normalYaw(yaw);
-        if (y < 45 || y >= 315) return Direction.SOUTH;
-        if (y < 135)             return Direction.WEST;
-        if (y < 225)             return Direction.NORTH;
+        float y=normalYaw(yaw);
+        if(y<45||y>=315) return Direction.SOUTH;
+        if(y<135)        return Direction.WEST;
+        if(y<225)        return Direction.NORTH;
         return Direction.EAST;
     }
 
     private float snapToCardinal(float yaw) {
-        float y = normalYaw(yaw);
-        if (y < 45 || y >= 315) return 0f;
-        if (y < 135) return 90f;
-        if (y < 225) return 180f;
+        float y=normalYaw(yaw);
+        if(y<45||y>=315) return 0f;
+        if(y<135) return 90f;
+        if(y<225) return 180f;
         return 270f;
     }
 
-    private float normalYaw(float yaw) { return ((yaw % 360) + 360) % 360; }
+    private float normalYaw(float y) { return ((y%360)+360)%360; }
 
     private boolean movedIn(BlockPos from, BlockPos to, Direction dir) {
-        if (from.equals(to)) return false;
-        return switch (dir) {
-            case NORTH -> to.getZ() < from.getZ();
-            case SOUTH -> to.getZ() > from.getZ();
-            case EAST  -> to.getX() > from.getX();
-            case WEST  -> to.getX() < from.getX();
-            default    -> false;
+        if(from.equals(to)) return false;
+        return switch(dir){
+            case NORTH->to.getZ()<from.getZ(); case SOUTH->to.getZ()>from.getZ();
+            case EAST ->to.getX()>from.getX(); case WEST ->to.getX()<from.getX();
+            default->false;
         };
     }
 
     private void smoothYaw(ClientPlayerEntity p, float target) {
-        float cur  = p.getYaw();
-        float diff = target - cur;
-        while (diff > 180)  diff -= 360;
-        while (diff < -180) diff += 360;
-        p.setYaw(cur + (Math.abs(diff) > 15 ? Math.signum(diff) * 8 : diff));
+        float cur=p.getYaw(),diff=target-cur;
+        while(diff>180)diff-=360; while(diff<-180)diff+=360;
+        p.setYaw(cur+(Math.abs(diff)>15?Math.signum(diff)*8:diff));
     }
 
     private String dirName(Direction d) {
-        return switch (d) {
-            case NORTH -> "North (−Z)"; case SOUTH -> "South (+Z)";
-            case EAST  -> "East (+X)";  case WEST  -> "West (−X)";
-            default    -> d.getName();
-        };
+        return switch(d){case NORTH->"North";case SOUTH->"South";case EAST->"East";case WEST->"West";default->d.getName();};
     }
 
     private void maybeRandomPause() {
-        if (rng.nextInt(100) < parseInt(getSetting("PauseChance"), 20))
-            pauseTicksLeft = rng.nextInt(parseInt(getSetting("MaxPause"), 30)) + 1;
+        if(rng.nextInt(100)<parseInt(getSetting("PauseChance"),20))
+            pauseTicksLeft=rng.nextInt(parseInt(getSetting("MaxPause"),30))+1;
     }
 
-    private int   parseInt(String s, int def)     { try { return Integer.parseInt(s.trim());  } catch (Exception e) { return def; } }
-    private float parseFloat(String s, float def) { try { return Float.parseFloat(s.trim());  } catch (Exception e) { return def; } }
+    private int   parseInt(String s,int def)   {try{return Integer.parseInt(s.trim());}catch(Exception e){return def;}}
+    private float parseFloat(String s,float d) {try{return Float.parseFloat(s.trim());}catch(Exception e){return d;}}
 }
