@@ -1,12 +1,12 @@
-# ClaudeMC v1.12.0
+# ClaudeMC v1.14.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
 </p>
 
-A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, and more.
+A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, AI-powered server analysis, and more.
 
-> **What's new in v1.12:** Massive module expansion — 33 new modules added across Combat, Movement, Render, Player, World, and Misc categories. Highlights: **AutoCrystal**, **OreESP (Xray)**, **HoleESP**, **Zoom**, **Radar**, **InventoryMove**, **ElytraFlight**, **AutoReply** (AFK-check auto-response), and **AntiAFK** (staff-detection with vanish/TP detection + human look-around). See the full changelog in [v1.12.0 release notes].
+> **What's new in v1.14:** AI integration now includes automated active server probing (`/version`, `/plugins`) and live DuckDuckGo web search — **ExploitAdvisor** builds a full server fingerprint then searches the web for recent CVEs and dupes before asking the AI to produce verbatim, macro-ready exploit instructions for that exact software stack. v1.13 added **SmartReply** (AI-generated AFK replies), **AIAssist** (`!ai` chat helper + packet narration), and a three-provider AI config panel (`[AI]` in the ClickGUI footer). v1.12 added 33 modules including **AutoCrystal**, **OreESP**, **HoleESP**, **Zoom**, **Radar**, **AutoReply**, and **AntiAFK**.
 
 ---
 
@@ -25,12 +25,17 @@ A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full i
    - [Render / ESP](#render--esp-modules)
    - [World](#world-modules)
    - [Misc / Exploits](#misc--exploit-modules)
-8. [Editing Module Settings](#editing-module-settings)
-9. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-10. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-11. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-12. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-13. [Troubleshooting](#troubleshooting)
+8. [AI Integration](#ai-integration)
+   - [AI Settings](#ai-settings)
+   - [SmartReply](#smartreply)
+   - [ExploitAdvisor](#exploitadvisor)
+   - [AIAssist](#aiassist)
+9. [Editing Module Settings](#editing-module-settings)
+10. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+11. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+12. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+13. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -127,7 +132,7 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.10.0.jar
+build/libs/claudemc-1.14.0.jar
 ```
 (There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
@@ -137,13 +142,13 @@ Copy the JAR to your mods folder:
 
 ```bash
 # Windows
-copy build\libs\claudemc-1.10.0.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.14.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.10.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.14.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.10.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.14.0.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -366,6 +371,88 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **PacketLogger** | Logs incoming chat/game packets to the mod logger |
 | **AntiSpam** | Filters duplicate and ad messages from chat |
 | **FakePlayer** | Spawns a client-side fake player entity at your position |
+| **SmartReply** | AI-generated AFK / DM replies that sound human; falls back to canned response if no key is set |
+| **ExploitAdvisor** | Probes server software + plugins, searches web for recent CVEs/dupes, and asks AI to produce verbatim macro-ready exploit instructions |
+| **AIAssist** | `!ai <question>` chat helper (intercepted locally) + optional packet narration via PacketLogger |
+
+---
+
+## AI Integration
+
+ClaudeMC v1.13+ embeds an AI layer that connects to **Anthropic Claude**, **OpenAI GPT**, or **Google Gemini**. All three providers are supported; you choose which one to use and supply your own API key. Keys are stored locally in `config/claudemc/ai.json` and are never transmitted anywhere other than the chosen AI provider.
+
+### AI Settings
+
+Press **`.`** → click **`[AI]`** in the ClickGUI footer.
+
+| Field | Notes |
+|---|---|
+| **Provider** | Click to cycle: Anthropic → OpenAI → Gemini |
+| **Anthropic key** | API key from console.anthropic.com |
+| **OpenAI key** | API key from platform.openai.com |
+| **Gemini key** | API key from aistudio.google.com |
+| **Model** | Leave blank for sensible defaults (`claude-haiku-4-5-20251001` / `gpt-4o-mini` / `gemini-1.5-flash`) |
+| **Max tokens** | Response length cap (default 300) |
+| **Test Connection** | Sends a live ping to verify the key works |
+
+Press **Tab** to cycle between input fields. The key fields show masked characters (`•••`) in the panel header but reveal what you type.
+
+### SmartReply
+
+**Module:** Misc → `SmartReply`
+
+Replaces AutoReply's hardcoded responses with AI-generated replies that sound like a real player. Triggers on AFK-check patterns in incoming chat and (optionally) any DM.
+
+| Setting | Default | Effect |
+|---|---|---|
+| `DelayTicks` | 40 (2 s) | How long to wait before sending the AI reply (natural timing) |
+| `AnyDM` | off | Trigger on any incoming private message, not just AFK checks |
+
+Falls back to a canned `"AFK, brb"` response if no AI key is configured or if the API call fails.
+
+### ExploitAdvisor
+
+**Module:** Misc → `ExploitAdvisor`
+
+Three-stage pipeline that runs automatically after joining a server:
+
+**Stage 1 — Active server probe**  
+Sends `/version` and `/plugins` and parses the text responses to extract server software, exact Minecraft version, and a full plugin list with version numbers. Falls back to passive brand-string and plugin-channel detection.
+
+**Stage 2 — Web search**  
+Queries DuckDuckGo (no API key required) for recent CVEs, duplication glitches, and exploit write-ups targeting the exact software stack detected. Runs separate queries for the top three plugins and searches dupedb.net. Returns up to 12 text snippets.
+
+**Stage 3 — AI synthesis**  
+Feeds the full server fingerprint + web snippets to the AI, which produces a numbered list (max 10) of specific, actionable exploits. Each entry includes:
+- What the exploit achieves
+- Exact step-by-step instructions
+- **Verbatim commands and macro strings** ready to paste into a `/macro` or type in chat
+- Items or conditions required
+
+| Setting | Default | Effect |
+|---|---|---|
+| `AutoOnJoin` | on | Fire the pipeline automatically after joining |
+| `WaitTicks` | 160 (8 s) | Delay before starting (lets server load finish) |
+| `WebSearch` | on | Run DuckDuckGo queries before the AI call |
+| `ProbeServer` | on | Send `/version` + `/plugins` to gather software info |
+
+Re-trigger manually at any time via the module's right-click menu → the pipeline resets and reruns.
+
+### AIAssist
+
+**Module:** Misc → `AIAssist`
+
+Two features in one:
+
+**Chat assistant:** Type `!ai <your question>` in the chat box. The message is intercepted before it reaches the server — the AI's answer appears in your local chat only (the server never sees it).
+
+**Packet narration:** When **PacketLogger** is also enabled, AIAssist periodically sends the last 20 logged packets to the AI and prints a plain-English summary of what the server is doing — useful for spotting unusual behaviour or understanding a server's anti-cheat.
+
+| Setting | Default | Effect |
+|---|---|---|
+| `Prefix` | `!ai` | Trigger prefix for the chat assistant |
+| `PacketNarration` | off | Enable periodic packet summary |
+| `NarrateTicks` | 200 (10 s) | How often to send the packet batch to AI |
 
 ---
 
