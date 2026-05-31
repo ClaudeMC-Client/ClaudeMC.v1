@@ -108,6 +108,7 @@ public class ModuleManager {
         register(new SmartReply());
         register(new ExploitAdvisor());
         register(new AIAssist());
+        register(new AutoMine());
     }
 
     private void register(Module m) { modules.add(m); }
