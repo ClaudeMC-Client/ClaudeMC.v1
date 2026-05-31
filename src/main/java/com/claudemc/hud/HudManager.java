@@ -1,6 +1,7 @@
 package com.claudemc.hud;
 
 import com.claudemc.ClaudeMCClient;
+import com.claudemc.chat.ChatOverlay;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -52,6 +53,7 @@ public class HudManager {
         renderCoords(ctx, client);
         renderStats(ctx, client);
         renderArmor(ctx, client);
+        ChatOverlay.INSTANCE.render(ctx, client);
     }
 
     // ── Watermark ────────────────────────────────────────────────────────

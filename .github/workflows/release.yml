@@ -10,17 +10,18 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   release:
-    name: Create release for version in VERSION file
+    name: Build and release version in VERSION file
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Read version
         id: ver
@@ -29,14 +30,43 @@ jobs:
           echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build mod JAR
+        run: ./gradlew build --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2G"
+
+      - name: Find built JAR
+        id: jar
+        run: |
+          JAR=$(ls build/libs/claudemc-*.jar | grep -v sources | head -1)
+          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+          echo "Found JAR: $JAR"
+
       - name: Create and push tag
         run: |
           TAG="${{ steps.ver.outputs.tag }}"
           git config user.email "actions@github.com"
           git config user.name  "GitHub Actions"
-          # Only create if it doesn't already exist
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists — skipping tag creation."
+            echo "Tag $TAG already exists — skipping."
           else
             git tag -a "$TAG" -m "$TAG"
             git push origin "refs/tags/$TAG"
@@ -45,7 +75,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read release notes
-        id: notes
         run: |
           TAG="${{ steps.ver.outputs.tag }}"
           NOTES_FILE=".github/release-notes/${TAG}.md"
@@ -57,7 +86,7 @@ jobs:
             echo "**Minecraft:** 1.21.1 · **Fabric Loader:** 0.16.5 · **Fabric API:** 0.100.7+1.21.1 · **Java:** 21" >> /tmp/release_body.md
           fi
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (with JAR)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
@@ -65,6 +94,6 @@ jobs:
           body_path: /tmp/release_body.md
           draft: false
           prerelease: false
+          files: ${{ steps.jar.outputs.path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

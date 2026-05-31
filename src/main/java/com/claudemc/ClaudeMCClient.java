@@ -1,5 +1,8 @@
 package com.claudemc;
 
+import com.claudemc.account.AltManager;
+import com.claudemc.chat.ChatOverlay;
+import com.claudemc.chat.MacroManager;
 import com.claudemc.gui.ClickGui;
 import com.claudemc.hud.HudManager;
 import com.claudemc.keybind.KeybindManager;
@@ -14,15 +17,18 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
+import org.lwjgl.glfw.GLFW;
 
 public class ClaudeMCClient implements ClientModInitializer {
 
     public static ModuleManager MODULES;
     public static HudManager    HUD;
 
-    // Ticks to wait after joining before running exploit match (give server time to send channels)
-    private static final int SCAN_DELAY_TICKS = 100; // ~5 seconds
-    private int joinTick = -1;
+    // Default chat overlay key: T (same key as vanilla chat, but works inside GUIs)
+    public static final int DEFAULT_CHAT_OVERLAY_KEY = GLFW.GLFW_KEY_T;
+
+    private static final int SCAN_DELAY_TICKS = 100;
+    private int joinTick  = -1;
     private boolean alertSent = false;
 
     @Override
@@ -31,13 +37,13 @@ public class ClaudeMCClient implements ClientModInitializer {
         HUD     = new HudManager();
 
         KeybindManager.INSTANCE.load();
+        MacroManager.INSTANCE.load();
+        AltManager.INSTANCE.load();
 
-        // Kick off remote exploit DB fetch immediately on startup (background thread)
         ExploitFetcher.INSTANCE.fetchAsync();
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 
-        // Reset server info on join; start scan countdown
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             ServerInfo.INSTANCE.reset();
             joinTick  = 0;
@@ -50,18 +56,22 @@ public class ClaudeMCClient implements ClientModInitializer {
     }
 
     private void onTick(MinecraftClient client) {
-        // Check GUI open key
         long window = client.getWindow().getHandle();
         int guiKey  = KeybindManager.INSTANCE.getGuiKey();
-        if (isKeyJustPressed(window, guiKey)) {
-            if (client.currentScreen == null) {
-                client.setScreen(new ClickGui());
-            }
+
+        // Chat overlay toggle key (works inside any GUI)
+        if (isKeyJustPressed(window, DEFAULT_CHAT_OVERLAY_KEY) && client.currentScreen != null) {
+            ChatOverlay.INSTANCE.toggle();
+        }
+
+        // GUI open key (only when no screen is open)
+        if (client.currentScreen == null && isKeyJustPressed(window, guiKey)) {
+            client.setScreen(new ClickGui());
         }
 
         if (client.player == null) return;
 
-        // Check per-module hotkeys
+        // Per-module hotkeys
         for (Module m : MODULES.getModules()) {
             int bind = KeybindManager.INSTANCE.getModuleBind(m.getName());
             if (bind != -1 && client.currentScreen == null && isKeyJustPressed(window, bind)) {
@@ -69,9 +79,18 @@ public class ClaudeMCClient implements ClientModInitializer {
             }
         }
 
+        // Macro hotkeys (fire when no screen open)
+        if (client.currentScreen == null) {
+            for (MacroManager.Macro macro : MacroManager.INSTANCE.getMacros()) {
+                if (macro.keybind != -1 && isKeyJustPressed(window, macro.keybind)) {
+                    fireMacro(client, macro.command);
+                }
+            }
+        }
+
         MODULES.onTick(client);
 
-        // After joining, wait SCAN_DELAY_TICKS then run exploit match and notify
+        // Delayed exploit alert after joining
         if (joinTick >= 0) {
             joinTick++;
             if (joinTick >= SCAN_DELAY_TICKS && !alertSent) {
@@ -79,6 +98,15 @@ public class ClaudeMCClient implements ClientModInitializer {
                 joinTick  = -1;
                 runExploitAlert(client);
             }
+        }
+    }
+
+    private void fireMacro(MinecraftClient client, String command) {
+        if (command == null || command.isBlank()) return;
+        if (command.startsWith("/")) {
+            client.getNetworkHandler().sendChatCommand(command.substring(1));
+        } else {
+            client.getNetworkHandler().sendChatMessage(command);
         }
     }
 

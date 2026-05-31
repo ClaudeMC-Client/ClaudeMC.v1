@@ -1,4 +1,4 @@
-# ClaudeMC v1.7
+# ClaudeMC v1.8
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, survival flight, combat assists, dupe exploits, and more.
 
@@ -53,31 +53,71 @@ A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full i
 
 ### Step 3 — Install ClaudeMC
 
-1. Download `claudemc-2.0.0.jar` from the releases page (or build from source).
-2. Place it into `.minecraft/mods/`.
-3. Launch Minecraft with the **Fabric 1.21.1** profile.
-4. You should see `ClaudeMC v2 initialised` in the log.
+1. Go to the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases).
+2. Under the latest release, download the **`claudemc-X.X.X.jar`** file (not the Source code zip/tar.gz — those are the raw source, not a runnable mod).
+3. Place the `.jar` into `.minecraft/mods/`.
+4. Launch Minecraft with the **Fabric 1.21.1** profile.
+5. You should see `ClaudeMC v2 initialised` in the log.
+
+> **Why zip/tar.gz?** Older releases (v1.1–v1.4) were published before the CI pipeline was set up to compile the mod. From v1.5 onwards, every release attaches the compiled `.jar` automatically.
 
 ---
 
 ## Building from Source
 
+You only need to do this if you want to modify the code. Otherwise, just download the `.jar` from the Releases page.
+
+### Prerequisites
+
+| Tool | Version |
+|---|---|
+| Git | Any recent version |
+| JDK (Java Development Kit) | **21 or newer** — NOT a JRE, must be a full JDK |
+| Internet access | Required to download Fabric dependencies on first build |
+
+You do **not** need to install Gradle — the repository includes a Gradle wrapper (`gradlew`) that downloads the correct version automatically.
+
+### Steps
+
 ```bash
-# Prerequisites: JDK 21+, internet access (for maven.fabricmc.net)
+# 1. Clone the repository
+git clone https://github.com/l0azathkamil/ClaudeMC.v1.git
+cd ClaudeMC.v1
 
-git clone https://github.com/l0azathkamil/claudemc.v1.git
-cd claudemc.v1
+# 2. Switch to the development branch
+git checkout claude/serene-volta-eY5Oe
 
-# Windows
+# 3. Build (first run downloads ~200 MB of Fabric/MC dependencies)
+#    Windows:
 gradlew.bat build
-
-# macOS / Linux
+#    macOS / Linux:
 ./gradlew build
 
-# Output: build/libs/claudemc-2.0.0.jar
+# 4. The compiled mod JAR is here (ignore the -sources.jar):
+#    build/libs/claudemc-1.8.0.jar
 ```
 
-Copy the output jar into your `mods/` folder.
+### Copy to mods folder
+
+```
+# Windows
+copy build\libs\claudemc-1.8.0.jar %APPDATA%\.minecraft\mods\
+
+# macOS
+cp build/libs/claudemc-1.8.0.jar ~/Library/Application\ Support/minecraft/mods/
+
+# Linux
+cp build/libs/claudemc-1.8.0.jar ~/.minecraft/mods/
+```
+
+### Common build errors
+
+| Error | Fix |
+|---|---|
+| `JAVA_HOME` not set / wrong version | Install JDK 21+ and set `JAVA_HOME` to it |
+| `Plugin not found: fabric-loom` | No internet access — Fabric plugin must be downloadable from Gradle Plugin Portal |
+| `java.lang.foreign` errors at runtime | You launched with a JRE or Java 17/18 — must be JDK **21** |
+| `Could not resolve net.fabricmc:yarn` | Temporary network issue — retry; or check `maven.fabricmc.net` is reachable |
 
 ---
 
@@ -420,8 +460,118 @@ Premium vanish plugins (PremiumVanish, advanced EssX) suppress these movement pa
 
 ---
 
+## Mod Compatibility
+
+### Compatible (safe to use alongside ClaudeMC)
+
+| Mod | Notes |
+|---|---|
+| **Sodium** | Fully compatible — rendering performance improvement, no conflicts |
+| **Lithium** | Fully compatible — server-side logic optimisation for singleplayer |
+| **FerriteCore** | Fully compatible — memory usage reduction |
+| **ModMenu** | Fully compatible — shows ClaudeMC in the mod list |
+| **Replay Mod** | Compatible, but RecordProof will also hide the window from ReplayMod capture |
+| **MiniHUD** | Compatible — HUD elements may overlap; reposition ClaudeMC panels if needed |
+| **Tweakeroo** | Mostly compatible; some movement tweaks may conflict with Flight/Speed modules |
+
+### Incompatible / Conflicts
+
+| Mod | Why |
+|---|---|
+| **OptiFabric / OptiFine** | Breaks Mixin injection — do not use; use Sodium instead |
+| **Iris Shaders** | ESP boxes may flicker or disappear — the shader pipeline overrides the render layer |
+| **Indium** | Required if using Sodium + Iris; no additional conflicts with ClaudeMC itself |
+| **Meteor Client** | Cannot run alongside ClaudeMC — both register the same Mixin targets and keybinds |
+| **Wurst Client** | Same conflict as Meteor — only one hack client at a time |
+| **LabyMod** | Replaces core GUI rendering; ClickGUI panels may not render correctly |
+| **Essential Mod** | Conflicts with session/alt management — do not use AltManager alongside Essential |
+
+### Shader note
+
+If you use Iris + Sodium and want shaders, ESP boxes will not render through walls. The rest of ClaudeMC functions normally. To use ESP with shaders, disable the shader pack while ESP is active.
+
+---
+
+## Chat Overlay (UIUtils)
+
+Press **`T`** while any GUI is open (auction house, chest, crafting table, etc.) to open the floating chat input box without closing the current screen. Press **Enter** to send, **Esc** to dismiss.
+
+- Supports full text editing (backspace, delete, left/right arrow, home/end)
+- Prepend `/` to send a command instead of a chat message
+- Works in any screen — you never have to close the GUI to type
+
+---
+
+## Macros
+
+Open **`.`** → click **`[Macros]`** in the footer.
+
+- **Add:** click `[+ New Macro]`, type a name and command (e.g. `/tp spawn`), press Tab to cycle fields, Enter to save
+- **Keybind:** tab to the Key field; it enters listening mode automatically — press any key to bind
+- **Delete:** right-click any macro row
+- **Fire:** press the bound key in-game (while no screen is open), or run via the Chat Overlay
+
+---
+
+## Alt Manager
+
+Open **`.`** → click **`[Alts]`** in the footer.
+
+**Offline / Cracked alts** — works on offline-mode and cracked servers:
+1. Click `[+ Offline]`
+2. Enter a username → Enter
+
+**Session alts** (online-mode servers) — requires a pre-obtained access token:
+1. Click `[+ Session]`
+2. Enter username, UUID, and the Microsoft access token → Enter
+3. Tokens can be obtained from external auth tools (not included)
+
+Click any row to switch to that account. Click **`[Restore]`** to switch back to your original account. Changes take effect on the next server connection — you must reconnect after switching.
+
+> **Warning:** switching alts while already connected to a server will not work mid-session. Always switch before joining.
+
+---
+
+## MiniMessage Exploit
+
+**Module:** Misc → `MiniMessageExploit`
+
+Based on the [khaodoes.dev MiniMessage escape exploit](https://khaodoes.dev/blog/minimessage-escape-exploit). Targets plugins (EssentialsX < 2.21.0, TAB, custom chat plugins) that pass player chat through MiniMessage without sanitising tags.
+
+Enable once → fires the selected payload → auto-disables.
+
+| Technique | What it does |
+|---|---|
+| **ClickCommand** | Wraps your text in `<click:run_command:'/cmd'>` — any player who clicks the message in chat executes the injected command |
+| **HoverSpoof** | Fakes a `[SERVER]` broadcast using `<red><bold>` + `<hover>` — visual deception |
+| **GradientBypass** | Wraps text in `<gradient>` tags — bypasses simple chat filters that match plain strings |
+| **EscapeInject** | Uses `\<` escape sequences to survive sanitisers that only strip unescaped tags |
+| **FontObfuscate** | Renders text in `<font:uniform>` — different visual appearance, bypasses font-sensitive filters |
+
+Settings: **Target** (username for ClickCommand, default = yourself), **CustomText** (visible text), **CustomCmd** (injected command, `{target}` is replaced).
+
+---
+
+## Server Crash
+
+**Module:** Misc → `ServerCrash`
+
+Sends crash-inducing packets targeting unpatched Spigot/CraftBukkit servers. Patched on Paper 1.19.3+.
+
+| Technique | Target |
+|---|---|
+| **BookOverflow** | 100 pages × 32767 chars — crashes servers processing book NBT synchronously on the main thread |
+| **PacketFlood** | Rapid `CloseHandledScreenC2SPacket` spam — overflows the packet queue on servers without rate limiting |
+| **NBTOverflow** | 512-level deep nested NBT compound — crashes servers without NBT depth limits |
+| **SignOverflow** | Sign update with 32767-char lines — crashes old sign-handling code |
+
+Enable once → fires immediately → auto-disables.
+
+---
+
 ## Credits
 
 - Module system inspired by [Meteor Client](https://meteorclient.com/)
 - Dupe research from [dupedb.net](https://dupedb.net)
+- MiniMessage exploit research: [khaodoes.dev](https://khaodoes.dev/blog/minimessage-escape-exploit)
 - Built with [Fabric API](https://fabricmc.net) and [LWJGL 3](https://www.lwjgl.org/)

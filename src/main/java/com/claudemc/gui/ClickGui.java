@@ -4,6 +4,9 @@ import com.claudemc.ClaudeMCClient;
 import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
+import com.claudemc.gui.AltScreen;
+import com.claudemc.gui.MacroScreen;
+import com.claudemc.gui.ServerInfoScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -64,24 +67,19 @@ public class ClickGui extends Screen {
         for (Category cat : Category.values()) {
             drawPanel(ctx, mx, my, cat);
         }
-        // Footer bar
-        ctx.fill(0, height - 14, width, height, 0xFF18181F);
+        // Footer bar (taller to fit all buttons)
+        ctx.fill(0, height - 16, width, height, 0xFF18181F);
         ctx.drawText(textRenderer, Text.literal("§7[" +
                 KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
-                "] close  §8|  §7LClick=toggle  RClick=settings"),
-            4, height - 10, 0x888888, false);
-        // [Server Info] button
-        int siBtnW = 84, siBtnH = 12;
-        int siBtnX = width - siBtnW - 82, siBtnY = height - 13;
-        ctx.fill(siBtnX, siBtnY, siBtnX + siBtnW, siBtnY + siBtnH, 0xFF1C1C28);
-        ctx.fill(siBtnX, siBtnY, siBtnX + 2, siBtnY + siBtnH, 0xFF44AAFF);
-        ctx.drawText(textRenderer, Text.literal("§f[Server Info]"), siBtnX + 5, siBtnY + 2, 0xFFEEEEEE, false);
-        // [Keybinds] button
-        int btnW = 72, btnH = 12;
-        int btnX = width - btnW - 4, btnY = height - 13;
-        ctx.fill(btnX, btnY, btnX + btnW, btnY + btnH, 0xFF1C1C28);
-        ctx.fill(btnX, btnY, btnX + 2,   btnY + btnH, 0xFF4ADE80);
-        ctx.drawText(textRenderer, Text.literal("§f[Keybinds]"), btnX + 5, btnY + 2, 0xFFEEEEEE, false);
+                "] close  §8|  §7T=chat  LClick=toggle  RClick=settings"),
+            4, height - 11, 0x888888, false);
+        // Buttons right-to-left: [Keybinds] [Macros] [Alts] [Server Info]
+        int bY = height - 13, bH = 11;
+        int bX = width - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Keybinds]",   0xFF4ADE80) - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Macros]",     0xFFFFAA44) - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Alts]",       0xFF44AAFF) - 4;
+        bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Server Info]",0xFF44AAFF) - 4;
     }
 
     private void drawPanel(DrawContext ctx, int mx, int my, Category cat) {
@@ -156,19 +154,26 @@ public class ClickGui extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         int x = (int) mx, y = (int) my;
 
-        // Server Info button
-        int siBtnW = 84, siBtnX = width - siBtnW - 82, siBtnY = height - 13;
-        if (button == 0 && inRect(x, y, siBtnX, siBtnY, siBtnW, 12)) {
+        // Footer buttons — mirror render order (right-to-left) to determine hit areas
+        if (button == 0 && y >= height - 13 && y < height - 2) {
             assert client != null;
-            client.setScreen(new ServerInfoScreen());
-            return true;
-        }
-        // Keybinds button
-        int btnW = 72, btnX = width - btnW - 4, btnY = height - 13;
-        if (button == 0 && inRect(x, y, btnX, btnY, btnW, 12)) {
-            assert client != null;
-            client.setScreen(new KeybindScreen());
-            return true;
+            // Compute button positions same as render: right-to-left
+            int bX = width - 4;
+            // [Keybinds]
+            int kbW  = textRenderer.getWidth("[Keybinds]")  + 10; bX -= kbW;
+            if (x >= bX && x < bX + kbW) { client.setScreen(new KeybindScreen());   return true; }
+            bX -= 4;
+            // [Macros]
+            int macW = textRenderer.getWidth("[Macros]")    + 10; bX -= macW;
+            if (x >= bX && x < bX + macW) { client.setScreen(new MacroScreen());    return true; }
+            bX -= 4;
+            // [Alts]
+            int altW = textRenderer.getWidth("[Alts]")      + 10; bX -= altW;
+            if (x >= bX && x < bX + altW) { client.setScreen(new AltScreen());      return true; }
+            bX -= 4;
+            // [Server Info]
+            int siW  = textRenderer.getWidth("[Server Info]")+ 10; bX -= siW;
+            if (x >= bX && x < bX + siW)  { client.setScreen(new ServerInfoScreen()); return true; }
         }
 
         for (Category cat : Category.values()) {
@@ -227,6 +232,16 @@ public class ClickGui extends Screen {
     @Override
     public boolean mouseScrolled(double mx, double my, double hScroll, double vScroll) {
         return false;
+    }
+
+    /** Draws a right-aligned footer button and returns the new right edge X. */
+    private int drawFooterBtn(DrawContext ctx, int rightX, int y, int h, String label, int accent) {
+        int w = textRenderer.getWidth(label.replaceAll("§.", "")) + 10;
+        int x = rightX - w;
+        ctx.fill(x, y, x + w, y + h, 0xFF1C1C28);
+        ctx.fill(x, y, x + 2, y + h, accent);
+        ctx.drawText(textRenderer, Text.literal(label), x + 4, y + 2, 0xFFEEEEEE, false);
+        return x;
     }
 
     private boolean inRect(int mx, int my, int x, int y, int w, int h) {

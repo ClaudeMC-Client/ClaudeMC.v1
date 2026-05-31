@@ -1,0 +1,169 @@
+package com.claudemc.account;
+
+import com.claudemc.ClaudeMCMod;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.session.Session;
+
+import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.file.*;
+import java.util.*;
+
+/**
+ * Alt account manager.
+ *
+ * Supports two account modes:
+ *
+ *  OFFLINE  — sets the client session to an offline/cracked session with any username.
+ *             Works on cracked servers and offline-mode servers.
+ *             UUID is generated deterministically from the username (same as vanilla offline).
+ *
+ *  SESSION  — uses a pre-obtained session token (accessToken + UUID).
+ *             Lets you switch between real Microsoft accounts without restarting.
+ *             Obtain tokens via external auth tools; paste them in here.
+ *
+ * Saved to .minecraft/config/claudemc/alts.json (tokens stored — keep this file private).
+ */
+public class AltManager {
+
+    public static final AltManager INSTANCE = new AltManager();
+
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path CONFIG_PATH =
+        FabricLoader.getInstance().getConfigDir().resolve("claudemc/alts.json");
+    private static final Type LIST_TYPE = new TypeToken<List<AltEntry>>() {}.getType();
+
+    public enum AltType { OFFLINE, SESSION }
+
+    public static class AltEntry {
+        public String  name;
+        public AltType type;
+        public String  uuid;         // for SESSION type
+        public String  accessToken;  // for SESSION type
+        public AltEntry() {}
+        public AltEntry(String name, AltType type, String uuid, String accessToken) {
+            this.name = name; this.type = type;
+            this.uuid = uuid; this.accessToken = accessToken;
+        }
+    }
+
+    private final List<AltEntry> alts = new ArrayList<>();
+    private String  originalName  = null;
+    private Session originalSession = null;
+
+    private AltManager() {}
+
+    public void load() {
+        if (!Files.exists(CONFIG_PATH)) return;
+        try (Reader r = Files.newBufferedReader(CONFIG_PATH)) {
+            List<AltEntry> loaded = GSON.fromJson(r, LIST_TYPE);
+            if (loaded != null) { alts.clear(); alts.addAll(loaded); }
+        } catch (Exception e) {
+            ClaudeMCMod.LOGGER.warn("[AltManager] Load failed: {}", e.getMessage());
+        }
+    }
+
+    public void save() {
+        try {
+            Files.createDirectories(CONFIG_PATH.getParent());
+            try (Writer w = Files.newBufferedWriter(CONFIG_PATH)) { GSON.toJson(alts, w); }
+        } catch (Exception e) {
+            ClaudeMCMod.LOGGER.warn("[AltManager] Save failed: {}", e.getMessage());
+        }
+    }
+
+    public List<AltEntry> getAlts() { return alts; }
+
+    public void addOffline(String username) {
+        alts.add(new AltEntry(username, AltType.OFFLINE, offlineUuid(username), ""));
+        save();
+    }
+
+    public void addSession(String username, String uuid, String accessToken) {
+        alts.add(new AltEntry(username, AltType.SESSION, uuid, accessToken));
+        save();
+    }
+
+    public void remove(int index) {
+        if (index >= 0 && index < alts.size()) { alts.remove(index); save(); }
+    }
+
+    /** Switch the active Minecraft session to the given alt. */
+    public boolean switchTo(int index) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (index < 0 || index >= alts.size()) return false;
+
+        // Store original session on first switch
+        if (originalSession == null) {
+            originalSession = client.getSession();
+            originalName    = originalSession.getUsername();
+        }
+
+        AltEntry alt = alts.get(index);
+        try {
+            Session newSession = switch (alt.type) {
+                case OFFLINE -> new Session(
+                    alt.name,
+                    com.mojang.util.UndashedUuid.fromStringLenient(offlineUuid(alt.name)),
+                    "",                          // empty token = offline/cracked
+                    Optional.empty(),
+                    Optional.empty(),
+                    Session.AccountType.LEGACY
+                );
+                case SESSION -> new Session(
+                    alt.name,
+                    com.mojang.util.UndashedUuid.fromStringLenient(alt.uuid),
+                    alt.accessToken,
+                    Optional.empty(),
+                    Optional.empty(),
+                    Session.AccountType.MSA
+                );
+            };
+
+            // Inject session via reflection (field is private final)
+            var field = MinecraftClient.class.getDeclaredField("session");
+            field.setAccessible(true);
+            field.set(client, newSession);
+
+            ClaudeMCMod.LOGGER.info("[AltManager] Switched to: {} ({})", alt.name, alt.type);
+            return true;
+        } catch (Exception e) {
+            ClaudeMCMod.LOGGER.warn("[AltManager] Switch failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /** Restore the original session. */
+    public boolean restore() {
+        if (originalSession == null) return false;
+        MinecraftClient client = MinecraftClient.getInstance();
+        try {
+            var field = MinecraftClient.class.getDeclaredField("session");
+            field.setAccessible(true);
+            field.set(client, originalSession);
+            originalSession = null;
+            ClaudeMCMod.LOGGER.info("[AltManager] Restored original session: {}", originalName);
+            return true;
+        } catch (Exception e) {
+            ClaudeMCMod.LOGGER.warn("[AltManager] Restore failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public String getActiveUsername() {
+        var session = MinecraftClient.getInstance().getSession();
+        return session != null ? session.getUsername() : "Unknown";
+    }
+
+    public boolean isUsingAlt() { return originalSession != null; }
+
+    /** Deterministic offline UUID — same algorithm as Minecraft's offline player UUID. */
+    private static String offlineUuid(String username) {
+        UUID uuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return uuid.toString().replace("-", "");
+    }
+}

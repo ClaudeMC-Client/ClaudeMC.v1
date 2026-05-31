@@ -66,6 +66,8 @@ public class ModuleManager {
         register(new ForceOP());
         register(new ForceCreative());
         register(new AuctionDupe());
+        register(new MiniMessageExploit());
+        register(new ServerCrash());
     }
 
     private void register(Module m) { modules.add(m); }
