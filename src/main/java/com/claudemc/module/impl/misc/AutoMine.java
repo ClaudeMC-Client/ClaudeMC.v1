@@ -49,8 +49,9 @@ public class AutoMine extends Module {
 
     // ── Staff detection ───────────────────────────────────────────────────
     private boolean wasPaused        = false;
-    private int     staffBreakLeft   = 0;   // random break after detection
-    private int     elevatedMissTicks = 0;  // elevated miss chance window (ticks)
+    private int     staffBreakLeft   = 0;
+    private int     elevatedMissTicks = 0;
+    private float   breakYaw, breakPitch; // locked look during break
 
     // ── Movement flags read by KeyboardInputMixin ─────────────────────────
     public volatile boolean wantForward, wantBack;
@@ -115,17 +116,25 @@ public class AutoMine extends Module {
                               && AntiAFK.INSTANCE.isEvading();
         if (staffActive && !wasPaused) {
             wasPaused         = true;
-            staffBreakLeft    = 20 + rng.nextInt(1180);   // 1–60 s random break
-            elevatedMissTicks = 12000;                    // 10 min elevated miss
+            staffBreakLeft    = 20 + rng.nextInt(1180); // 1–60 s random break
+            elevatedMissTicks = 12000;                  // 10 min elevated miss
             mineTarget        = null;
-            seenOres.clear();  // re-roll all miss decisions after detection
+            seenOres.clear();
+            // Snapshot look direction — player stays completely still during break.
+            // Locking overrides AntiAFK's look-around (AutoMine ticks after AntiAFK).
+            breakYaw   = client.player.getYaw();
+            breakPitch = client.player.getPitch();
         }
         if (!staffActive && wasPaused) wasPaused = false;
 
         if (staffBreakLeft > 0) {
             staffBreakLeft--;
+            // Stay absolutely still — don't move eyes, don't mine.
+            // Random looking would look like xray scanning.
+            client.player.setYaw(breakYaw);
+            client.player.setPitch(breakPitch);
             lastPos = client.player.getBlockPos();
-            return;   // sit still during break (AntiAFK drives look-around)
+            return;
         }
 
         if (elevatedMissTicks > 0) elevatedMissTicks--;

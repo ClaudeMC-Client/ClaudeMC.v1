@@ -53,10 +53,9 @@ public class ServerFinder extends Module {
         super("ServerFinder",
               "Scans mcscans.fi for vulnerable / P2W servers. Results in local chat.",
               Category.MISC);
-        addBool("FindVulnerable", true);
-        addBool("FindP2W",        true);
-        addBool("UseAI",          true);
-        addNumber("MaxResults",   20, 5, 100, 5, true);
+        addMode("Mode", "Both", "Both", "Vulnerable", "P2W");
+        addBool("UseAI",        true);
+        addNumber("MaxResults", 20, 5, 100, 5, true);
         INSTANCE = this;
     }
 
@@ -89,10 +88,11 @@ public class ServerFinder extends Module {
             }
 
             List<ServerEntry> servers = parseServers(json);
-            int maxResults = parseInt(getSetting("MaxResults"), 20);
+            int    maxResults = parseInt(getSetting("MaxResults"), 20);
+            String mode       = getSetting("Mode");
 
             // 2. Vulnerability scan
-            if (Boolean.parseBoolean(getSetting("FindVulnerable"))) {
+            if (mode.equals("Both") || mode.equals("Vulnerable")) {
                 List<ServerEntry> vulnServers = findVulnerable(servers, maxResults);
                 if (vulnServers.isEmpty()) {
                     msg(client, "§6[ServerFinder] §7No clearly vulnerable servers found in this page.");
@@ -106,7 +106,7 @@ public class ServerFinder extends Module {
             }
 
             // 3. P2W scan — match name/motd against known list + AI
-            if (Boolean.parseBoolean(getSetting("FindP2W"))) {
+            if (mode.equals("Both") || mode.equals("P2W")) {
                 List<ServerEntry> p2wServers = findP2W(servers, maxResults);
                 msg(client, "§d§l[ServerFinder] Likely P2W / child-gambling servers (" + p2wServers.size() + "):");
                 for (ServerEntry s : p2wServers)
