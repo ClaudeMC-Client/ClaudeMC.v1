@@ -10,8 +10,8 @@ public class Nuker extends Module {
 
     public Nuker() {
         super("Nuker", "Automatically breaks blocks around you", Category.WORLD);
-        addSetting("Radius", "4");
-        addSetting("Mode",   "All"); // All | Flat | Above
+        addNumber("Radius", 4, 1, 16, 1, true);
+        addMode("Mode", "All", "All", "Flat", "Above");
     }
 
     @Override

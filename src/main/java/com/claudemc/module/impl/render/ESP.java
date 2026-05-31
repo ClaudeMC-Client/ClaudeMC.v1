@@ -17,7 +17,7 @@ public class ESP extends Module {
 
     public ESP() {
         super("ESP", "Draw coloured boxes around entities through walls", Category.RENDER);
-        addSetting("Filter",    "All");      // All | Players | Hostile
+        addMode("Filter", "All", "All", "Players", "Hostile");
         addSetting("ShowInvis", "true");
         INSTANCE = this;
 

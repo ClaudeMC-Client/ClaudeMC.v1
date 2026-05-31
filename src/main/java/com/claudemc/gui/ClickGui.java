@@ -136,12 +136,14 @@ public class ClickGui extends Screen {
 
             my_ += 12;
 
-            // Settings (expanded)
+            // Settings (expanded) — left-click value to cycle up, right-click to cycle down
             if (expanded.contains(m)) {
-                for (String[] s : m.getSettings()) {
-                    ctx.fill(px + 4, my_, px + pw - 2, my_ + 12, 0xFF0D0D14);
+                for (com.claudemc.module.setting.Setting s : m.getSettings()) {
+                    boolean rowHover = inRect(mx, my, px + 4, my_, pw - 6, 12);
+                    ctx.fill(px + 4, my_, px + pw - 2, my_ + 12, rowHover ? 0xFF15151F : 0xFF0D0D14);
+                    String val = (s.isEditable() ? "§a" : "§7") + s.asString();
                     ctx.drawText(textRenderer,
-                        Text.literal("§8 " + s[0] + ": §7" + s[1]),
+                        Text.literal("§8 " + s.getName() + ": " + val),
                         px + 6, my_ + 2, C_SUB, false);
                     my_ += 12;
                 }
@@ -210,7 +212,21 @@ public class ClickGui extends Screen {
                     return true;
                 }
                 my_ += 12;
-                if (expanded.contains(m)) my_ += m.getSettings().size() * 12 + 4;
+                // Setting rows (only when expanded): left-click = next, right-click = previous
+                if (expanded.contains(m)) {
+                    for (com.claudemc.module.setting.Setting s : m.getSettings()) {
+                        if (inRect(x, y, px + 4, my_, pw - 6, 12)) {
+                            if (s.isEditable()) {
+                                if (button == 0)      s.onLeftClick();
+                                else if (button == 1) s.onRightClick();
+                                com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                            }
+                            return true;
+                        }
+                        my_ += 12;
+                    }
+                    my_ += 4;
+                }
             }
         }
         return false;

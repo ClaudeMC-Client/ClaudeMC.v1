@@ -51,6 +51,7 @@ public class ModuleManager {
         register(new FreeCam());
         register(new Nametags());
         register(new AntiInvis());
+        register(new Trajectories());
 
         // World
         register(new Nuker());

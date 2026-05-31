@@ -18,6 +18,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPlayNetworkHandler.class)
 public class VanishTrackingMixin {
 
+    // Log a reflection failure at most once, so a future Yarn field rename is diagnosable
+    // instead of silently disabling VanishDetect's packet layer.
+    private static final java.util.concurrent.atomic.AtomicBoolean WARNED =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    private static void warnOnce(Exception e) {
+        if (WARNED.compareAndSet(false, true)) {
+            com.claudemc.ClaudeMCMod.LOGGER.warn(
+                "[VanishDetect] packet field reflection failed (mappings may have changed): {}",
+                e.toString());
+        }
+    }
+
     @Inject(method = "onEntitiesDestroy", at = @At("HEAD"), require = 0)
     private void claudemc$onEntitiesDestroy(EntitiesDestroyS2CPacket packet, CallbackInfo ci) {
         if (VanishDetect.INSTANCE == null || !VanishDetect.INSTANCE.isEnabled()) return;
@@ -35,7 +48,7 @@ public class VanishTrackingMixin {
             double y = getDoubleField(clazz, packet, "y");
             double z = getDoubleField(clazz, packet, "z");
             VanishDetect.INSTANCE.onGhostEntityPosition(id, x, y, z);
-        } catch (Exception ignored) {}
+        } catch (Exception e) { warnOnce(e); }
     }
 
     @Inject(method = "onEntity", at = @At("HEAD"), require = 0)
@@ -50,7 +63,7 @@ public class VanishTrackingMixin {
             short dy = getShortField(clazz, packet, "deltaY", "dy");
             short dz = getShortField(clazz, packet, "deltaZ", "dz");
             VanishDetect.INSTANCE.onGhostEntityMoveRelative(id, dx, dy, dz);
-        } catch (Exception ignored) {}
+        } catch (Exception e) { warnOnce(e); }
     }
 
     // ── Reflection helpers ────────────────────────────────────────────────

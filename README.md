@@ -1,6 +1,8 @@
-# ClaudeMC v1.8
+# ClaudeMC v1.10.0
 
-A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, survival flight, combat assists, dupe exploits, and more.
+A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, and more.
+
+> **What's new in v1.10:** projectile **Trajectories** module (see your own *and* enemy arrow/throwable arcs), **editable settings** directly in the ClickGUI (click a setting to cycle/adjust — values now persist across restarts), plus an internal refactor (typed settings, shared scan engine) and unit tests. See [v1.9.1] for the preceding performance/bugfix pass.
 
 ---
 
@@ -19,10 +21,12 @@ A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full i
    - [Render / ESP](#render--esp-modules)
    - [World](#world-modules)
    - [Misc / Exploits](#misc--exploit-modules)
-8. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-9. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-10. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-11. [Troubleshooting](#troubleshooting)
+8. [Editing Module Settings](#editing-module-settings)
+9. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+10. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+11. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+12. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -119,9 +123,9 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.3.0.jar
+build/libs/claudemc-1.10.0.jar
 ```
-(There will also be a `claudemc-1.3.0-sources.jar` — ignore that one.)
+(There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
 **5. Install it**
 
@@ -129,13 +133,13 @@ Copy the JAR to your mods folder:
 
 ```bash
 # Windows
-copy build\libs\claudemc-1.3.0.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.10.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.3.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.10.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.3.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.10.0.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -230,12 +234,17 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 
 ```
 │ ● KillAura               │
-│   Range: 4.0             │  ← editable in future version
-│   Target: Hostile+Players│
-│   Rotate: true           │
+│   Range: 4.0             │  ← left-click = increase, right-click = decrease
+│   Filter: Hostile        │  ← click to cycle options
+│   Rotate: true           │  ← click to toggle
 ```
 
-> Settings editing via text input is planned for v2.1. For now, edit the default values in the module source files and rebuild.
+> **Settings are editable directly in the GUI (v1.10+).** Expand a module (right-click it), then
+> **left-click a setting to increase / toggle / pick the next option, right-click to go back.**
+> Numbers are bounded and step sensibly; on/off toggles flip; multiple-choice settings cycle.
+> All values are saved to `config/claudemc/modules.json` and restored on the next launch.
+> (A handful of free-text settings — e.g. exploit command strings — show in grey and are not
+> click-editable.) See [Editing Module Settings](#editing-module-settings) for details.
 
 ---
 
@@ -278,9 +287,10 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | Module | Description | Key Settings |
 |---|---|---|
 | **ESP** | Coloured entity outlines through walls | Filter (All/Players/Hostile) |
-| **BlockESP** | Highlights shulkers, chests, spawners through walls | Radius, Shulkers, Chests, Spawners, Custom IDs |
+| **BlockESP** | Highlights shulkers, chests, spawners + your custom blocks | Radius (managed via the [BlockESP] GUI / **B** key) |
 | **StorageESP** | Shows container fill level through walls | Radius, ShowFull, ShowEmpty |
 | **Tracers** | Lines from screen centre to entities | Filter, Range |
+| **Trajectories** | Predicts arrow/throwable flight paths (yours + enemies') | Self, Others |
 | **Fullbright** | Maximum light everywhere (no torch needed) | — |
 | **FreeCam** | Detach camera from body | Speed |
 | **Nametags** | Shows health/ping/distance above player heads | Health, Ping, Dist |
@@ -321,23 +331,59 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 
 ---
 
+## Editing Module Settings
+
+As of **v1.10** module settings are edited live in the ClickGUI — no rebuilding required.
+
+1. Press **`.`** to open the ClickGUI.
+2. **Right-click** a module to expand its settings.
+3. Click a setting value:
+   - **Numbers** (e.g. `Range`, `Radius`, `Speed`) — **left-click increases**, **right-click decreases**, clamped to a sensible range and step.
+   - **Toggles** (e.g. `Rotate`, `ShowFull`) — either click flips on/off.
+   - **Options** (e.g. ESP `Filter` = All/Players/Hostile) — **left-click = next**, **right-click = previous**.
+
+Settings are written to `config/claudemc/modules.json` the moment you change them and restored on the next launch. Free-text settings (a few exploit command strings) are shown in grey and are not click-editable; edit `modules.json` directly if you need to change those.
+
+> Module **enabled/disabled** state is intentionally *not* restored on startup — only setting values are — so nothing activates before you join a world.
+
+---
+
+## Trajectories — Projectile Prediction
+
+**Module:** Render → `Trajectories`
+
+Draws the predicted flight path of shootable/throwable items, integrated with the same gravity/drag model the vanilla projectiles use and clipped against the world so the line ends where the projectile would actually land (marked with a small box).
+
+| Setting | Default | Effect |
+|---|---|---|
+| **Self** | on | Draw the arc for the item you are holding / drawing (**cyan**) |
+| **Others** | on | Draw arcs for nearby entities that are actively aiming (**orange-red**) |
+
+**Supported items**
+
+| Item | When the arc shows | Notes |
+|---|---|---|
+| **Bow** | While drawing | Arc speed scales with your draw progress (a barely-drawn bow shows nothing) |
+| **Crossbow** | While loaded | Full-power bolt arc |
+| **Trident** | While held / charging | Riptide throws are not predicted |
+| **Snowball / Egg / Ender Pearl** | While held (self) | Standard throw arc |
+| **Splash / Lingering Potion** | While held (self) | Includes the vanilla −20° lob |
+| **Experience Bottle** | While held (self) | Lobbed arc |
+
+**Enemy trajectories:** with **Others** enabled, any player or mob within ~64 blocks that is *actively drawing a bow / charging a trident* or *holding a loaded crossbow* gets a red arc, so you can see incoming shots and where they'll land. (Held throwables are only drawn for yourself, to avoid clutter.)
+
+---
+
 ## BlockESP — Custom Blocks
 
-By default BlockESP highlights:
-- All 16 shulker box colours
-- Chest, Trapped Chest, Ender Chest, Barrel
-- Spawner
-- Ancient Debris
+By default BlockESP highlights all 16 shulker box colours, chests (incl. trapped/ender), barrels, spawners, and ancient debris.
 
-To **add a custom block** at runtime (via chat command or a future keybind):
+**Add or remove blocks with no coding (v1.9+):**
 
-```
-# In the mod source, call:
-BlockESP.INSTANCE.addTarget("minecraft:diamond_ore");
-BlockESP.INSTANCE.addTarget("minecraft:deepslate_diamond_ore");
-```
+- **Crosshair keybind (default `B`):** look at any block in the world and press **B** to add it to the tracking list instantly — press again while looking at it to remove it. Rebind the key in the **[Keybinds]** screen ("BlockESP: Add block" row).
+- **Block manager GUI:** press **`.`** → **[BlockESP]** in the footer. The left pane lists your tracked blocks (click to remove); the right pane is a searchable list of every block in the game (click to add/remove, a green ✔ marks tracked ones).
 
-A full runtime command interface is planned for v2.1.
+Your additions and any removed defaults are saved to `config/claudemc/blockesp.json` and restored on the next launch.
 
 ---
 
@@ -345,8 +391,9 @@ A full runtime command interface is planned for v2.1.
 
 **Platform:** Windows 10 version 2004 (May 2020 Update) or newer, Windows 11.
 
-When enabled, ClaudeMC calls `SetWindowDisplayAffinity(HWND, WDA_EXCLUDEFROMCAPTURE)` via the
-Java 21 Foreign Function & Memory API — no extra native libraries or JNA needed.
+When enabled, ClaudeMC calls `SetWindowDisplayAffinity(HWND, WDA_EXCLUDEFROMCAPTURE)` through a
+short PowerShell `Add-Type` bridge (the window handle is obtained from GLFW) — no extra native
+libraries or JNA needed.
 
 **What it hides from:**
 - Discord screen share (window capture mode)

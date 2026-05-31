@@ -15,13 +15,16 @@ public class Timer extends Module {
 
     public Timer() {
         super("Timer", "Speed up or slow down game time", Category.WORLD);
-        addSetting("Speed", "2.0"); // multiplier
+        // Bounded so the GUI can't drive it to 0 (which would freeze game ticking).
+        addNumber("Speed", 2.0, 0.1, 10.0, 0.1, false); // multiplier
         INSTANCE = this;
     }
 
     public float getSpeed() {
-        try { return Float.parseFloat(getSetting("Speed")); }
+        float v;
+        try { v = Float.parseFloat(getSetting("Speed")); }
         catch (Exception e) { return 2.0f; }
+        return Math.max(0.1f, v);   // never 0 — would halt ticking
     }
 
     @Override public void onTick(MinecraftClient client) {}

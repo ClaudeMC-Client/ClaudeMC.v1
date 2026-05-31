@@ -42,6 +42,7 @@ public class ClaudeMCClient implements ClientModInitializer {
         KeybindManager.INSTANCE.load();
         MacroManager.INSTANCE.load();
         AltManager.INSTANCE.load();
+        com.claudemc.config.ModuleConfig.load(MODULES);
         if (BlockESP.INSTANCE != null) BlockESP.INSTANCE.loadCustomBlocksFull();
 
         ExploitFetcher.INSTANCE.fetchAsync();

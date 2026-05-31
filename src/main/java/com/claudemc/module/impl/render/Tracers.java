@@ -17,8 +17,8 @@ public class Tracers extends Module {
 
     public Tracers() {
         super("Tracers", "Draw lines from crosshair to entities", Category.RENDER);
-        addSetting("Filter", "Players");  // Players | Hostile | All
-        addSetting("Range",  "64");
+        addMode("Filter", "Players", "Players", "Hostile", "All");
+        addNumber("Range", 64, 8, 256, 4, true);
         INSTANCE = this;
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
