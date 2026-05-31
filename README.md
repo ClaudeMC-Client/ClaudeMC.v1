@@ -1,4 +1,4 @@
-# ClaudeMC v1.14.0
+# ClaudeMC v1.15.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -24,7 +24,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.14:** WebSearch + active ServerProbe added to ExploitAdvisor — now produces macro-ready exploit steps for the specific server you're on. v1.13 added the full AI layer (SmartReply, ExploitAdvisor, AIAssist, `[AI]` GUI). v1.12 added 33 modules including AutoCrystal, OreESP, HoleESP, Zoom, Radar, AutoReply, and AntiAFK.
+> **What's new in v1.15:** **AutoMine** — human-like strip miner with automatic branching, ore targeting, deliberate misses (so it looks like a real player), and full staff-detection integration (freezes when AntiAFK detects a vanish/TP check). v1.14 added WebSearch + active ServerProbe to ExploitAdvisor. v1.13 added the full AI layer. v1.12 added 33 modules including AutoCrystal, OreESP, HoleESP, Zoom, Radar, AutoReply, and AntiAFK.
 
 ---
 
@@ -48,12 +48,14 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
    - [SmartReply](#smartreply)
    - [ExploitAdvisor](#exploitadvisor)
    - [AIAssist](#aiassist)
-9. [Editing Module Settings](#editing-module-settings)
-10. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-11. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-12. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-13. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-14. [Troubleshooting](#troubleshooting)
+9. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
+10. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
+11. [Editing Module Settings](#editing-module-settings)
+12. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+13. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+14. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+15. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -392,6 +394,7 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **SmartReply** | AI-generated AFK / DM replies that sound human; falls back to canned response if no key is set |
 | **ExploitAdvisor** | Probes server software + plugins, searches web for recent CVEs/dupes, and asks AI to produce verbatim macro-ready exploit instructions |
 | **AIAssist** | `!ai <question>` chat helper (intercepted locally) + optional packet narration via PacketLogger |
+| **AutoMine** | Human-like strip miner: mines forward, branches left/right, collects ores with deliberate misses, freezes on staff detection |
 
 ---
 
@@ -471,6 +474,96 @@ Two features in one:
 | `Prefix` | `!ai` | Trigger prefix for the chat assistant |
 | `PacketNarration` | off | Enable periodic packet summary |
 | `NarrateTicks` | 200 (10 s) | How often to send the packet batch to AI |
+
+---
+
+## AutoMine — Human-like Strip Mining
+
+**Module:** Misc → `AutoMine`
+
+Automatically runs a strip mine that looks like a real player dug it: it mines forward, branches off to the sides, collects ores it "notices", but deliberately misses a configurable percentage of them. It also freezes completely if **AntiAFK** detects staff nearby so there is no suspicious activity during a check.
+
+### Pattern
+
+```
+Main tunnel →→→→→→→→→→→→→→→→→→→→→→→→→→→
+                   ↑ branch left (8 blocks)
+                              ↑ branch right (8 blocks)
+                                         ↑ branch left …
+```
+
+1. Face the direction you want to mine before enabling — the module snaps your yaw to the nearest cardinal.
+2. Mines a 1-wide × 2-tall forward corridor.
+3. Every **BranchEvery** blocks it turns 90° and mines a **BranchLen**-block side branch.
+4. Returns to the main tunnel, alternates to the other side, and continues.
+
+### Staff detection
+
+When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-check DM), AutoMine stops immediately — no movement, no mining. AntiAFK handles the human-like look-around. Once the evasion window ends, AutoMine sends `§a[AutoMine] Resuming` and continues from where it left off.
+
+> You need **AntiAFK enabled** for this integration to work. If AntiAFK is off, AutoMine never pauses.
+
+### Settings
+
+| Setting | Default | Effect |
+|---|---|---|
+| `Ores` | Diamond+Iron | Which ores to target — Diamond+Iron / Diamond / Iron / All Valuable / Everything |
+| `BranchEvery` | 16 | Blocks forward between branches |
+| `BranchLen` | 8 | Blocks per side branch |
+| `OreRadius` | 3 | Radius (blocks) around current position to scan for ores |
+| `MissChance` | 15% | Probability the module skips a detected ore (looks human) |
+| `PauseChance` | 20% | Probability of a random pause between block breaks |
+| `MaxPause` | 30 ticks | Upper bound on random pause length (~1.5 s at default) |
+| `UseAI` | off | Sends a one-sentence mining tip to the AI every ~32 forward blocks (requires API key) |
+
+### Tips
+
+- Stand at **Y=−54 to −58** for diamond strip mining (below the diamond peak at Y=−58).
+- For ancient debris, try **Y=15** in the Nether.
+- The module mines whatever block is in its path — if you start inside a cave, it will clear the cave first before resuming the tunnel pattern.
+- Combine with **OreESP** to visually confirm what the bot is collecting.
+- The `MissChance` is rolled **once per ore** (when first seen), not every tick — so the same ore is either always collected or always skipped, not flickering.
+
+---
+
+## Cracked Minecraft (TLauncher etc.)
+
+**Short answer: yes.** ClaudeMC is a standard Fabric client mod — it works on any Minecraft installation regardless of how the game was launched, including TLauncher, MultiMC in offline mode, PolyMC, ATLauncher, and any other launcher.
+
+### What you need
+
+| What | Notes |
+|---|---|
+| Minecraft Java Edition 1.21.1 | Any launcher that can run this version |
+| Fabric Loader ≥ 0.16.5 | Install via the launcher's built-in profile creator or the Fabric Installer |
+| Fabric API 0.107.0+1.21.1 | Downloadable from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) |
+
+### TLauncher — step by step
+
+1. **Download and install TLauncher** from [tlauncher.org](https://tlauncher.org) if you don't have it.
+2. In the version selector, type `1.21.1` and look for **Fabric 1.21.1** in the list (TLauncher bundles Fabric profiles). Select it and click **Install** / **Play** once to let it download.
+   - If Fabric 1.21.1 doesn't appear: download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/) and run it pointing at your TLauncher game directory.
+3. **Find the mods folder.** Default locations:
+   - Windows: `%AppData%\.minecraft\mods\`
+   - macOS: `~/Library/Application Support/minecraft/mods/`
+   - Linux: `~/.minecraft/mods/`
+   - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
+4. **Drop in the JARs:**
+   - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
+   - `claudemc-1.15.0.jar` (from the Releases page)
+5. Launch the **Fabric 1.21.1** profile in TLauncher.
+6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
+
+### Online-mode vs offline-mode servers
+
+| Server type | Works? | Notes |
+|---|---|---|
+| **Offline-mode / cracked servers** | ✅ | Any username works. No Microsoft account needed. |
+| **Online-mode servers** | ✅ with valid account | Requires a genuine Microsoft session. TLauncher Premium (paid) or a real account entered via TLauncher works. Without a valid session the server will reject the connection with "Not authenticated with Minecraft.net" — that is a server restriction, not a mod restriction. |
+
+### Alt Manager
+
+ClaudeMC includes a built-in **Alt Manager** (press `.` → `[Alts]` in the footer). You can add **Offline alts** (just a username — works on cracked servers) or **Session alts** (username + UUID + access token — for online-mode servers).
 
 ---
 
