@@ -1,8 +1,8 @@
-# ClaudeMC v1.10.0
+# ClaudeMC v1.11.0
 
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, and more.
 
-> **What's new in v1.10:** projectile **Trajectories** module (see your own *and* enemy arrow/throwable arcs), **editable settings** directly in the ClickGUI (click a setting to cycle/adjust — values now persist across restarts), plus an internal refactor (typed settings, shared scan engine) and unit tests. See [v1.9.1] for the preceding performance/bugfix pass.
+> **What's new in v1.11:** **AimAssist** module (smooth camera interpolation toward the nearest target, fully GUI-editable), **ForceOP BungeeCord fix** (plugin-message now actually fires), and dead-code cleanup. See [v1.10.0] for Trajectories and editable settings.
 
 ---
 
@@ -254,6 +254,7 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 
 | Module | Description | Key Settings |
 |---|---|---|
+| **AimAssist** | Smoothly rotates toward the nearest valid target | Range (1–60), Smoothing (0.01–1.0), Target (Players/Hostile+Players/Hostile/All) |
 | **KillAura** | Auto-attacks nearby entities each tick | Range (blocks), Target (Hostile+Players/Players/Hostile/All), Rotate |
 | **Velocity** | Reduces knockback received when hit | H-Mult (0=none), V-Mult (1=normal) |
 | **AutoTotem** | Moves Totem of Undying to offhand automatically | — |

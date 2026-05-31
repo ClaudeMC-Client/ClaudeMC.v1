@@ -1,44 +1,47 @@
 package com.claudemc.module.impl;
 
-import com.claudemc.module.Module;
 import com.claudemc.module.Category;
+import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.SlimeEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 public class AimAssistModule extends Module {
 
-    // Entity type IDs the user wants to aim at (e.g. "minecraft:player")
-    private final Set<String> targetTypes = new LinkedHashSet<>();
-    private float smoothing = 0.15f; // 0.01 = very slow, 1.0 = instant snap
-    private double range = 20.0;
-
     public AimAssistModule() {
-        super("AimAssist", "Smoothly aims at selected nearby entities", Category.COMBAT);
-        targetTypes.add("minecraft:player"); // default target
+        super("AimAssist", "Smoothly rotates toward the nearest valid target", Category.COMBAT);
+        addNumber("Range",     20.0, 1.0, 60.0, 0.5,  false);
+        addNumber("Smoothing",  0.15, 0.01, 1.0, 0.01, false);
+        addMode("Target", "Players", "Players", "Hostile+Players", "Hostile", "All");
     }
+
+    @Override public void onEnable()  {}
+    @Override public void onDisable() {}
 
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
-        if (client.currentScreen != null) return; // don't aim while menu is open
+        if (client.currentScreen != null) return;
 
-        Entity target = findNearest(client);
+        double range     = parseDouble(getSetting("Range"),     20.0);
+        double smoothing = parseDouble(getSetting("Smoothing"), 0.15);
+        String mode      = getSetting("Target");
+
+        Entity target = findNearest(client, range, mode);
         if (target == null) return;
 
-        Vec3d eye = client.player.getEyePos();
-        Vec3d center = target.getBoundingBox().getCenter();
-        Vec3d delta = center.subtract(eye);
+        Vec3d eye    = client.player.getEyePos();
+        Vec3d centre = target.getBoundingBox().getCenter();
+        Vec3d delta  = centre.subtract(eye);
 
-        double horizDist = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+        double horiz    = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
         float wantYaw   = (float) Math.toDegrees(Math.atan2(delta.z, delta.x)) - 90.0f;
-        float wantPitch = (float) -Math.toDegrees(Math.atan2(delta.y, horizDist));
+        float wantPitch = (float) -Math.toDegrees(Math.atan2(delta.y, horiz));
 
         float curYaw   = client.player.getYaw();
         float curPitch = client.player.getPitch();
@@ -46,35 +49,33 @@ public class AimAssistModule extends Module {
         float dyaw   = MathHelper.wrapDegrees(wantYaw - curYaw);
         float dpitch = wantPitch - curPitch;
 
-        client.player.setYaw(curYaw + dyaw * smoothing);
-        client.player.setPitch(MathHelper.clamp(curPitch + dpitch * smoothing, -90f, 90f));
+        client.player.setYaw(curYaw   + dyaw   * (float) smoothing);
+        client.player.setPitch(MathHelper.clamp(curPitch + dpitch * (float) smoothing, -90f, 90f));
     }
 
-    private Entity findNearest(MinecraftClient client) {
-        Entity nearest = null;
-        double nearestDist = range * range;
+    private Entity findNearest(MinecraftClient client, double range, String mode) {
+        Entity nearest  = null;
+        double bestDist = range * range;
         for (Entity e : client.world.getEntities()) {
             if (e == client.player) continue;
-            if (!(e instanceof LivingEntity le) || le.isDead()) continue;
-            String id = EntityType.getId(e.getType()).toString();
-            if (!targetTypes.contains(id)) continue;
+            if (!(e instanceof LivingEntity le) || !le.isAlive()) continue;
+            if (!shouldTarget(le, mode)) continue;
             double d = e.squaredDistanceTo(client.player);
-            if (d < nearestDist) { nearestDist = d; nearest = e; }
+            if (d < bestDist) { bestDist = d; nearest = e; }
         }
         return nearest;
     }
 
-    @Override public void onEnable()  {}
-    @Override public void onDisable() {}
+    private boolean shouldTarget(LivingEntity e, String mode) {
+        return switch (mode) {
+            case "Players"         -> e instanceof PlayerEntity;
+            case "Hostile"         -> e instanceof HostileEntity || e instanceof SlimeEntity;
+            case "Hostile+Players" -> e instanceof PlayerEntity || e instanceof HostileEntity || e instanceof SlimeEntity;
+            default                -> true;
+        };
+    }
 
-    public Set<String> getTargetTypes()          { return targetTypes; }
-    public void addTarget(String id)             { targetTypes.add(id); }
-    public void removeTarget(String id)          { targetTypes.remove(id); }
-    public boolean hasTarget(String id)          { return targetTypes.contains(id); }
-
-    public float getSmoothing()                  { return smoothing; }
-    public void setSmoothing(float v)            { smoothing = MathHelper.clamp(v, 0.01f, 1.0f); }
-
-    public double getRange()                     { return range; }
-    public void setRange(double v)               { range = MathHelper.clamp((float)v, 1.0f, 60.0f); }
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
+    }
 }
