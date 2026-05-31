@@ -4,9 +4,27 @@
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
 </p>
 
-A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** featuring a full in-game overlay, ClickGUI, ESP through walls, projectile trajectory prediction, survival flight, combat assists, dupe exploits, AI-powered server analysis, and more.
+A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** — with a built-in **AI engine** that analyses the server you're on, searches the web for recent exploits, and tells you exactly what to type.
 
-> **What's new in v1.14:** AI integration now includes automated active server probing (`/version`, `/plugins`) and live DuckDuckGo web search — **ExploitAdvisor** builds a full server fingerprint then searches the web for recent CVEs and dupes before asking the AI to produce verbatim, macro-ready exploit instructions for that exact software stack. v1.13 added **SmartReply** (AI-generated AFK replies), **AIAssist** (`!ai` chat helper + packet narration), and a three-provider AI config panel (`[AI]` in the ClickGUI footer). v1.12 added 33 modules including **AutoCrystal**, **OreESP**, **HoleESP**, **Zoom**, **Radar**, **AutoReply**, and **AntiAFK**.
+---
+
+### 🤖 AI-Powered Server Analysis
+
+ClaudeMC connects to **Claude, ChatGPT, or Gemini** (your API key, stored locally) and puts the AI to work the moment you join a server:
+
+1. **Probes the server** — sends `/version` and `/plugins` automatically and parses the responses to identify the exact server software, Minecraft version, and every installed plugin with its version number.
+2. **Searches the web** — queries DuckDuckGo for recent CVEs, dupe methods, and exploit write-ups targeting that exact software stack. No API key required for search.
+3. **Generates a ranked exploit list** — the AI receives the full server fingerprint plus live web intelligence and produces a numbered list of actionable attacks, each with **verbatim commands and macro strings** ready to paste straight into the game.
+
+Other AI modules: **SmartReply** generates human-sounding AFK replies so staff checks bounce off you; **AIAssist** lets you type `!ai <question>` in chat for instant local answers without the server seeing it.
+
+> Configure your API key in-game: press `.` → click **`[AI]`** in the ClickGUI footer. Supports Anthropic, OpenAI, and Google Gemini.
+
+---
+
+Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
+
+> **What's new in v1.14:** WebSearch + active ServerProbe added to ExploitAdvisor — now produces macro-ready exploit steps for the specific server you're on. v1.13 added the full AI layer (SmartReply, ExploitAdvisor, AIAssist, `[AI]` GUI). v1.12 added 33 modules including AutoCrystal, OreESP, HoleESP, Zoom, Radar, AutoReply, and AntiAFK.
 
 ---
 
