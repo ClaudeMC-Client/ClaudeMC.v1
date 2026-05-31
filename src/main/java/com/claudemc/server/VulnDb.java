@@ -25,7 +25,7 @@ public class VulnDb {
         String dupedbnRef        // dupedb.net label / slug for browser link
     ) {}
 
-    private static final List<VulnEntry> DB = List.of(
+    private static final List<VulnEntry> DB = new ArrayList<>(List.of(
 
         // ── Dupe exploits (dupedb.net) ────────────────────────────────────
 
@@ -200,7 +200,16 @@ public class VulnDb {
             "Skript < 2.8.0 with eval",
             "If server uses Skript with eval/parse support, chat injection can execute arbitrary Skript code.",
             "2.8.0 or disable eval", null)
-    );
+    ));
+
+    /** Adds a dynamically discovered entry. Ignored if pluginName already exists in DB. */
+    public static synchronized void addDynamic(VulnEntry entry) {
+        String lower = entry.pluginName().toLowerCase();
+        for (VulnEntry e : DB) {
+            if (e.pluginName().toLowerCase().equals(lower)) return;
+        }
+        DB.add(entry);
+    }
 
     /** Returns all matching entries for a given plugin/brand name (case-insensitive). */
     public static List<VulnEntry> lookup(String name) {
@@ -215,6 +224,6 @@ public class VulnDb {
         return hits;
     }
 
-    /** Returns all entries — used to build the full DB list in the UI. */
-    public static List<VulnEntry> all() { return DB; }
+    /** Returns a snapshot of all entries — safe to iterate while updates arrive. */
+    public static synchronized List<VulnEntry> all() { return new ArrayList<>(DB); }
 }

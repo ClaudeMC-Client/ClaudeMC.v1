@@ -14,6 +14,7 @@ import com.claudemc.module.impl.render.BlockESP;
 import com.claudemc.server.ExploitFetcher;
 import com.claudemc.server.ExploitMatcher;
 import com.claudemc.server.ServerInfo;
+import com.claudemc.server.VulnDbUpdater;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -51,6 +52,7 @@ public class ClaudeMCClient implements ClientModInitializer {
         if (BlockESP.INSTANCE != null) BlockESP.INSTANCE.loadCustomBlocksFull();
 
         ExploitFetcher.INSTANCE.fetchAsync();
+        VulnDbUpdater.INSTANCE.refreshAsync();
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 
