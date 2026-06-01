@@ -25,8 +25,8 @@ public class ElytraFlight extends Module {
 
         if (!client.player.isFallFlying()) {
             if (client.player.getVelocity().y < -0.1) {
-                // Start gliding when falling
-                client.getNetworkHandler().sendPacket(
+                var nh = client.getNetworkHandler();
+                if (nh != null) nh.sendPacket(
                     new ClientCommandC2SPacket(client.player,
                         ClientCommandC2SPacket.Mode.START_FALL_FLYING));
             }
@@ -40,7 +40,8 @@ public class ElytraFlight extends Module {
             }
             case "Packet" -> {
                 // Restart gliding each tick to prevent the server killing fall-fly
-                client.getNetworkHandler().sendPacket(
+                var nh = client.getNetworkHandler();
+                if (nh != null) nh.sendPacket(
                     new ClientCommandC2SPacket(client.player,
                         ClientCommandC2SPacket.Mode.START_FALL_FLYING));
                 Vec3d look = client.player.getRotationVec(1.0f);

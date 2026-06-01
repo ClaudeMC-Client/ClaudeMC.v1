@@ -15,9 +15,9 @@ public class AutoRespawn extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.currentScreen instanceof DeathScreen) {
-            client.getNetworkHandler().sendPacket(
-                new ClientStatusC2SPacket(ClientStatusC2SPacket.Mode.PERFORM_RESPAWN)
-            );
+            var nh = client.getNetworkHandler();
+            if (nh != null) nh.sendPacket(
+                new ClientStatusC2SPacket(ClientStatusC2SPacket.Mode.PERFORM_RESPAWN));
             client.setScreen(null);
         }
     }
