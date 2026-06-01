@@ -64,7 +64,7 @@ public class SmartReply extends Module {
 
         if (!AIConfig.INSTANCE.isConfigured()) {
             // Fall back to rule-based if no API key
-            scheduleReply("Haha sorry was tabbed out, I'm here");
+            scheduleReply("yeah im here, what's up");
             return;
         }
 
@@ -84,7 +84,7 @@ public class SmartReply extends Module {
             },
             err -> {
                 AIConfig.INSTANCE.systemPrompt = originalSys;
-                scheduleReply("Sorry, was tabbed out!");
+                scheduleReply("yeah im here");
                 waiting.set(false);
             }
         );

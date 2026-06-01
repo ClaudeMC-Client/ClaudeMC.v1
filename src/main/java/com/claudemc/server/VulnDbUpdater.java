@@ -14,12 +14,19 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Runs once at startup on a virtual thread.
- * Queries DuckDuckGo for Minecraft 1.21.x server exploits, feeds results to the
- * configured AI provider, parses the structured response, and injects any new
- * entries into VulnDb. Results are cached for 23 hours so the AI is only called
- * once per day, not on every launch.
  *
- * Requires an AI API key to be configured; silently does nothing if absent.
+ * Two data sources, both feeding into VulnDb:
+ *
+ * 1. DupeDB public API (https://dupedb.net/api/public/exploits) — no auth required.
+ *    Returns the 10 most recent community-verified exploits. Entries with a known
+ *    plugin name are injected directly into VulnDb (no AI needed).
+ *
+ * 2. AI + web search — 3 targeted DuckDuckGo queries scoped to Minecraft 1.21.x,
+ *    results fed to the AI with a strict structured prompt. Only entries matching
+ *    the pipe-delimited format and confirmed for 1.21.x are injected.
+ *
+ * Both sources are cached for 23 hours so neither runs on every launch.
+ * The AI step requires a configured API key; DupeDB public fetch has no prerequisite.
  */
 public final class VulnDbUpdater {
 
@@ -45,6 +52,9 @@ public final class VulnDbUpdater {
         try {
             // Load from cache if still fresh
             if (loadFromCache()) return;
+
+            // ── Source 1: DupeDB public exploits (no auth) ─────────────────
+            injectDupeDbPublic();
 
             // Nothing to do without an AI key
             if (!AIConfig.INSTANCE.isConfigured()) return;
@@ -105,6 +115,32 @@ public final class VulnDbUpdater {
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[VulnDb] Auto-update error: {}", e.getMessage());
         }
+    }
+
+    // ── Source 1: DupeDB public exploit feed ────────────────────────────
+
+    private void injectDupeDbPublic() {
+        List<DupeDbClient.DupeEntry> entries = DupeDbClient.INSTANCE.fetchPublicExploits();
+        if (entries.isEmpty()) return;
+
+        Set<String> existing = new HashSet<>();
+        for (VulnDb.VulnEntry e : VulnDb.all()) existing.add(e.pluginName().toLowerCase());
+
+        int added = 0;
+        for (DupeDbClient.DupeEntry e : entries) {
+            // Skip entries with no plugin (generic/vanilla exploits) or already in DB
+            if (e.plugin == null || e.plugin.isBlank()) continue;
+            if (existing.contains(e.plugin.toLowerCase())) continue;
+
+            String desc = e.name.isBlank() ? e.type + " exploit" : e.name;
+            String patch = e.patched ? "patched" : "check dupedb.net/" + e.id;
+            VulnDb.addDynamic(new VulnDb.VulnEntry(
+                e.plugin, e.severity(), "see dupedb.net/" + e.id, desc, patch, e.id));
+            existing.add(e.plugin.toLowerCase());
+            added++;
+        }
+        if (added > 0)
+            ClaudeMCMod.LOGGER.info("[VulnDb] {} entries added from DupeDB public feed.", added);
     }
 
     // ── Parse + inject ───────────────────────────────────────────────────
