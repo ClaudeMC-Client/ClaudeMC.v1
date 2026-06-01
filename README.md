@@ -1,4 +1,4 @@
-# ClaudeMC v1.18.1
+# ClaudeMC v1.19.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -24,7 +24,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.18.1:** **MiniMessageExploit expanded** — four new techniques: ZelChat bypass, ZelChat bypass bypass (double-nested), SimpleTeams 2.0.0 prefix injection, and TotemHand (item-name relay). Three new VulnDb entries: SimpleTeams, ZelChat, DiscordSRV. **v1.18:** **Full in-game settings editing** — every setting including free-text fields (queries, passwords, command strings) is now editable directly in the ClickGUI; no file editing ever needed. **ServerFinder AI Search mode** — type any exploit name and the AI hunts for matching live servers. **DupeDB integration** — VulnDb auto-updates on every launch from the dupedb.net public feed and AI-assisted web search. **ServerFinder MCScans parser fixed** — previous regex parser silently returned zero results; now uses correct Gson-based parsing. v1.17 added ServerFinder cross-reference tags (`[⚠ ALSO P2W]` / `[⚠ EXPLOITABLE]`). v1.16 added AutoMine evasion overhaul, ServerFinder scanner, 14 new VulnDb entries, and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
+> **What's new in v1.19.0:** **ClaudeMC Companion** — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
 
 ---
 
@@ -48,15 +48,21 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
    - [SmartReply](#smartreply)
    - [ExploitAdvisor](#exploitadvisor)
    - [AIAssist](#aiassist)
-9. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
-10. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
-11. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
-12. [Editing Module Settings](#editing-module-settings)
-13. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-14. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-15. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-16. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-17. [Troubleshooting](#troubleshooting)
+9. [ClaudeMC Companion (localhost web app)](#claudemc-companion-localhost-web-app)
+   - [Scanner](#scanner)
+   - [Chat](#chat)
+   - [Settings](#companion-settings)
+   - [Alts](#companion-alts)
+   - [VulnDb](#companion-vulndb)
+10. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
+11. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
+12. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
+13. [Editing Module Settings](#editing-module-settings)
+14. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+15. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+16. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+17. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -153,7 +159,7 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.18.1.jar
+build/libs/claudemc-1.19.0.jar
 ```
 (There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
@@ -163,13 +169,13 @@ Copy the JAR to your mods folder:
 
 ```bash
 # Windows
-copy build\libs\claudemc-1.18.1.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.19.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.18.1.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.19.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.18.1.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.19.0.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -485,6 +491,95 @@ Two features in one:
 
 ---
 
+## ClaudeMC Companion (localhost web app)
+
+ClaudeMC v1.19 ships an embedded web server that starts automatically when Minecraft launches and serves a companion app at **`http://localhost:8080`**.
+
+Open it from the **Minecraft main menu** — a `[ClaudeMC]` button appears in the top-right corner of the title screen. Click it and your browser opens the companion. It stays running the entire session, so you can switch between Minecraft and the browser tab freely.
+
+The companion gives you a full scanner, AI chat, settings editor, alt manager, and vulnerability database — all accessible *before* you've even picked a server to join.
+
+---
+
+### Scanner
+
+Discover and analyse servers without being in-game.
+
+**Filter row:**
+| Control | Options |
+|---|---|
+| Software | All / paper / spigot / bungeecord / velocity / craftbukkit / mohist / magma |
+| Auth Mode | Any / Offline / Online |
+| Max Results | Number input (default 50) |
+| Include Shodan | Checkbox — requires a Shodan API key in Settings |
+
+**Buttons:**
+- **Scan MCScans** — queries `api.mcscans.fi` for live servers, cross-references each result against VulnDb, and shows severity badges (CRITICAL / HIGH / MEDIUM / PATCHED).
+- **Shodan Search** — free-text query (e.g. `port:25565 minecraft 1.21`) sent to the Shodan API; results are also VulnDb-enriched.
+
+**Results table columns:** IP:Port | Software | Version | Players | Auth | Vulnerabilities | Actions
+
+**Per-row actions:**
+- **Copy IP** — copies the address to clipboard.
+- **Enrich** — fetches data from mcsrvstat.us *and* mcstatus.io concurrently, expanding the row inline with MOTD, version, player list, and detected plugins.
+- **Analyze** — sends the server's fingerprint to the AI, which returns a ranked exploit plan with verbatim commands.
+
+---
+
+### Chat
+
+Full AI conversation without entering a game.
+
+- Scrollable history with user bubbles (right, blue) and AI bubbles (left, dark).
+- Basic markdown rendering: `**bold**`, `` `code` ``, newlines.
+- **Enter** to send; the last 6 message pairs are included as context.
+- "Thinking…" indicator while the AI responds.
+- Works with whatever provider/key is set in Settings — no in-game configuration needed first.
+
+---
+
+### Companion Settings
+
+All API keys and AI settings are editable here without touching any file or being in-game.
+
+| Field | Notes |
+|---|---|
+| **Provider** | Radio: Anthropic / OpenAI / Gemini |
+| **Anthropic key** | Stored in `config/claudemc/ai.json` |
+| **OpenAI key** | Stored in `config/claudemc/ai.json` |
+| **Gemini key** | Stored in `config/claudemc/ai.json` |
+| **Shodan API key** | Used by the Scanner's Shodan search; stored in `config/claudemc/ai.json` |
+| **Model** | Leave blank for provider default |
+| **Max tokens** | Response length cap |
+| **System prompt** | Default prompt prepended to all AI requests |
+
+Click **Save** to persist immediately. Changes take effect on the next AI call — no restart required.
+
+---
+
+### Companion Alts
+
+Manage accounts without opening the in-game GUI.
+
+- **Playing as:** banner shows your current username with a **Restore** button if you are on an alt.
+- **Alt list** — each row has a **Switch** button (reconnect required) and a **Delete** button.
+- **Add Offline Alt** — enter a username, click Add. Works on cracked/offline servers.
+- **Add Session Alt** — enter a username, UUID, and Microsoft access token for online-mode servers.
+
+---
+
+### Companion VulnDb
+
+Browse and search the full vulnerability database.
+
+- Loaded once when you first open the tab.
+- **Search** filters by plugin name, description, or affected versions.
+- **Severity** dropdown filters to CRITICAL / HIGH / MEDIUM / PATCHED.
+- Entry count shown above the table.
+- Severity cells are colour-coded identically to the Scanner badges.
+
+---
+
 ## DupeDB Integration
 
 ClaudeMC connects to **[dupedb.net](https://dupedb.net)** — a community-maintained database of verified Minecraft duplication exploits and vulnerabilities — to keep VulnDb and ExploitAdvisor current without requiring a mod update.
@@ -651,7 +746,7 @@ The module is trigger-only — enable it once to fire a scan, then it disables i
    - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
 4. **Drop in the JARs:**
    - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
-   - `claudemc-1.18.1.jar` (from the Releases page)
+   - `claudemc-1.19.0.jar` (from the Releases page)
 5. Launch the **Fabric 1.21.1** profile in TLauncher.
 6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
 
