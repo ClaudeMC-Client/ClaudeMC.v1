@@ -4,7 +4,7 @@ import com.claudemc.hud.HudManager;
 import com.claudemc.module.impl.misc.AuthMeBypass;
 import com.claudemc.server.ServerInfo;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.network.packet.s2c.common.CustomPayloadS2CPacket;
+import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
@@ -27,11 +27,10 @@ public class ClientPlayNetworkHandlerMixin {
 
     /** Intercept custom payload to detect server brand and plugin channels. */
     @Inject(method = "onCustomPayload", at = @At("HEAD"), require = 0)
-    private void claudemc$onCustomPayload(CustomPayloadS2CPacket packet, CallbackInfo ci) {
+    private void claudemc$onCustomPayload(CustomPayload payload, CallbackInfo ci) {
         try {
-            var payload = packet.payload();
             if (payload == null) return;
-            String id = payload.getId().toString();
+            String id = payload.getId().id().toString();
 
             // Brand packet: "minecraft:brand"
             if ("minecraft:brand".equals(id)) {
