@@ -2,6 +2,7 @@ package com.claudemc;
 
 import com.claudemc.account.AltManager;
 import com.claudemc.ai.AIConfig;
+import com.claudemc.companion.CompanionServer;
 import com.claudemc.module.impl.misc.ForceOP;
 import com.claudemc.chat.ChatOverlay;
 import com.claudemc.chat.MacroManager;
@@ -53,6 +54,7 @@ public class ClaudeMCClient implements ClientModInitializer {
 
         ExploitFetcher.INSTANCE.fetchAsync();
         VulnDbUpdater.INSTANCE.refreshAsync();
+        CompanionServer.INSTANCE.start();
 
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 

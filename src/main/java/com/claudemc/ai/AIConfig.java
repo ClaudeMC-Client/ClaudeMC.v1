@@ -37,6 +37,9 @@ public class AIConfig {
     /** System-prompt prefix prepended to all requests */
     public String  systemPrompt = "You are an assistant integrated into a Minecraft client mod. Be brief (1-3 sentences max). No markdown.";
 
+    /** Shodan API key for server discovery (optional). Get one at account.shodan.io */
+    public String  shodanApiKey = "";
+
     private AIConfig() {}
 
     // ── Persistence ──────────────────────────────────────────────────────
@@ -53,6 +56,7 @@ public class AIConfig {
             INSTANCE.model        = orDefault(loaded.model, "");
             INSTANCE.maxTokens    = loaded.maxTokens > 0 ? loaded.maxTokens : 300;
             INSTANCE.systemPrompt = orDefault(loaded.systemPrompt, INSTANCE.systemPrompt);
+            INSTANCE.shodanApiKey = orDefault(loaded.shodanApiKey, "");
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[AIConfig] Load failed: {}", e.getMessage());
         }
