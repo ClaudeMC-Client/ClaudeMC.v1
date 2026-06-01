@@ -71,10 +71,12 @@ class SettingTest {
     }
 
     @Test
-    void stringSettingIsNotEditable() {
+    void stringSettingIsEditableInGui() {
         StringSetting s = new StringSetting("Cmd", "/say hi");
-        assertFalse(s.isEditable());
-        s.onLeftClick();                 // no-op
+        assertTrue(s.isEditable());     // editable via ClickGui inline text editor
+        s.onLeftClick();                // no-op at setting level; ClickGui handles it
         assertEquals("/say hi", s.asString());
+        s.set("hello");
+        assertEquals("hello", s.asString());
     }
 }
