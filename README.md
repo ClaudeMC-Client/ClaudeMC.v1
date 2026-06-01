@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.0
+# ClaudeMC v1.20.1
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>

@@ -100,8 +100,14 @@ public class KeybindManager {
     /** Human-readable name for a GLFW key code. */
     public static String keyName(int key) {
         if (key == -1 || key == GLFW.GLFW_KEY_UNKNOWN) return "None";
-        String name = GLFW.glfwGetKeyName(key, 0);
-        if (name != null && !name.isBlank()) return name.toUpperCase();
+        // glfwGetKeyName is a GLFW function — calling it before Minecraft runs glfwInit()
+        // throws GLFW_NOT_INITIALIZED and crashes startup. Only query GLFW once the window
+        // exists (i.e. GLFW is initialized); otherwise fall back to the static table below.
+        var mc = net.minecraft.client.MinecraftClient.getInstance();
+        if (mc != null && mc.getWindow() != null) {
+            String name = GLFW.glfwGetKeyName(key, 0);
+            if (name != null && !name.isBlank()) return name.toUpperCase();
+        }
         // Fallback for special keys
         return switch (key) {
             case GLFW.GLFW_KEY_SPACE        -> "SPACE";
