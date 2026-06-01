@@ -86,8 +86,12 @@ public class ClaudeMCClient implements ClientModInitializer {
         });
 
         HUD.register();
-        ClaudeMCMod.LOGGER.info("ClaudeMC v2 initialised — press [{}] to open GUI",
-            KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()));
+        // NOTE: do not call KeybindManager.keyName() here — it invokes GLFW.glfwGetKeyName(),
+        // and onInitializeClient runs before Minecraft's RenderSystem.initBackendSystem()
+        // calls glfwInit(). Any GLFW function call before glfwInit triggers GLFW_NOT_INITIALIZED
+        // and crashes startup on real hardware. Log the raw keycode instead.
+        ClaudeMCMod.LOGGER.info("ClaudeMC v2 initialised — open the GUI with your bound key (default '.', keycode {}).",
+            KeybindManager.INSTANCE.getGuiKey());
     }
 
     private void onTick(MinecraftClient client) {
