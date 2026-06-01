@@ -1,4 +1,4 @@
-# ClaudeMC v1.18.0
+# ClaudeMC v1.18.1
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -24,7 +24,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.18:** **Full in-game settings editing** — every setting including free-text fields (queries, passwords, command strings) is now editable directly in the ClickGUI; no file editing ever needed. **ServerFinder AI Search mode** — type any exploit name and the AI hunts for matching live servers. **DupeDB integration** — VulnDb auto-updates on every launch from the dupedb.net public feed and AI-assisted web search. **ServerFinder MCScans parser fixed** — previous regex parser silently returned zero results; now uses correct Gson-based parsing. v1.17 added ServerFinder cross-reference tags (`[⚠ ALSO P2W]` / `[⚠ EXPLOITABLE]`). v1.16 added AutoMine evasion overhaul, ServerFinder scanner, 14 new VulnDb entries, and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
+> **What's new in v1.18.1:** **MiniMessageExploit expanded** — four new techniques: ZelChat bypass, ZelChat bypass bypass (double-nested), SimpleTeams 2.0.0 prefix injection, and TotemHand (item-name relay). Three new VulnDb entries: SimpleTeams, ZelChat, DiscordSRV. **v1.18:** **Full in-game settings editing** — every setting including free-text fields (queries, passwords, command strings) is now editable directly in the ClickGUI; no file editing ever needed. **ServerFinder AI Search mode** — type any exploit name and the AI hunts for matching live servers. **DupeDB integration** — VulnDb auto-updates on every launch from the dupedb.net public feed and AI-assisted web search. **ServerFinder MCScans parser fixed** — previous regex parser silently returned zero results; now uses correct Gson-based parsing. v1.17 added ServerFinder cross-reference tags (`[⚠ ALSO P2W]` / `[⚠ EXPLOITABLE]`). v1.16 added AutoMine evasion overhaul, ServerFinder scanner, 14 new VulnDb entries, and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
 
 ---
 
@@ -153,7 +153,7 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.18.0.jar
+build/libs/claudemc-1.18.1.jar
 ```
 (There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
@@ -163,13 +163,13 @@ Copy the JAR to your mods folder:
 
 ```bash
 # Windows
-copy build\libs\claudemc-1.18.0.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.18.1.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.18.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.18.1.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.18.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.18.1.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -651,7 +651,7 @@ The module is trigger-only — enable it once to fire a scan, then it disables i
    - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
 4. **Drop in the JARs:**
    - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
-   - `claudemc-1.18.0.jar` (from the Releases page)
+   - `claudemc-1.18.1.jar` (from the Releases page)
 5. Launch the **Fabric 1.21.1** profile in TLauncher.
 6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
 
@@ -1003,19 +1003,51 @@ Click any row to switch to that account. Click **`[Restore]`** to switch back to
 
 **Module:** Misc → `MiniMessageExploit`
 
-Based on the [khaodoes.dev MiniMessage escape exploit](https://khaodoes.dev/blog/minimessage-escape-exploit). Targets plugins (EssentialsX < 2.21.0, TAB, custom chat plugins) that pass player chat through MiniMessage without sanitising tags.
+Based on the [khaodoes.dev MiniMessage escape exploit](https://khaodoes.dev/blog/minimessage-escape-exploit) and extended with payloads from [dupedb.net](https://dupedb.net). Targets plugins (EssentialsX < 2.21.0, ZelChat, SimpleTeams 2.0.0, TAB, DiscordSRV, custom chat plugins) that pass player chat or team data through MiniMessage without sanitising tags.
 
 Enable once → fires the selected payload → auto-disables.
 
-| Technique | What it does |
-|---|---|
-| **ClickCommand** | Wraps your text in `<click:run_command:'/cmd'>` — any player who clicks the message in chat executes the injected command |
-| **HoverSpoof** | Fakes a `[SERVER]` broadcast using `<red><bold>` + `<hover>` — visual deception |
-| **GradientBypass** | Wraps text in `<gradient>` tags — bypasses simple chat filters that match plain strings |
-| **EscapeInject** | Uses `\<` escape sequences to survive sanitisers that only strip unescaped tags |
-| **FontObfuscate** | Renders text in `<font:uniform>` — different visual appearance, bypasses font-sensitive filters |
+| Technique | Target plugin / condition | What it does |
+|---|---|---|
+| **ClickCommand** | No sanitiser | `<click:run_command:…>` — any player who clicks the message executes the injected command |
+| **HoverSpoof** | No sanitiser | Fakes a `[SERVER]` broadcast — visual deception / phishing |
+| **GradientBypass** | Plugins filtering plain strings | Wraps text in `<gradient>` — bypasses word-match filters |
+| **EscapeInject** | Single-pass strippers | `\<` escape sequences survive sanitisers that only strip unescaped `< >` tags |
+| **FontObfuscate** | Font-sensitive filters | Renders in `<font:uniform>` — different visual, bypasses font-keyed word filters |
+| **ZelChat** | ZelChat (pre-patch) | `<<aqua>aqua ><click:run_command:…>` — nesting the opening bracket fools ZelChat's tag stripper *(Khao/Linux)* |
+| **ZelChatV2** | ZelChat after first patch | Double-nested bracket defeats ZelChat's second stripping pass *(Khao/Bright6f)* |
+| **SimpleTeams** | SimpleTeams 2.0.0 | Creates/updates a team and injects the click payload into the prefix; fires for any player who runs `/team info <name>` |
+| **TotemHand** | Servers with `[item]`/`[hand]` chat placeholders | Sends `[item]` in chat; the item name payload executes when displayed. Rename a Totem via anvil with the MiniMessage payload first |
 
-Settings: **Target** (username for ClickCommand, default = yourself), **CustomText** (visible text), **CustomCmd** (injected command, `{target}` is replaced).
+Settings:
+
+| Setting | Default | Effect |
+|---|---|---|
+| `Technique` | ClickCommand | Which payload to fire — cycle with left/right click |
+| `Target` | *(your name)* | Username substituted into `{target}` in the command |
+| `CustomText` | Click to claim your free rank! | Visible text shown to other players |
+| `CustomCmd` | `/op {target}` | Command injected into click payloads |
+| `TeamName` | claudemc | Team name created/used by the SimpleTeams technique |
+
+### SimpleTeams prefix injection
+
+SimpleTeams 2.0.0 applies no tag sanitisation to the `/team edit prefix` command. The module:
+
+1. Sends `/team create <TeamName>` (silently ignores if the team already exists)
+2. Waits 1 second, then sends `/team edit prefix <TeamName> <click:run_command:'…'>…</click>`
+3. Notifies you in local chat to direct victims to `/team info <TeamName>`
+
+When a victim runs `/team info`, the prefixed click event appears in their chat. One click executes the injected command as them.
+
+### TotemHand (item name relay)
+
+1. Open an **Anvil**.
+2. Place a Totem of Undying in the first slot.
+3. In the name field, type the MiniMessage payload: `<click:run_command:'/op YourName'>[Click here]`
+4. Take the renamed totem and hold it in your main hand.
+5. Enable `MiniMessageExploit` with `Technique = TotemHand`. The module sends `[item]` in chat.
+
+Many servers broadcast the item name verbatim. If the chat plugin passes item names through MiniMessage without stripping, the click event executes for anyone who clicks it.
 
 ---
 
