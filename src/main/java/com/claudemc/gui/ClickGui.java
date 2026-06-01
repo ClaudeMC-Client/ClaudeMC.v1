@@ -13,6 +13,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
+import com.claudemc.module.setting.StringSetting;
 import java.util.*;
 
 /**
@@ -49,9 +50,13 @@ public class ClickGui extends Screen {
     private static final Map<Category, Boolean> collapsed = new EnumMap<>(Category.class);
     private static final Set<Module>  expanded  = new HashSet<>();   // settings expanded
 
-    private Category dragging      = null;
-    private int      dragOffX      = 0;
-    private int      dragOffY      = 0;
+    private Category     dragging      = null;
+    private int          dragOffX      = 0;
+    private int          dragOffY      = 0;
+
+    // ── Inline string editor state ────────────────────────────────────────
+    private StringSetting editingSetting = null;
+    private String        editBuffer     = "";
 
     public ClickGui() {
         super(Text.literal("ClaudeMC"));
@@ -73,7 +78,7 @@ public class ClickGui extends Screen {
         ctx.fill(0, height - 16, width, height, 0xFF18181F);
         ctx.drawText(textRenderer, Text.literal("§7[" +
                 KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
-                "] close  §8|  §7T=chat  LClick=toggle  RClick=settings"),
+                "] close  §8|  §7LClick=toggle  RClick=settings  §eClick text=edit  Enter=save"),
             4, height - 11, 0x888888, false);
         // Buttons right-to-left: [Keybinds] [Macros] [Alts] [Server Info]
         int bY = height - 13, bH = 11;
@@ -142,8 +147,24 @@ public class ClickGui extends Screen {
             if (expanded.contains(m)) {
                 for (com.claudemc.module.setting.Setting s : m.getSettings()) {
                     boolean rowHover = inRect(mx, my, px + 4, my_, pw - 6, 12);
-                    ctx.fill(px + 4, my_, px + pw - 2, my_ + 12, rowHover ? 0xFF15151F : 0xFF0D0D14);
-                    String val = (s.isEditable() ? "§a" : "§7") + s.asString();
+                    boolean isEditing = (s == editingSetting);
+                    int rowBg = isEditing ? 0xFF1A1A2E : (rowHover ? 0xFF15151F : 0xFF0D0D14);
+                    ctx.fill(px + 4, my_, px + pw - 2, my_ + 12, rowBg);
+
+                    String val;
+                    if (isEditing) {
+                        // Show edit buffer with blinking cursor; truncate from left if too wide
+                        String buf = editBuffer;
+                        int maxW = pw - 16 - textRenderer.getWidth(s.getName() + ": ");
+                        String raw = buf + "|";
+                        if (textRenderer.getWidth(raw) > maxW && buf.length() > 0) {
+                            raw = textRenderer.trimToWidth(new StringBuilder(raw).reverse().toString(), maxW);
+                            raw = new StringBuilder(raw).reverse().toString();
+                        }
+                        val = "§e" + raw;
+                    } else {
+                        val = (s.isEditable() ? "§a" : "§7") + s.asString();
+                    }
                     ctx.drawText(textRenderer,
                         Text.literal("§8 " + s.getName() + ": " + val),
                         px + 6, my_ + 2, C_SUB, false);
@@ -156,9 +177,25 @@ public class ClickGui extends Screen {
 
     // ── Mouse ─────────────────────────────────────────────────────────────
 
+    /** Commit any in-progress string edit. */
+    private void commitEdit() {
+        if (editingSetting != null) {
+            editingSetting.set(editBuffer);
+            com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+            editingSetting = null;
+        }
+    }
+
+    @Override
+    public void removed() {
+        commitEdit();
+    }
+
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         int x = (int) mx, y = (int) my;
+        // Commit any active string edit when clicking elsewhere
+        if (editingSetting != null) commitEdit();
 
         // Footer buttons — mirror render order (right-to-left) to determine hit areas
         if (button == 0 && y >= height - 13 && y < height - 2) {
@@ -222,7 +259,16 @@ public class ClickGui extends Screen {
                 if (expanded.contains(m)) {
                     for (com.claudemc.module.setting.Setting s : m.getSettings()) {
                         if (inRect(x, y, px + 4, my_, pw - 6, 12)) {
-                            if (s.isEditable()) {
+                            if (s instanceof StringSetting ss) {
+                                // Left-click enters edit mode; right-click clears the value
+                                if (button == 0) {
+                                    editingSetting = ss;
+                                    editBuffer = ss.get();
+                                } else if (button == 1) {
+                                    ss.set("");
+                                    com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                                }
+                            } else if (s.isEditable()) {
                                 if (button == 0)      s.onLeftClick();
                                 else if (button == 1) s.onRightClick();
                                 com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
@@ -236,6 +282,37 @@ public class ClickGui extends Screen {
             }
         }
         return false;
+    }
+
+    // ── Keyboard (string editor) ──────────────────────────────────────────
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (editingSetting != null) {
+            switch (keyCode) {
+                case 257, 335 -> { // ENTER / numpad enter → commit
+                    commitEdit();
+                }
+                case 256 -> {      // ESC → cancel
+                    editingSetting = null;
+                }
+                case 259 -> {      // BACKSPACE
+                    if (!editBuffer.isEmpty())
+                        editBuffer = editBuffer.substring(0, editBuffer.length() - 1);
+                }
+            }
+            return true;          // consume all keys while editing
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        if (editingSetting != null) {
+            if (chr >= 32) editBuffer += chr;
+            return true;
+        }
+        return super.charTyped(chr, modifiers);
     }
 
     @Override

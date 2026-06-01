@@ -18,7 +18,7 @@ public class StringSetting extends Setting {
 
     @Override public String asString()         { return value; }
     @Override public void fromString(String s) { this.value = s; }
-    @Override public void onLeftClick()        { /* not editable */ }
-    @Override public void onRightClick()       { /* not editable */ }
-    @Override public boolean isEditable()      { return false; }
+    @Override public void onLeftClick()        { /* handled by ClickGui inline editor */ }
+    @Override public void onRightClick()       { /* handled by ClickGui inline editor */ }
+    @Override public boolean isEditable()      { return true; }
 }
