@@ -21,15 +21,16 @@ public class GameRendererMixin {
         }
     }
 
-    /** Zoom: divide the calculated FOV by the zoom factor while Zoom is active. */
+    /** Zoom: divide the calculated FOV by the zoom factor while Zoom is active.
+     *  1.21.x getFov returns float (was double), so the CIR is parameterised with Float. */
     @Inject(method = "getFov", at = @At("RETURN"), cancellable = true, require = 0)
     private void claudemc$zoom(net.minecraft.client.render.Camera camera,
                                 float tickDelta,
                                 boolean changingFov,
-                                CallbackInfoReturnable<Double> cir) {
+                                CallbackInfoReturnable<Float> cir) {
         if (Zoom.INSTANCE != null && Zoom.INSTANCE.isEnabled()) {
-            double fov = cir.getReturnValue();
-            cir.setReturnValue(fov / Zoom.INSTANCE.getZoomFactor());
+            float fov = cir.getReturnValue();
+            cir.setReturnValue((float) (fov / Zoom.INSTANCE.getZoomFactor()));
         }
     }
 }
