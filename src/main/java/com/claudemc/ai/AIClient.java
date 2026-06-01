@@ -33,16 +33,25 @@ public final class AIClient {
     /**
      * Sends {@code prompt} asynchronously using the configured provider.
      * @param prompt       User message
-     * @param onSuccess    Called on the game thread with the response text
-     * @param onFailure    Called on the game thread with an error description
+     * @param onSuccess    Called with the response text
+     * @param onFailure    Called with an error description
      */
     public void ask(String prompt, Consumer<String> onSuccess, Consumer<String> onFailure) {
+        ask(null, prompt, onSuccess, onFailure);
+    }
+
+    /**
+     * Sends {@code prompt} with an explicit system prompt override (thread-safe; does not
+     * mutate AIConfig). Pass {@code null} to use the configured AIConfig system prompt.
+     */
+    public void ask(String systemPromptOverride, String prompt,
+                    Consumer<String> onSuccess, Consumer<String> onFailure) {
         if (!AIConfig.INSTANCE.isConfigured()) {
             onFailure.accept("No API key configured — open [AI] in the ClickGUI.");
             return;
         }
 
-        CompletableFuture.supplyAsync(() -> sendSync(prompt))
+        CompletableFuture.supplyAsync(() -> sendSync(systemPromptOverride, prompt))
             .thenAccept(result -> {
                 if (result.startsWith("\0ERR:")) onFailure.accept(result.substring(5));
                 else                              onSuccess.accept(result);
@@ -55,12 +64,13 @@ public final class AIClient {
 
     // ── Provider dispatch ────────────────────────────────────────────────
 
-    private String sendSync(String prompt) {
+    private String sendSync(String sysOverride, String prompt) {
         try {
+            String sys = sysOverride != null ? sysOverride : AIConfig.INSTANCE.systemPrompt;
             return switch (AIConfig.INSTANCE.provider.toLowerCase()) {
-                case "openai"  -> sendOpenAI(prompt);
-                case "gemini"  -> sendGemini(prompt);
-                default        -> sendAnthropic(prompt);
+                case "openai"  -> sendOpenAI(sys, prompt);
+                case "gemini"  -> sendGemini(sys, prompt);
+                default        -> sendAnthropic(sys, prompt);
             };
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[AIClient] Request failed: {}", e.getMessage());
@@ -70,14 +80,12 @@ public final class AIClient {
 
     // ── Anthropic ────────────────────────────────────────────────────────
 
-    private String sendAnthropic(String prompt) throws Exception {
+    private String sendAnthropic(String sys, String prompt) throws Exception {
         JsonObject body = new JsonObject();
         body.addProperty("model", AIConfig.INSTANCE.resolvedModel());
         body.addProperty("max_tokens", AIConfig.INSTANCE.maxTokens);
 
-        // System prompt
-        String sys = AIConfig.INSTANCE.systemPrompt;
-        if (!sys.isBlank()) body.addProperty("system", sys);
+        if (sys != null && !sys.isBlank()) body.addProperty("system", sys);
 
         // User message
         JsonArray messages = new JsonArray();
@@ -99,22 +107,25 @@ public final class AIClient {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         if (resp.statusCode() != 200) return "\0ERR:Anthropic HTTP " + resp.statusCode();
 
-        JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
-        return json.getAsJsonArray("content").get(0).getAsJsonObject()
-            .get("text").getAsString();
+        JsonObject json    = GSON.fromJson(resp.body(), JsonObject.class);
+        JsonArray  content = json.has("content") ? json.getAsJsonArray("content") : null;
+        if (content == null || content.isEmpty())
+            return "\0ERR:Anthropic returned empty content";
+        JsonObject first = content.get(0).getAsJsonObject();
+        return first.has("text") ? first.get("text").getAsString()
+                                 : "\0ERR:Anthropic missing text field";
     }
 
     // ── OpenAI ───────────────────────────────────────────────────────────
 
-    private String sendOpenAI(String prompt) throws Exception {
+    private String sendOpenAI(String sys, String prompt) throws Exception {
         JsonObject body = new JsonObject();
         body.addProperty("model", AIConfig.INSTANCE.resolvedModel());
         body.addProperty("max_tokens", AIConfig.INSTANCE.maxTokens);
 
         JsonArray messages = new JsonArray();
 
-        String sys = AIConfig.INSTANCE.systemPrompt;
-        if (!sys.isBlank()) {
+        if (sys != null && !sys.isBlank()) {
             JsonObject sysMsg = new JsonObject();
             sysMsg.addProperty("role", "system");
             sysMsg.addProperty("content", sys);
@@ -138,21 +149,24 @@ public final class AIClient {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         if (resp.statusCode() != 200) return "\0ERR:OpenAI HTTP " + resp.statusCode();
 
-        JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
-        return json.getAsJsonArray("choices").get(0).getAsJsonObject()
-            .getAsJsonObject("message").get("content").getAsString();
+        JsonObject json    = GSON.fromJson(resp.body(), JsonObject.class);
+        JsonArray  choices = json.has("choices") ? json.getAsJsonArray("choices") : null;
+        if (choices == null || choices.isEmpty())
+            return "\0ERR:OpenAI returned empty choices";
+        JsonObject msg = choices.get(0).getAsJsonObject().getAsJsonObject("message");
+        return msg != null && msg.has("content") ? msg.get("content").getAsString()
+                                                 : "\0ERR:OpenAI missing content field";
     }
 
     // ── Gemini ───────────────────────────────────────────────────────────
 
-    private String sendGemini(String prompt) throws Exception {
+    private String sendGemini(String sys, String prompt) throws Exception {
         String modelId = AIConfig.INSTANCE.resolvedModel();
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
             + modelId + ":generateContent?key=" + AIConfig.INSTANCE.geminiKey;
 
         // Prepend system prompt to user turn (Gemini free tier has no system role)
-        String sys = AIConfig.INSTANCE.systemPrompt;
-        String combined = sys.isBlank() ? prompt : sys + "\n\n" + prompt;
+        String combined = (sys == null || sys.isBlank()) ? prompt : sys + "\n\n" + prompt;
 
         JsonObject part = new JsonObject();
         part.addProperty("text", combined);
@@ -180,10 +194,16 @@ public final class AIClient {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         if (resp.statusCode() != 200) return "\0ERR:Gemini HTTP " + resp.statusCode();
 
-        JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
-        return json.getAsJsonArray("candidates").get(0).getAsJsonObject()
-            .getAsJsonObject("content")
-            .getAsJsonArray("parts").get(0).getAsJsonObject()
-            .get("text").getAsString().trim();
+        JsonObject json       = GSON.fromJson(resp.body(), JsonObject.class);
+        JsonArray  candidates = json.has("candidates") ? json.getAsJsonArray("candidates") : null;
+        if (candidates == null || candidates.isEmpty())
+            return "\0ERR:Gemini returned empty candidates";
+        JsonObject respContent = candidates.get(0).getAsJsonObject().getAsJsonObject("content");
+        if (respContent == null) return "\0ERR:Gemini missing content";
+        JsonArray respParts = respContent.has("parts") ? respContent.getAsJsonArray("parts") : null;
+        if (respParts == null || respParts.isEmpty()) return "\0ERR:Gemini missing parts";
+        JsonObject respPart = respParts.get(0).getAsJsonObject();
+        return respPart.has("text") ? respPart.get("text").getAsString().trim()
+                                    : "\0ERR:Gemini missing text";
     }
 }

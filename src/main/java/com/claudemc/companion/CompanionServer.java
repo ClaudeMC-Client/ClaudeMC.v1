@@ -42,18 +42,20 @@ public final class CompanionServer {
 
     private static final int    PORT = 8080;
     private static final Gson   GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String UA   = "ClaudeMC-Companion/1.18";
+    private static final String UA   = "ClaudeMC-Companion/1.19";
 
     private final HttpClient http = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .followRedirects(HttpClient.Redirect.NORMAL)
         .build();
 
-    // Simple in-memory chat history for the session
-    private final List<Map<String, String>> chatHistory = new ArrayList<>();
+    // In-memory chat history — synchronizedList because handler virtual threads access it concurrently
+    private final List<Map<String, String>> chatHistory =
+        Collections.synchronizedList(new ArrayList<>());
 
-    private HttpServer server;
-    private boolean    started = false;
+    private volatile HttpServer server;
+    private volatile boolean    started    = false;
+    private volatile int        boundPort  = PORT;
 
     private CompanionServer() {}
 
@@ -79,7 +81,8 @@ public final class CompanionServer {
                     server.createContext("/api/alts/switch",    this::handleAltSwitch);
                     server.createContext("/api/alts/restore",   this::handleAltRestore);
                     server.start();
-                    started = true;
+                    boundPort = port;
+                    started   = true;
                     ClaudeMCMod.LOGGER.info("[Companion] Running at http://localhost:{}", port);
                     return;
                 } catch (Exception e) {
@@ -93,8 +96,13 @@ public final class CompanionServer {
     /** Opens the companion page in the default browser. */
     public void open() {
         if (!started) start();
+        // Brief spin-wait to let the async start() bind before we try to open (≤ 200 ms)
+        long deadline = System.currentTimeMillis() + 200;
+        while (!started && System.currentTimeMillis() < deadline) {
+            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+        }
         try {
-            java.awt.Desktop.getDesktop().browse(URI.create("http://localhost:" + PORT));
+            java.awt.Desktop.getDesktop().browse(URI.create("http://localhost:" + boundPort));
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[Companion] Cannot open browser: {}", e.getMessage());
         }
@@ -236,8 +244,7 @@ public final class CompanionServer {
 
             // Fire both lookups concurrently
             CompletableFuture<String> mcsrvFut = CompletableFuture.supplyAsync(() ->
-                httpGet("https://api.mcsrvstat.us/3/" + enc(address),
-                        "ClaudeMC-Companion/1.18.1"));
+                httpGet("https://api.mcsrvstat.us/3/" + enc(address), UA));
             CompletableFuture<String> mcstatFut = CompletableFuture.supplyAsync(() ->
                 httpGet("https://api.mcstatus.io/v2/status/java/" + enc(address), null));
 
@@ -340,8 +347,7 @@ public final class CompanionServer {
             }
             prompt.append("User: ").append(message);
 
-            String savedSys = AIConfig.INSTANCE.systemPrompt;
-            AIConfig.INSTANCE.systemPrompt =
+            String chatSys =
                 "You are ClaudeMC Companion, an AI assistant for a Minecraft hacking mod. " +
                 "Answer questions about Minecraft servers, exploits, plugins, and vulnerabilities. " +
                 "You may use markdown formatting in your response.";
@@ -349,9 +355,9 @@ public final class CompanionServer {
             CountDownLatch latch = new CountDownLatch(1);
             String[]       reply = {""};
 
-            AIClient.INSTANCE.ask(prompt.toString(),
-                resp -> { AIConfig.INSTANCE.systemPrompt = savedSys; reply[0] = resp; latch.countDown(); },
-                err  -> { AIConfig.INSTANCE.systemPrompt = savedSys; reply[0] = "Error: " + err; latch.countDown(); });
+            AIClient.INSTANCE.ask(chatSys, prompt.toString(),
+                resp -> { reply[0] = resp; latch.countDown(); },
+                err  -> { reply[0] = "Error: " + err; latch.countDown(); });
 
             latch.await(30, TimeUnit.SECONDS);
 
@@ -401,17 +407,16 @@ public final class CompanionServer {
                 "For each: name, what it achieves, exact commands/steps. " +
                 "Focus on the most impactful exploits first. Use markdown.";
 
-            String savedSys = AIConfig.INSTANCE.systemPrompt;
-            AIConfig.INSTANCE.systemPrompt =
+            String analyzeSys =
                 "You are a Minecraft server penetration testing assistant. " +
                 "Provide specific, actionable exploit steps. Use markdown formatting.";
 
             CountDownLatch latch    = new CountDownLatch(1);
             String[]       analysis = {""};
 
-            AIClient.INSTANCE.ask(prompt,
-                resp -> { AIConfig.INSTANCE.systemPrompt = savedSys; analysis[0] = resp; latch.countDown(); },
-                err  -> { AIConfig.INSTANCE.systemPrompt = savedSys; analysis[0] = "AI error: " + err; latch.countDown(); });
+            AIClient.INSTANCE.ask(analyzeSys, prompt,
+                resp -> { analysis[0] = resp; latch.countDown(); },
+                err  -> { analysis[0] = "AI error: " + err; latch.countDown(); });
 
             latch.await(45, TimeUnit.SECONDS);
 
@@ -514,6 +519,7 @@ public final class CompanionServer {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
         try {
             JsonObject body = parseBody(ex);
+            if (!body.has("index")) { sendText(ex, 400, "Missing index"); return; }
             AltManager.INSTANCE.switchTo(body.get("index").getAsInt());
             sendJson(ex, 200, new JsonObject());
         } catch (Exception e) {

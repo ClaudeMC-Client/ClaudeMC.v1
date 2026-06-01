@@ -330,15 +330,14 @@ public class AutoMine extends Module {
 
     private void requestAIHint(MinecraftClient client) {
         aiPending.set(true);
-        String saved = AIConfig.INSTANCE.systemPrompt;
-        AIConfig.INSTANCE.systemPrompt = "Minecraft mining advisor. One sentence, no markdown.";
         AIClient.INSTANCE.ask(
+            "Minecraft mining advisor. One sentence, no markdown.",
             "Strip mining at Y=" + client.player.getBlockY() + ", " + blocksForward
             + " blocks deep, ore target=" + getSetting("Ores") + ". One tip.",
-            resp -> { AIConfig.INSTANCE.systemPrompt = saved; aiPending.set(false);
+            resp -> { aiPending.set(false);
                 var mc = MinecraftClient.getInstance();
                 if (mc.player != null) mc.player.sendMessage(Text.literal("§b[AutoMine AI] §7" + resp), false); },
-            err  -> { AIConfig.INSTANCE.systemPrompt = saved; aiPending.set(false); }
+            err  -> aiPending.set(false)
         );
     }
 

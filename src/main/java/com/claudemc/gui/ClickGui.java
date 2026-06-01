@@ -231,11 +231,11 @@ public class ClickGui extends Screen {
             int[] pos = panelPos.get(cat);
             int px = pos[0], py = pos[1], pw = 124;
 
-            // Header click
+            // Header click: left-click collapses/expands; either button starts drag
             if (inRect(x, y, px, py, pw, 14)) {
                 if (button == 0) {
                     collapsed.merge(cat, false, (a, b) -> !a);
-                } else if (button == 0) { /* reserved */ }
+                }
                 dragging = cat;
                 dragOffX = x - px;
                 dragOffY = y - py;

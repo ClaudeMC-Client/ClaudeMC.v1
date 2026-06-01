@@ -76,9 +76,7 @@ public final class VulnDbUpdater {
             String webCtx = String.join("\n",
                 snippets.subList(0, Math.min(10, snippets.size())));
 
-            // Swap system prompt, ask AI, restore
-            String savedSys = AIConfig.INSTANCE.systemPrompt;
-            AIConfig.INSTANCE.systemPrompt =
+            String updaterSys =
                 "You are a Minecraft server security researcher. Output only structured data — no prose.";
 
             String prompt =
@@ -96,14 +94,12 @@ public final class VulnDbUpdater {
             CountDownLatch latch   = new CountDownLatch(1);
             List<String>   aiLines = new ArrayList<>();
 
-            AIClient.INSTANCE.ask(prompt,
+            AIClient.INSTANCE.ask(updaterSys, prompt,
                 resp -> {
-                    AIConfig.INSTANCE.systemPrompt = savedSys;
                     Collections.addAll(aiLines, resp.split("\n"));
                     latch.countDown();
                 },
                 err -> {
-                    AIConfig.INSTANCE.systemPrompt = savedSys;
                     ClaudeMCMod.LOGGER.warn("[VulnDb] AI call failed: {}", err);
                     latch.countDown();
                 });

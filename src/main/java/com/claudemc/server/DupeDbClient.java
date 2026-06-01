@@ -249,9 +249,14 @@ public final class DupeDbClient {
 
     private String storeTokens(JsonObject json, DupeDbConfig cfg) {
         try {
-            cfg.accessToken   = json.get("access_token").getAsString();
-            cfg.refreshToken  = json.get("refresh_token").getAsString();
-            long expiresIn    = json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600;
+            if (!json.has("access_token") || json.get("access_token").isJsonNull()) {
+                ClaudeMCMod.LOGGER.warn("[DupeDB] Token response missing access_token");
+                return null;
+            }
+            cfg.accessToken  = json.get("access_token").getAsString();
+            cfg.refreshToken = json.has("refresh_token") && !json.get("refresh_token").isJsonNull()
+                             ? json.get("refresh_token").getAsString() : "";
+            long expiresIn   = json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600;
             cfg.tokenExpiresAt = Instant.now().getEpochSecond() + expiresIn;
             DupeDbConfig.save(cfg);
             return cfg.accessToken;
