@@ -72,18 +72,12 @@ public class SmartReply extends Module {
         String prompt = "A player in Minecraft sent me this message: \"" + raw + "\"\n"
             + "Reply naturally as a human Minecraft player would.";
 
-        // Override system prompt for this request type
-        String originalSys = AIConfig.INSTANCE.systemPrompt;
-        AIConfig.INSTANCE.systemPrompt = REPLY_SYSTEM;
-
-        AIClient.INSTANCE.ask(prompt,
+        AIClient.INSTANCE.ask(REPLY_SYSTEM, prompt,
             reply -> {
-                AIConfig.INSTANCE.systemPrompt = originalSys;
                 scheduleReply(reply.trim());
                 waiting.set(false);
             },
             err -> {
-                AIConfig.INSTANCE.systemPrompt = originalSys;
                 scheduleReply("yeah im here");
                 waiting.set(false);
             }

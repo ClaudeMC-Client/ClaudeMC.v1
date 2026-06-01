@@ -184,12 +184,11 @@ public class ServerFinder extends Module {
                 return;
             }
 
-            String saved = AIConfig.INSTANCE.systemPrompt;
-            AIConfig.INSTANCE.systemPrompt =
+            String aiSearchSys =
                 "Minecraft exploit researcher. Respond ONLY in this format, nothing else: " +
                 "software:<CSV names>|keyword:<one word>|summary:<50 words max>";
 
-            AIClient.INSTANCE.ask(
+            AIClient.INSTANCE.ask(aiSearchSys,
                 "Minecraft exploit or vulnerability: \"" + query + "\"\n" +
                 "1. Which server software is affected? Choose from: Spigot, CraftBukkit, Paper, " +
                 "BungeeCord, Waterfall, Fabric, Forge, Mohist, Velocity. " +
@@ -198,12 +197,8 @@ public class ServerFinder extends Module {
                 "2. What single keyword is most likely to appear in an affected server's MOTD " +
                 "or version string? (e.g. the plugin name, server network name, or version tag)\n" +
                 "3. Describe the vulnerability in 50 words or less.",
-                resp -> {
-                    AIConfig.INSTANCE.systemPrompt = saved;
-                    handleTargetedResponse(resp, query, client);
-                },
+                resp -> handleTargetedResponse(resp, query, client),
                 err -> {
-                    AIConfig.INSTANCE.systemPrompt = saved;
                     msg(client, "§6[ServerFinder] §7AI unavailable, falling back to VulnDb.");
                     vulnDbTargeted(query, client);
                 }
@@ -413,22 +408,20 @@ public class ServerFinder extends Module {
         String webCtx = snippets.isEmpty() ? "" :
             "\nWeb results:\n" + String.join("\n", snippets.subList(0, Math.min(4, snippets.size())));
 
-        String saved = AIConfig.INSTANCE.systemPrompt;
-        AIConfig.INSTANCE.systemPrompt =
+        String p2wSys =
             "You list Minecraft servers. Be concise. Output: numbered list only, format: ServerName | IP (if known) | Why P2W";
-        AIClient.INSTANCE.ask(
+        AIClient.INSTANCE.ask(p2wSys,
             "List up to 15 well-known Minecraft servers that are pay-to-win or have child gambling "
             + "mechanics (crate keys, OP spawners for sale, /fly for pay, in-game currency sales). "
             + "Focus on servers still active in 2024-2025." + webCtx,
             resp -> {
-                AIConfig.INSTANCE.systemPrompt = saved;
                 msg(client, "§d§l[ServerFinder] AI P2W/gambling list:");
                 for (String line : resp.split("\n")) {
                     String t = line.trim();
                     if (!t.isBlank()) msg(client, "§d  " + t);
                 }
             },
-            err -> { AIConfig.INSTANCE.systemPrompt = saved; webP2WList(client); }
+            err -> webP2WList(client)
         );
     }
 
