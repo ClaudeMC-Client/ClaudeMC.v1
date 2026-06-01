@@ -44,7 +44,7 @@ public class AntiSpam extends Module {
         if (Boolean.parseBoolean(getSetting("FilterAds"))) {
             String lower = text.toLowerCase();
             if (lower.contains("shop.") || lower.contains("store.") || lower.contains("buy now")
-             || lower.contains("discord.gg") && !lower.contains("server")) return false;
+             || (lower.contains("discord.gg") && !lower.contains("server"))) return false;
         }
 
         recentMessages.addLast(text);
