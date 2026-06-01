@@ -5,8 +5,10 @@ import com.claudemc.server.ExploitMatcher;
 import com.claudemc.server.ExploitMatcher.MatchResult;
 import com.claudemc.server.RemoteExploit;
 import com.claudemc.server.ServerInfo;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
@@ -385,7 +387,8 @@ public class ServerInfoScreen extends Screen {
     // ── Mouse ─────────────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         if (button != 0) return false;
         int x = (int) mx, y = (int) my;
 
@@ -434,13 +437,14 @@ public class ServerInfoScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyInput input) {
+        int keyCode = input.key(); int scanCode = input.scancode(); int modifiers = input.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             assert client != null;
             client.setScreen(new ClickGui());
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────

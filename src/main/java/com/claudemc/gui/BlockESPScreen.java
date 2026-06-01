@@ -1,8 +1,11 @@
 package com.claudemc.gui;
 
 import com.claudemc.module.impl.render.BlockESP;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -152,7 +155,8 @@ public class BlockESPScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         assert client != null;
         int pw = Math.min(width - 40, 800);
         int ph = Math.min(height - 40, 500);
@@ -160,7 +164,7 @@ public class BlockESPScreen extends Screen {
         int py = (height - ph) / 2;
         int half = (pw - 3) / 2;
 
-        if (button != 0) return super.mouseClicked(mx, my, button);
+        if (button != 0) return super.mouseClicked(click, doubled);
 
         // Left pane: remove target on click
         List<String> targets = new ArrayList<>(BlockESP.INSTANCE.getTargets());
@@ -193,7 +197,7 @@ public class BlockESPScreen extends Screen {
             }
             sRowY += ROW_H;
         }
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(click, doubled);
     }
 
     @Override
@@ -209,7 +213,8 @@ public class BlockESPScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int key, int scan, int mods) {
+    public boolean keyPressed(KeyInput input) {
+        int key = input.key(); int scan = input.scancode(); int mods = input.modifiers();
         if (key == GLFW.GLFW_KEY_ESCAPE) { assert client != null; client.setScreen(new ClickGui()); return true; }
         if (key == GLFW.GLFW_KEY_BACKSPACE && cursorPos > 0) {
             searchText = searchText.substring(0, cursorPos - 1) + searchText.substring(cursorPos);
@@ -224,11 +229,12 @@ public class BlockESPScreen extends Screen {
         if (key == GLFW.GLFW_KEY_RIGHT && cursorPos < searchText.length())   { cursorPos++; return true; }
         if (key == GLFW.GLFW_KEY_HOME)  { cursorPos = 0;                  return true; }
         if (key == GLFW.GLFW_KEY_END)   { cursorPos = searchText.length(); return true; }
-        return super.keyPressed(key, scan, mods);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char c, int mods) {
+    public boolean charTyped(CharInput input) {
+        char c = (char) input.codepoint(); int mods = input.modifiers();
         searchText = searchText.substring(0, cursorPos) + c + searchText.substring(cursorPos);
         cursorPos++;
         return true;

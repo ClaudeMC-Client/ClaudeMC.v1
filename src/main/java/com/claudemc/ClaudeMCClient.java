@@ -21,7 +21,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import org.lwjgl.glfw.GLFWCharCallbackI;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -184,7 +183,8 @@ public class ClaudeMCClient implements ClientModInitializer {
     private final java.util.Set<Integer> heldKeys = new java.util.HashSet<>();
 
     private boolean isKeyJustPressed(long window, int key) {
-        boolean down = InputUtil.isKeyPressed(window, key);
+        // InputUtil.isKeyPressed now takes a Window; query GLFW directly with the handle instead.
+        boolean down = org.lwjgl.glfw.GLFW.glfwGetKey(window, key) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
         if (down && heldKeys.add(key)) return true;
         if (!down) heldKeys.remove(key);
         return false;

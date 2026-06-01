@@ -3,7 +3,7 @@ package com.claudemc.module.impl.misc;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.render.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.entity.Entity;
@@ -55,16 +55,16 @@ public class VanishDetect extends Module {
             if (client.world == null || client.player == null) return;
             if (client.getNetworkHandler() == null) return;
 
-            var matrices  = context.matrixStack();
+            var matrices  = context.matrices();
             var consumers = context.consumers();
             if (matrices == null || consumers == null) return;
 
-            Vec3d cam = context.camera().getPos();
+            Vec3d cam = context.worldState().cameraRenderState.pos;
 
             // Tab-list UUIDs
             Set<UUID> tabUuids = new HashSet<>();
             for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
-                tabUuids.add(e.getProfile().getId());
+                tabUuids.add(e.getProfile().id());
             }
             tabUuids.remove(client.player.getUuid());
 
@@ -106,7 +106,7 @@ public class VanishDetect extends Module {
 
         Set<UUID> tabUuids = new HashSet<>();
         for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
-            tabUuids.add(e.getProfile().getId());
+            tabUuids.add(e.getProfile().id());
         }
 
         for (int id : ids) {
@@ -152,7 +152,7 @@ public class VanishDetect extends Module {
         for (Entity e : client.world.getEntities()) {
             if (!(e instanceof PlayerEntity) || e == client.player) continue;
             entityIdToUuid.put(e.getId(), e.getUuid());
-            lastKnownPos.put(e.getUuid(), e.getPos());
+            lastKnownPos.put(e.getUuid(), e.getEntityPos());
         }
     }
 }

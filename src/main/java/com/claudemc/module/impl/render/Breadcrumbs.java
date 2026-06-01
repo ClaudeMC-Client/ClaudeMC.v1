@@ -3,7 +3,7 @@ package com.claudemc.module.impl.render;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.render.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.math.Vec3d;
 
@@ -30,8 +30,8 @@ public class Breadcrumbs extends Module {
             if (client.world == null || client.player == null) return;
             if (trail.size() < 2) return;
 
-            var cam      = context.camera().getPos();
-            var matrices = context.matrixStack();
+            var cam      = context.worldState().cameraRenderState.pos;
+            var matrices = context.matrices();
             if (matrices == null) return;
             var consumers = context.consumers();
             if (consumers == null) return;
@@ -48,7 +48,7 @@ public class Breadcrumbs extends Module {
     public void onTick(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
 
-        Vec3d pos = client.player.getPos();
+        Vec3d pos = client.player.getEntityPos();
         double minDist = parseDouble(getSetting("MinDist"), 1.0);
         if (lastPos != null && lastPos.squaredDistanceTo(pos) < minDist * minDist) return;
 

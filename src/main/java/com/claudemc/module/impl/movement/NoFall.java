@@ -21,7 +21,7 @@ public class NoFall extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        if (client.player.isFallFlying()) return;
+        if (client.player.isGliding()) return;
         if (client.player.fallDistance > 2.0f) {
             client.player.fallDistance = 0;
         }

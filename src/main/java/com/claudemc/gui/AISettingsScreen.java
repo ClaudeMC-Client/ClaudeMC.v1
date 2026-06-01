@@ -2,8 +2,11 @@ package com.claudemc.gui;
 
 import com.claudemc.ai.AIClient;
 import com.claudemc.ai.AIConfig;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -154,7 +157,8 @@ public class AISettingsScreen extends Screen {
     private int testBtnY = 0;
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         int y = 28;
 
         // Provider selector
@@ -186,11 +190,12 @@ public class AISettingsScreen extends Screen {
         }
 
         activeField = -1;
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(click, doubled);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyInput input) {
+        int keyCode = input.key(); int scanCode = input.scancode(); int modifiers = input.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             AIConfig.save();
             if (client != null) client.setScreen(new ClickGui());
@@ -211,11 +216,12 @@ public class AISettingsScreen extends Screen {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharInput input) {
+        char chr = (char) input.codepoint(); int modifiers = input.modifiers();
         if (activeField >= 0) {
             setFieldValue(activeField, getFieldValue(activeField) + chr);
             return true;

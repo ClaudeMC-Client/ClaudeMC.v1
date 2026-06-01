@@ -23,7 +23,7 @@ public class ElytraFlight extends Module {
         String mode  = getSetting("Mode");
         double speed = parseDouble(getSetting("Speed"), 1.8);
 
-        if (!client.player.isFallFlying()) {
+        if (!client.player.isGliding()) {
             if (client.player.getVelocity().y < -0.1) {
                 var nh = client.getNetworkHandler();
                 if (nh != null) nh.sendPacket(
@@ -62,7 +62,7 @@ public class ElytraFlight extends Module {
     }
 
     private boolean isWearingElytra(MinecraftClient client) {
-        var chest = client.player.getInventory().getArmorStack(2);
+        var chest = client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.CHEST);
         return chest.getItem() == Items.ELYTRA;
     }
 

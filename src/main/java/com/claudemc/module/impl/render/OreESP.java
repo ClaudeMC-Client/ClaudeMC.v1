@@ -39,7 +39,7 @@ public class OreESP extends BlockScanModule {
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
         int minY = Math.max(client.world.getBottomY(), pPos.getY() - radius);
-        int maxY = Math.min(client.world.getTopY(),    pPos.getY() + radius);
+        int maxY = Math.min(client.world.getTopYInclusive(),    pPos.getY() + radius);
 
         for (int x = pPos.getX() - radius; x <= pPos.getX() + radius; x++) {
             for (int z = pPos.getZ() - radius; z <= pPos.getZ() + radius; z++) {

@@ -53,7 +53,7 @@ public class BlockESP extends BlockScanModule {
 
         BlockPos.Mutable pos = new BlockPos.Mutable();
         int minY = Math.max(client.world.getBottomY(), playerPos.getY() - radius);
-        int maxY = Math.min(client.world.getTopY(),    playerPos.getY() + radius);
+        int maxY = Math.min(client.world.getTopYInclusive(),    playerPos.getY() + radius);
 
         for (int x = playerPos.getX() - radius; x <= playerPos.getX() + radius; x++) {
             for (int z = playerPos.getZ() - radius; z <= playerPos.getZ() + radius; z++) {

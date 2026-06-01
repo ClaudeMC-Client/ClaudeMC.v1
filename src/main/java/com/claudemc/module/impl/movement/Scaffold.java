@@ -32,14 +32,14 @@ public class Scaffold extends Module {
         int slot = findBlock(client);
         if (slot < 0) return;
 
-        int prevSlot = client.player.getInventory().selectedSlot;
-        client.player.getInventory().selectedSlot = slot;
+        int prevSlot = client.player.getInventory().getSelectedSlot();
+        client.player.getInventory().setSelectedSlot(slot);
 
         Vec3d placePos = new Vec3d(below.getX() + 0.5, below.getY() + 1.0, below.getZ() + 0.5);
         var hit = new BlockHitResult(placePos, Direction.UP, below, false);
         client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND, hit);
         client.player.swingHand(Hand.MAIN_HAND);
-        client.player.getInventory().selectedSlot = prevSlot;
+        client.player.getInventory().setSelectedSlot(prevSlot);
         delay = 2;
     }
 

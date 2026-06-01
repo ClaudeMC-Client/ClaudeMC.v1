@@ -6,6 +6,7 @@ import com.claudemc.module.Module;
 import com.claudemc.module.impl.AimAssistModule;
 import com.claudemc.module.impl.movement.Flight;
 import com.claudemc.module.impl.render.ESP;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -341,7 +342,8 @@ public class LunarMenuScreen extends Screen {
     // ─────────────────────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         if (button != 0) return false;
         int x = (int) mx, y = (int) my;
 

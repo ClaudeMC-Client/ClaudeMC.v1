@@ -102,7 +102,7 @@ public class HudManager {
         int screenH = client.getWindow().getScaledHeight();
         int y = screenH - 40;
 
-        var pos = client.player.getPos();
+        var pos = client.player.getEntityPos();
         String dim = client.world.getRegistryKey().getValue().getPath();
         boolean isNether = "the_nether".equals(dim);
 
@@ -147,7 +147,13 @@ public class HudManager {
         int screenH = client.getWindow().getScaledHeight();
         int y = screenH - 50, x = screenW - 90;
 
-        var armorItems = client.player.getInventory().armor;
+        // 1.21.x removed PlayerInventory.armor; pull pieces via equipment slots.
+        // Index order matches the old list: 0=feet, 1=legs, 2=chest, 3=head.
+        var armorItems = java.util.List.of(
+            client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.FEET),
+            client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.LEGS),
+            client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.CHEST),
+            client.player.getEquippedStack(net.minecraft.entity.EquipmentSlot.HEAD));
         ctx.fill(x - 2, y - 2, screenW - 2, y + 18, 0x88000000);
 
         for (int i = 3; i >= 0; i--) {

@@ -9,8 +9,11 @@ import com.claudemc.gui.AltScreen;
 import com.claudemc.gui.BlockESPScreen;
 import com.claudemc.gui.MacroScreen;
 import com.claudemc.gui.ServerInfoScreen;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.KeyInput;
+import net.minecraft.client.input.CharInput;
 import net.minecraft.text.Text;
 
 import com.claudemc.module.setting.StringSetting;
@@ -192,7 +195,8 @@ public class ClickGui extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         int x = (int) mx, y = (int) my;
         // Commit any active string edit when clicking elsewhere
         if (editingSetting != null) commitEdit();
@@ -287,7 +291,8 @@ public class ClickGui extends Screen {
     // ── Keyboard (string editor) ──────────────────────────────────────────
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyInput input) {
+        int keyCode = input.key(); int scanCode = input.scancode(); int modifiers = input.modifiers();
         if (editingSetting != null) {
             switch (keyCode) {
                 case 257, 335 -> { // ENTER / numpad enter → commit
@@ -303,20 +308,22 @@ public class ClickGui extends Screen {
             }
             return true;          // consume all keys while editing
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharInput input) {
+        char chr = (char) input.codepoint(); int modifiers = input.modifiers();
         if (editingSetting != null) {
             if (chr >= 32) editBuffer += chr;
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(input);
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+    public boolean mouseDragged(Click click, double dx, double dy) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         if (dragging != null) {
             int[] pos = panelPos.get(dragging);
             pos[0] = (int) mx - dragOffX;
@@ -329,7 +336,8 @@ public class ClickGui extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double mx, double my, int button) {
+    public boolean mouseReleased(Click click) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         dragging = null;
         return true;
     }

@@ -26,7 +26,7 @@ public class HoleESP extends BlockScanModule {
 
         for (int x = playerPos.getX() - radius; x <= playerPos.getX() + radius; x++) {
             for (int z = playerPos.getZ() - radius; z <= playerPos.getZ() + radius; z++) {
-                for (int y = client.world.getBottomY(); y < client.world.getTopY() - 2; y++) {
+                for (int y = client.world.getBottomY(); y < client.world.getTopYInclusive() - 2; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (!client.world.getBlockState(pos).isAir()) continue;
                     if (!client.world.getBlockState(pos.up()).isAir()) continue;

@@ -37,7 +37,7 @@ public class Reach extends Module {
             double dist = e.distanceTo(client.player);
             if (dist > attackRange) continue;
 
-            Vec3d toEntity = e.getPos().subtract(eye).normalize();
+            Vec3d toEntity = e.getEntityPos().subtract(eye).normalize();
             double dot = look.dotProduct(toEntity);
             if (dot > bestDot) { bestDot = dot; best = e; }
         }

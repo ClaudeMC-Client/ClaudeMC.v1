@@ -42,7 +42,7 @@ public class BookDupe extends Module {
 
         for (int i = 0; i < copies; i++) {
             client.getNetworkHandler().sendPacket(new BookUpdateC2SPacket(
-                client.player.getInventory().selectedSlot,
+                client.player.getInventory().getSelectedSlot(),
                 List.of("Duped page"),
                 Optional.of(title)
             ));

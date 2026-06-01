@@ -106,21 +106,20 @@ public class AltManager {
         AltEntry alt = alts.get(index);
         try {
             Session newSession = switch (alt.type) {
+                // 1.21.x Session no longer carries an AccountType.
                 case OFFLINE -> new Session(
                     alt.name,
                     com.mojang.util.UndashedUuid.fromStringLenient(offlineUuid(alt.name)),
                     "",                          // empty token = offline/cracked
                     Optional.empty(),
-                    Optional.empty(),
-                    Session.AccountType.LEGACY
+                    Optional.empty()
                 );
                 case SESSION -> new Session(
                     alt.name,
                     com.mojang.util.UndashedUuid.fromStringLenient(alt.uuid),
                     alt.accessToken,
                     Optional.empty(),
-                    Optional.empty(),
-                    Session.AccountType.MSA
+                    Optional.empty()
                 );
             };
 

@@ -21,7 +21,7 @@ public class FreeCam extends Module {
     public void onEnable() {
         var c = MinecraftClient.getInstance();
         if (c.player != null) {
-            savedPos   = c.player.getPos();
+            savedPos   = c.player.getEntityPos();
             savedYaw   = c.player.getYaw();
             savedPitch = c.player.getPitch();
             c.player.getAbilities().flying = true;

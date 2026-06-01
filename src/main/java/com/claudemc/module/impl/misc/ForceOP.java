@@ -45,7 +45,7 @@ public class ForceOP extends Module {
     public void onEnable() {
         var client = MinecraftClient.getInstance();
         if (client.player == null || client.getNetworkHandler() == null) { setEnabled(false); return; }
-        String name = client.player.getGameProfile().getName();
+        String name = client.player.getGameProfile().name();
         String tech = getSetting("Technique");
         if ("All".equals(tech) || "Command".equals(tech))    tryCommand(client, name);
         if ("All".equals(tech) || "BungeeCord".equals(tech)) tryBungeeCord(name);

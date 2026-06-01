@@ -4,7 +4,7 @@ import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.render.RenderUtils;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -38,8 +38,8 @@ public class LogoutSpots extends Module {
             if (client.world == null || client.player == null) return;
             if (spots.isEmpty()) return;
 
-            var cam      = context.camera().getPos();
-            var matrices = context.matrixStack();
+            var cam      = context.worldState().cameraRenderState.pos;
+            var matrices = context.matrices();
             if (matrices == null) return;
             var consumers = context.consumers();
             if (consumers == null) return;
@@ -68,7 +68,7 @@ public class LogoutSpots extends Module {
             if (!(e instanceof PlayerEntity p) || e == client.player) continue;
             UUID uid = p.getUuid();
             current.add(uid);
-            seen.put(uid, p.getPos());
+            seen.put(uid, p.getEntityPos());
         }
 
         // Any UUID that was seen last tick but not this tick → logged out
@@ -79,7 +79,7 @@ public class LogoutSpots extends Module {
                 String name = uid.toString().substring(0, 8);
                 if (client.getNetworkHandler() != null) {
                     var listEntry = client.getNetworkHandler().getPlayerListEntry(uid);
-                    if (listEntry != null) name = listEntry.getProfile().getName();
+                    if (listEntry != null) name = listEntry.getProfile().name();
                 }
                 spots.put(uid, new LogoutEntry(entry.getValue(), name));
             }

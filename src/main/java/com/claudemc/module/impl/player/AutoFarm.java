@@ -41,7 +41,7 @@ public class AutoFarm extends Module {
                 if (aboveState.isAir()) {
                     int seedSlot = findSeedSlot(client);
                     if (seedSlot == -1) continue;
-                    client.player.getInventory().selectedSlot = seedSlot;
+                    client.player.getInventory().setSelectedSlot(seedSlot);
                     client.interactionManager.interactBlock(client.player, Hand.MAIN_HAND,
                         new BlockHitResult(Vec3d.ofCenter(above), Direction.UP, pos, false));
                     return;

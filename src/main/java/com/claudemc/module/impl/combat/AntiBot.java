@@ -43,7 +43,7 @@ public class AntiBot extends Module {
 
         Set<UUID> tabUuids = new HashSet<>();
         for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
-            tabUuids.add(e.getProfile().getId());
+            tabUuids.add(e.getProfile().id());
         }
 
         for (Entity e : client.world.getEntities()) {

@@ -3,7 +3,7 @@ package com.claudemc.module.impl.render;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.render.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -30,8 +30,8 @@ public class Chams extends Module {
             var client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) return;
 
-            var cam      = context.camera().getPos();
-            var matrices = context.matrixStack();
+            var cam      = context.worldState().cameraRenderState.pos;
+            var matrices = context.matrices();
             if (matrices == null) return;
             var consumers = context.consumers();
             if (consumers == null) return;

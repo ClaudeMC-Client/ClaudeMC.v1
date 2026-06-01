@@ -39,10 +39,10 @@ public class AutoCrystal extends Module {
             if (!(e instanceof EndCrystalEntity crystal)) continue;
             if (crystal.distanceTo(client.player) > range + 2) continue;
 
-            double dmg = estimateCrystalDamage(client, crystal.getPos());
+            double dmg = estimateCrystalDamage(client, crystal.getEntityPos());
             if (dmg < minDmg) continue;
             if (Boolean.parseBoolean(getSetting("AntiSuicide")) &&
-                estimateSelfDamage(client, crystal.getPos()) > 8.0) continue;
+                estimateSelfDamage(client, crystal.getEntityPos()) > 8.0) continue;
 
             client.interactionManager.attackEntity(client.player, crystal);
             client.player.swingHand(Hand.MAIN_HAND);
@@ -62,14 +62,14 @@ public class AutoCrystal extends Module {
         int crystalSlot = findCrystalSlot(client);
         if (crystalSlot == -1) return;
 
-        int prev = client.player.getInventory().selectedSlot;
-        if (autoSwap) client.player.getInventory().selectedSlot = crystalSlot;
+        int prev = client.player.getInventory().getSelectedSlot();
+        if (autoSwap) client.player.getInventory().setSelectedSlot(crystalSlot);
 
         client.interactionManager.interactBlock(client.player,
             Hand.MAIN_HAND,
             new BlockHitResult(Vec3d.ofCenter(placePos).add(0, 0.5, 0), Direction.UP, placePos, false));
 
-        if (autoSwap) client.player.getInventory().selectedSlot = prev;
+        if (autoSwap) client.player.getInventory().setSelectedSlot(prev);
     }
 
     private PlayerEntity findTarget(MinecraftClient client, double range) {
@@ -120,7 +120,7 @@ public class AutoCrystal extends Module {
     }
 
     private double estimateSelfDamage(MinecraftClient client, Vec3d crystalPos) {
-        double dist = client.player.getPos().distanceTo(crystalPos);
+        double dist = client.player.getEntityPos().distanceTo(crystalPos);
         return Math.max(0, 12.0 - dist * 2);
     }
 

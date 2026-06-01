@@ -20,7 +20,9 @@ public class TimeChanger extends Module {
     public void onTick(MinecraftClient client) {
         if (client.world == null) return;
         long time = getTargetTime();
-        client.world.setTimeOfDay(time);
+        // 1.21.x replaced setTimeOfDay with setTime(worldTime, timeOfDay, shouldTickTimeOfDay).
+        // shouldTickTimeOfDay=false locks the visual time until the next override.
+        client.world.setTime(client.world.getTimeOfDay(), time, false);
     }
 
     @Override

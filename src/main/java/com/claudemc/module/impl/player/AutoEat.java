@@ -26,7 +26,7 @@ public class AutoEat extends Module {
         for (int i = 0; i < 9; i++) {
             ItemStack s = client.player.getInventory().getStack(i);
             if (isFood(s)) {
-                client.player.getInventory().selectedSlot = i;
+                client.player.getInventory().setSelectedSlot(i);
                 tryEat(client, s, Hand.MAIN_HAND);
                 return;
             }

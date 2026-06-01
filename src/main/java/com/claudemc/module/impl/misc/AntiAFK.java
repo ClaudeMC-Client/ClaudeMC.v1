@@ -75,7 +75,7 @@ public class AntiAFK extends Module {
             if (VanishDetect.INSTANCE != null && VanishDetect.INSTANCE.isEnabled()) {
                 for (Map.Entry<UUID, Vec3d> entry : VanishDetect.INSTANCE.ghostPos.entrySet()) {
                     Vec3d gp = entry.getValue();
-                    if (client.player.getPos().distanceTo(gp) < alertRange) {
+                    if (client.player.getEntityPos().distanceTo(gp) < alertRange) {
                         triggerEvasion("Vanished staff detected nearby!");
                         break;
                     }
@@ -88,10 +88,10 @@ public class AntiAFK extends Module {
             if (!(e instanceof net.minecraft.entity.player.PlayerEntity p) || e == client.player) continue;
             UUID uid = p.getUuid();
             Vec3d prev = prevPlayerPos.get(uid);
-            Vec3d curr = p.getPos();
+            Vec3d curr = p.getEntityPos();
             if (prev != null) {
                 double moved = prev.distanceTo(curr);
-                double dist  = curr.distanceTo(client.player.getPos());
+                double dist  = curr.distanceTo(client.player.getEntityPos());
                 // Moved >15 blocks in one tick AND now within alertRange → likely TP
                 if (moved > 15 && dist < alertRange) {
                     triggerEvasion("Staff player teleported nearby!");

@@ -60,7 +60,7 @@ public class Radar extends Module {
 
         // Entity dots
         double scale = half / range;
-        var eyePos = client.player.getPos();
+        var eyePos = client.player.getEntityPos();
         float yaw = client.player.getYaw();
         double sinYaw = Math.sin(Math.toRadians(yaw));
         double cosYaw = Math.cos(Math.toRadians(yaw));

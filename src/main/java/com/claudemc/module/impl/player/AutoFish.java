@@ -24,7 +24,7 @@ public class AutoFish extends Module {
         if (!isHoldingRod(client)) {
             int rodSlot = findRodSlot(client);
             if (rodSlot == -1) return;
-            client.player.getInventory().selectedSlot = rodSlot;
+            client.player.getInventory().setSelectedSlot(rodSlot);
             return;
         }
 

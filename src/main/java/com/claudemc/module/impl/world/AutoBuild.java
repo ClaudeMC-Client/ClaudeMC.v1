@@ -31,7 +31,7 @@ public class AutoBuild extends Module {
 
         int slot = findBlockSlot(client);
         if (slot == -1) return;
-        client.player.getInventory().selectedSlot = slot;
+        client.player.getInventory().setSelectedSlot(slot);
 
         int radius = parseInt(getSetting("Radius"), 3);
         String shape = getSetting("Shape");

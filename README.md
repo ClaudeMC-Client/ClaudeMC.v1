@@ -1,4 +1,4 @@
-# ClaudeMC v1.19.2
+# ClaudeMC v1.20.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -28,7 +28,7 @@ The author(s) and contributors are **NOT RESPONSIBLE** for any misuse of this to
 
 **By using this tool, you acknowledge that you have read this disclaimer and agree to use it only for authorized testing of systems you own or have explicit permission to test.**
 
-A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** — with a built-in **AI engine** that analyses the server you're on, searches the web for recent exploits, and tells you exactly what to type.
+A **Meteor Client-style** Fabric mod for Minecraft **1.21.11** — with a built-in **AI engine** that analyses the server you're on, searches the web for recent exploits, and tells you exactly what to type.
 
 ---
 
@@ -48,7 +48,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception (`!lower.contains("server")`) to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick` — both `START_FALL_FLYING` packet sends now guard `getNetworkHandler()`. **v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt (affected SmartReply, ExploitAdvisor, ServerFinder, AutoMine, Companion Chat/Analyze). `AIClient.ask()` now accepts an explicit system-prompt parameter so modules never mutate global config. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays. Fixes unreachable dead-code branch in `ClickGui` header click. Fixes `DupeDbClient.storeTokens` NPE on missing token fields. **v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
+> **What's new in v1.20.0:** Minecraft **1.21.11** support. The mod has been migrated from 1.21.1 across every breaking API change in the 1.21.2 → 1.21.11 line: the new `Click`/`KeyInput`/`CharInput` input records (all ClickGUI/screen input handlers rewritten), the immutable `PlayerInput` movement record (InventoryMove/AutoMine input mixin), the 1.21.5 render-pipeline changes (`RenderLayers.LINES`, manual box edges in `RenderUtils`), the 1.21.9 decoupled render-state camera (`ctx.worldState().cameraRenderState.pos`), `WorldRenderEvents` moving to the `.world` subpackage, `PlayerInventory.getSelectedSlot()/setSelectedSlot()`, `getEntityPos()`, `isGliding()`, the `EquippableComponent`/attribute-based armor system (AutoArmor), the record-based `GameProfile` (`name()`/`id()`), and the new `Session` constructor. Build toolchain bumped to Gradle 8.14, fabric-loom 1.13.4, Fabric Loader 0.19.3, Fabric API 0.141.4+1.21.11. All mixins verified to apply cleanly at runtime. **v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception (`!lower.contains("server")`) to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick` — both `START_FALL_FLYING` packet sends now guard `getNetworkHandler()`. **v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt (affected SmartReply, ExploitAdvisor, ServerFinder, AutoMine, Companion Chat/Analyze). `AIClient.ask()` now accepts an explicit system-prompt parameter so modules never mutate global config. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays. Fixes unreachable dead-code branch in `ClickGui` header click. Fixes `DupeDbClient.storeTokens` NPE on missing token fields. **v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
 
 ---
 
@@ -94,9 +94,9 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
 
 | Requirement | Version |
 |---|---|
-| Minecraft Java Edition | **1.21.1** |
-| Fabric Loader | ≥ 0.16.5 |
-| Fabric API | 0.100.7+1.21.1 (bundled with mod release) |
+| Minecraft Java Edition | **1.21.11** |
+| Fabric Loader | ≥ 0.19.3 |
+| Fabric API | 0.141.4+1.21.11 (bundled with mod release) |
 | Java | **21** or newer |
 | OS (RecordProof) | Windows 10 v2004+ / Windows 11 |
 
@@ -107,12 +107,12 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
 ### Step 1 — Install Fabric Loader
 
 1. Download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/).
-2. Run the installer, select **Minecraft 1.21.1**, click **Install**.
+2. Run the installer, select **Minecraft 1.21.11**, click **Install**.
 3. A new Fabric profile appears in the vanilla launcher.
 
 ### Step 2 — Install Fabric API
 
-1. Download **Fabric API** for 1.21.1 from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api).
+1. Download **Fabric API** for 1.21.11 from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api).
 2. Place the `.jar` into your `.minecraft/mods/` folder.
 
 ### Step 3 — Install ClaudeMC
@@ -120,7 +120,7 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
 1. Go to the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases).
 2. Under the latest release, download the **`claudemc-X.X.X.jar`** file (not the Source code zip/tar.gz — those are the raw source, not a runnable mod).
 3. Place the `.jar` into `.minecraft/mods/`.
-4. Launch Minecraft with the **Fabric 1.21.1** profile.
+4. Launch Minecraft with the **Fabric 1.21.11** profile.
 5. You should see `ClaudeMC v2 initialised` in the log.
 
 > **Why zip/tar.gz?** Older releases (v1.1–v1.4) were published before the CI pipeline was set up to compile the mod. From v1.5 onwards, every release attaches the compiled `.jar` automatically.
@@ -202,7 +202,7 @@ cp build/libs/claudemc-1.19.1.jar ~/Library/Application\ Support/minecraft/mods/
 cp build/libs/claudemc-1.19.1.jar ~/.minecraft/mods/
 ```
 
-Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
+Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.11 in your mods folder.
 
 ### Common build errors
 
@@ -616,7 +616,7 @@ ClaudeMC connects to **[dupedb.net](https://dupedb.net)** — a community-mainta
 
 2. **AI + web search** — DuckDuckGo queries scoped to Minecraft 1.21.x feed into the AI, which structures confirmed exploits into VulnDb entries. Requires an AI API key.
 
-**When ServerFinder or ExploitAdvisor runs**, the authenticated DupeDB search API (`/api/exploits/search?version=1.21.1&status=verified`) is queried for results specific to the server's detected software stack, giving you community-reported dupes and exploits relevant to that exact server.
+**When ServerFinder or ExploitAdvisor runs**, the authenticated DupeDB search API (`/api/exploits/search?version=1.21.11&status=verified`) is queried for results specific to the server's detected software stack, giving you community-reported dupes and exploits relevant to that exact server.
 
 ### Connecting your DupeDB account (optional — enables full search)
 
@@ -754,24 +754,24 @@ The module is trigger-only — enable it once to fire a scan, then it disables i
 
 | What | Notes |
 |---|---|
-| Minecraft Java Edition 1.21.1 | Any launcher that can run this version |
-| Fabric Loader ≥ 0.16.5 | Install via the launcher's built-in profile creator or the Fabric Installer |
-| Fabric API 0.107.0+1.21.1 | Downloadable from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) |
+| Minecraft Java Edition 1.21.11 | Any launcher that can run this version |
+| Fabric Loader ≥ 0.19.3 | Install via the launcher's built-in profile creator or the Fabric Installer |
+| Fabric API 0.141.4+1.21.11 | Downloadable from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) |
 
 ### TLauncher — step by step
 
 1. **Download and install TLauncher** from [tlauncher.org](https://tlauncher.org) if you don't have it.
-2. In the version selector, type `1.21.1` and look for **Fabric 1.21.1** in the list (TLauncher bundles Fabric profiles). Select it and click **Install** / **Play** once to let it download.
-   - If Fabric 1.21.1 doesn't appear: download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/) and run it pointing at your TLauncher game directory.
+2. In the version selector, type `1.21.11` and look for **Fabric 1.21.11** in the list (TLauncher bundles Fabric profiles). Select it and click **Install** / **Play** once to let it download.
+   - If Fabric 1.21.11 doesn't appear: download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/) and run it pointing at your TLauncher game directory.
 3. **Find the mods folder.** Default locations:
    - Windows: `%AppData%\.minecraft\mods\`
    - macOS: `~/Library/Application Support/minecraft/mods/`
    - Linux: `~/.minecraft/mods/`
    - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
 4. **Drop in the JARs:**
-   - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
+   - `fabric-api-0.141.4+1.21.11.jar` (or equivalent version)
    - `claudemc-1.19.1.jar` (from the Releases page)
-5. Launch the **Fabric 1.21.1** profile in TLauncher.
+5. Launch the **Fabric 1.21.11** profile in TLauncher.
 6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
 
 ### Online-mode vs offline-mode servers

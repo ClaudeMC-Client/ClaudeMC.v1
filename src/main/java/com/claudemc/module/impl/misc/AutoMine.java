@@ -433,7 +433,7 @@ public class AutoMine extends Module {
     }
 
     private String dirName(Direction d) {
-        return switch(d){case NORTH->"North";case SOUTH->"South";case EAST->"East";case WEST->"West";default->d.getName();};
+        return switch(d){case NORTH->"North";case SOUTH->"South";case EAST->"East";case WEST->"West";default->d.asString();};
     }
 
     private void maybeRandomPause() {

@@ -4,7 +4,7 @@ import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import com.claudemc.module.setting.BoolSetting;
 import com.claudemc.render.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -58,8 +58,8 @@ public class Trajectories extends Module {
             var client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) return;
 
-            var cam       = ctx.camera().getPos();
-            var matrices  = ctx.matrixStack();
+            var cam       = ctx.worldState().cameraRenderState.pos;
+            var matrices  = ctx.matrices();
             if (matrices == null) return;
             var consumers = ctx.consumers();
             if (consumers == null) return;

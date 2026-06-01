@@ -2,8 +2,11 @@ package com.claudemc.gui;
 
 import com.claudemc.account.AltManager;
 import com.claudemc.account.AltManager.AltEntry;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.KeyInput;
+import net.minecraft.client.input.CharInput;
 import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
@@ -130,7 +133,8 @@ public class AltScreen extends Screen {
     // ── Mouse ─────────────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(Click click, boolean doubled) {
+        double mx = click.x(); double my = click.y(); int button = click.button();
         int x = (int) mx, y = (int) my;
         int footerH = addMode == AddMode.NONE ? 28 : 56;
         int fy = height - footerH;
@@ -173,7 +177,8 @@ public class AltScreen extends Screen {
     // ── Keyboard ──────────────────────────────────────────────────────────
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyInput input) {
+        int keyCode = input.key(); int scanCode = input.scancode(); int modifiers = input.modifiers();
         if (addMode != AddMode.NONE) {
             switch (keyCode) {
                 case GLFW.GLFW_KEY_ESCAPE -> { addMode = AddMode.NONE; return true; }
@@ -197,11 +202,12 @@ public class AltScreen extends Screen {
             client.setScreen(new ClickGui());
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(input);
     }
 
     @Override
-    public boolean charTyped(char c, int modifiers) {
+    public boolean charTyped(CharInput input) {
+        char c = (char) input.codepoint(); int modifiers = input.modifiers();
         if (addMode != AddMode.NONE && c >= 32) {
             if (addField == 0) fName  += c;
             if (addField == 1) fUuid  += c;

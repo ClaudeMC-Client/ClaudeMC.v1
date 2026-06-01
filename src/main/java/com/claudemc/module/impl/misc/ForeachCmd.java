@@ -50,7 +50,7 @@ public class ForeachCmd extends Module {
             // One command per online player
             if (client.getNetworkHandler() != null) {
                 for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
-                    String name = e.getProfile().getName();
+                    String name = e.getProfile().name();
                     queue.add(cmd.replace("%player%", name));
                 }
             }

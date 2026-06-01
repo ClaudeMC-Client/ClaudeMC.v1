@@ -48,8 +48,8 @@ public class Surround extends Module {
         int slot = findSuitableBlock(client);
         if (slot == -1) return;
 
-        int prev = client.player.getInventory().selectedSlot;
-        client.player.getInventory().selectedSlot = slot;
+        int prev = client.player.getInventory().getSelectedSlot();
+        client.player.getInventory().setSelectedSlot(slot);
 
         // Place against the block below
         BlockPos below = target.down();
@@ -58,7 +58,7 @@ public class Surround extends Module {
                 new BlockHitResult(Vec3d.ofCenter(below).add(0, 0.5, 0), Direction.UP, below, false));
         }
 
-        client.player.getInventory().selectedSlot = prev;
+        client.player.getInventory().setSelectedSlot(prev);
     }
 
     private List<BlockPos> getSurroundPositions(MinecraftClient client) {
