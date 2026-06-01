@@ -395,7 +395,7 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **SmartReply** | AI-generated AFK / DM replies that sound human; falls back to canned response if no key is set |
 | **ExploitAdvisor** | Probes server software + plugins, searches web for recent CVEs/dupes, and asks AI to produce verbatim macro-ready exploit instructions |
 | **AIAssist** | `!ai <question>` chat helper (intercepted locally) + optional packet narration via PacketLogger |
-| **AutoMine** | Human-like strip miner: mines forward, branches left/right, collects ores with deliberate misses, randomised break on staff detection with elevated miss rate |
+| **AutoMine** | Human-like strip miner: mines forward, branches left/right, deliberate ore misses, random 1–60s still break on staff detection (no camera movement), elevated miss rate post-detection |
 | **ServerFinder** | Queries mcscans.fi for live servers; filters by vulnerability (VulnDb) and/or P2W/gambling status; cross-tags servers that are both exploitable and P2W |
 | **ForeachCmd** | Runs a configurable command once per online player (`%player%`) or N times (`%i%`) with random tick delays |
 | **AutoAuth** | Auto-sends your password on AuthMe / NLogin / FastLogin / JPremium login prompts |
@@ -435,7 +435,7 @@ Replaces AutoReply's hardcoded responses with AI-generated replies that sound li
 | `DelayTicks` | 40 (2 s) | How long to wait before sending the AI reply (natural timing) |
 | `AnyDM` | off | Trigger on any incoming private message, not just AFK checks |
 
-Falls back to a canned `"AFK, brb"` response if no AI key is configured or if the API call fails.
+Falls back to a natural-sounding response (`"yeah im here, what's up"`) if no AI key is configured or if the API call fails — never an obvious `"AFK, brb"` that gives the game away.
 
 ### ExploitAdvisor
 
@@ -483,6 +483,35 @@ Two features in one:
 
 ---
 
+## DupeDB Integration
+
+ClaudeMC connects to **[dupedb.net](https://dupedb.net)** — a community-maintained database of verified Minecraft duplication exploits and vulnerabilities — to keep VulnDb and ExploitAdvisor current without requiring a mod update.
+
+### How it works
+
+**On every launch** (once per 23 hours), two sources are queried in the background:
+
+1. **Public feed (no auth required)** — `GET /api/public/exploits` returns the 10 most recently verified exploits. Any entry with a known plugin name is added to VulnDb immediately.
+
+2. **AI + web search** — DuckDuckGo queries scoped to Minecraft 1.21.x feed into the AI, which structures confirmed exploits into VulnDb entries. Requires an AI API key.
+
+**When ServerFinder or ExploitAdvisor runs**, the authenticated DupeDB search API (`/api/exploits/search?version=1.21.1&status=verified`) is queried for results specific to the server's detected software stack, giving you community-reported dupes and exploits relevant to that exact server.
+
+### Connecting your DupeDB account (optional — enables full search)
+
+The public feed requires no setup. For authenticated search (broader results, version/plugin filters):
+
+1. Create an account at [dupedb.net](https://dupedb.net).
+2. Go to **Account Settings → OAuth Apps** → **Create App**.
+3. Set the App ID to `claudemc`, Name to anything, Redirect URI to `http://127.0.0.1/callback`, and tick **Read-Only**.
+4. The next time a module triggers an authenticated DupeDB call, your browser will open automatically for a one-time consent. Click **Allow** and close the tab — you're done.
+
+Tokens are stored at `.minecraft/config/claudemc/dupedb.json` and auto-refreshed (30-day rotating tokens). You only authorize once unless you revoke the app.
+
+> To use a different App ID, edit `config/claudemc/dupedb.json` and change `"appId"` before authorizing.
+
+---
+
 ## AutoMine — Human-like Strip Mining
 
 **Module:** Misc → `AutoMine`
@@ -505,7 +534,9 @@ Main tunnel →→→→→→→→→→→→→→→→→→→→→→�
 
 ### Staff detection
 
-When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-check DM), AutoMine stops immediately — no movement, no mining. AntiAFK handles the human-like look-around. Once the evasion window ends, AutoMine sends `§a[AutoMine] Resuming` and continues from where it left off.
+When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-check DM), AutoMine takes a **random 1–60 second break** — no movement, no mining, no camera movement. Yaw and pitch are locked for the entire break, so from the server's perspective the player has just gone still (as if checking their phone or reading chat). After the break, mining resumes with an elevated miss chance (≥ 55%) for 10 minutes.
+
+**AutoMine never looks around during a staff break** — looking around underground looks exactly like an xray client scanning for ores. The only time AutoMine moves the camera is the brief surprise look-around after mining an unusually large vein (≥ 3 consecutive ores), which mimics a real player reacting to unexpectedly rich ground.
 
 > You need **AntiAFK enabled** for this integration to work. If AntiAFK is off, AutoMine never pauses.
 
@@ -780,7 +811,7 @@ Not automated due to world-edit requirements. See [dupedb.net/tnt](https://duped
 
 ---
 
-## ForceOP (v1.3)
+## ForceOP
 
 **Works on:** Servers with misconfigured permissions, old Spigot builds without validation, outdated BungeeCord proxies.  
 **Patched on:** Paper 1.19+, Purpur, modern Spigot with a current build.
@@ -797,7 +828,7 @@ The module **auto-disables after one attempt**. Watch chat for the server's resp
 
 ---
 
-## ForceCreative (v1.3)
+## ForceCreative
 
 Three techniques, all run simultaneously:
 
@@ -812,7 +843,7 @@ Three techniques, all run simultaneously:
 
 ---
 
-## VanishDetect — Packet Leak Tracking (v1.3)
+## VanishDetect — Packet Leak Tracking
 
 Improved in v1.3 to use two detection layers:
 
