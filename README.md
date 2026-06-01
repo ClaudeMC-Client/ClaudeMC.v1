@@ -1,4 +1,4 @@
-# ClaudeMC v1.17.0
+# ClaudeMC v1.18.0
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -24,7 +24,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.17:** **ServerFinder cross-reference** — vulnerable servers are now tagged `[⚠ ALSO P2W]` when they're also P2W, and P2W servers are tagged `[⚠ EXPLOITABLE]` when they run vulnerable software. v1.16 added AutoMine evasion overhaul (random break + ore-spawn detection), ServerFinder (mcscans.fi scanner with Vulnerable/P2W/Both modes), 14 new VulnDb entries, and four new anti-P2W modules: ForeachCmd, AutoAuth, BookColors, AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
+> **What's new in v1.18:** **Full in-game settings editing** — every setting including free-text fields (queries, passwords, command strings) is now editable directly in the ClickGUI; no file editing ever needed. **ServerFinder AI Search mode** — type any exploit name and the AI hunts for matching live servers. **DupeDB integration** — VulnDb auto-updates on every launch from the dupedb.net public feed and AI-assisted web search. **ServerFinder MCScans parser fixed** — previous regex parser silently returned zero results; now uses correct Gson-based parsing. v1.17 added ServerFinder cross-reference tags (`[⚠ ALSO P2W]` / `[⚠ EXPLOITABLE]`). v1.16 added AutoMine evasion overhaul, ServerFinder scanner, 14 new VulnDb entries, and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.15 added AutoMine. v1.14 added WebSearch + active ServerProbe. v1.13 added the AI layer.
 
 ---
 
@@ -153,7 +153,7 @@ chmod +x gradlew
 
 After a successful build, your file is at:
 ```
-build/libs/claudemc-1.17.0.jar
+build/libs/claudemc-1.18.0.jar
 ```
 (There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
 
@@ -163,13 +163,13 @@ Copy the JAR to your mods folder:
 
 ```bash
 # Windows
-copy build\libs\claudemc-1.14.0.jar %APPDATA%\.minecraft\mods\
+copy build\libs\claudemc-1.18.0.jar %APPDATA%\.minecraft\mods\
 
 # macOS
-cp build/libs/claudemc-1.17.0.jar ~/Library/Application\ Support/minecraft/mods/
+cp build/libs/claudemc-1.18.0.jar ~/Library/Application\ Support/minecraft/mods/
 
 # Linux
-cp build/libs/claudemc-1.17.0.jar ~/.minecraft/mods/
+cp build/libs/claudemc-1.18.0.jar ~/.minecraft/mods/
 ```
 
 Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.1 in your mods folder.
@@ -269,12 +269,13 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 │   Rotate: true           │  ← click to toggle
 ```
 
-> **Settings are editable directly in the GUI (v1.10+).** Expand a module (right-click it), then
-> **left-click a setting to increase / toggle / pick the next option, right-click to go back.**
-> Numbers are bounded and step sensibly; on/off toggles flip; multiple-choice settings cycle.
-> All values are saved to `config/claudemc/modules.json` and restored on the next launch.
-> (A handful of free-text settings — e.g. exploit command strings — show in grey and are not
-> click-editable.) See [Editing Module Settings](#editing-module-settings) for details.
+> **All settings are editable directly in the GUI (v1.18+).** Expand a module (right-click it), then interact with any setting:
+> - **Numbers** — left-click increases, right-click decreases
+> - **Toggles** — either click flips on/off
+> - **Options** — left-click = next, right-click = previous
+> - **Text fields** (yellow `§e`) — left-click to enter edit mode, type freely, **Enter** or click away to save, **Esc** to cancel, right-click to clear
+>
+> All values are saved to `config/claudemc/modules.json` and restored on the next launch. See [Editing Module Settings](#editing-module-settings) for details.
 
 ---
 
@@ -576,10 +577,11 @@ Queries the public [mcscans.fi](https://mcscans.fi) server list and filters resu
 | **Both** (default) | Runs both Vulnerable and P2W scans |
 | **Vulnerable** | Only flags servers with exploitable software |
 | **P2W** | Only flags servers with pay-to-win / gambling mechanics |
+| **AI Search** | Free-text targeted hunt — describe the exploit you want and the AI finds matching servers |
 
 ### Vulnerable scan
 
-Matches each server's version string and MOTD against **VulnDb** — ClaudeMC's built-in database of vulnerable plugin versions and unpatched server software. Unpatched Spigot, CraftBukkit, BungeeCord, Waterfall, Mohist, and Magma builds are also flagged by software name.
+Matches each server's software type and MOTD against **VulnDb** — ClaudeMC's built-in database of vulnerable plugin versions and unpatched server software. Unpatched Spigot, CraftBukkit, BungeeCord, Waterfall, Mohist, and Magma builds are flagged by software name.
 
 Each result shows: `IP:PORT | version | SEVERITY: Plugin — description`
 
@@ -589,14 +591,24 @@ Matches IP and MOTD against a curated list of servers publicly identified on p2w
 
 With `UseAI` on and an API key configured, the AI is also asked (backed by a DuckDuckGo web search) to produce a broader list of currently-active P2W/gambling servers.
 
+### AI Search mode
+
+Set `Mode` to **AI Search** and type your target exploit into the `Query` setting (right-click the module to expand settings, then left-click the `Query` row to edit it). Examples:
+
+- `EssentialsX dupe`
+- `Log4Shell vulnerable`
+- `forceop unpatched BungeeCord`
+
+The AI analyses your query, determines which server software is relevant, and queries mcscans.fi for live servers running that software. Results are filtered by the inferred keyword and displayed with player count. Falls back to a VulnDb string-match search if no AI key is configured.
+
 ### Cross-reference tags
 
 When both lists are collected, servers that appear in both are tagged:
 
 | Tag | Meaning |
 |---|---|
-| `§d[⚠ ALSO P2W]` | Shown on vulnerable servers that are also P2W — exploitable *and* predatory |
-| `§c[⚠ EXPLOITABLE]` | Shown on P2W servers that also run vulnerable software |
+| `[⚠ ALSO P2W]` | Shown on vulnerable servers that are also P2W — exploitable *and* predatory |
+| `[⚠ EXPLOITABLE]` | Shown on P2W servers that also run vulnerable software |
 
 Cross-tags appear regardless of which `Mode` you are viewing, because both lists are always collected internally.
 
@@ -604,9 +616,11 @@ Cross-tags appear regardless of which `Mode` you are viewing, because both lists
 
 | Setting | Default | Effect |
 |---|---|---|
-| `Mode` | Both | Both / Vulnerable / P2W |
-| `UseAI` | on | Use AI + web search for extra P2W server context |
+| `Mode` | Both | Both / Vulnerable / P2W / AI Search |
+| `UseAI` | on | Use AI + web search for P2W context and AI Search mode |
+| `OfflineOnly` | off | Restrict results to offline-mode (cracked) servers only |
 | `MaxResults` | 20 | Max servers shown per category (5–100) |
+| `Query` | *(empty)* | Free-text exploit query used in AI Search mode — left-click to edit in-game |
 
 The module is trigger-only — enable it once to fire a scan, then it disables itself. Results appear in local chat only; no data is sent anywhere except mcscans.fi.
 
@@ -636,7 +650,7 @@ The module is trigger-only — enable it once to fire a scan, then it disables i
    - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
 4. **Drop in the JARs:**
    - `fabric-api-0.107.0+1.21.1.jar` (or equivalent version)
-   - `claudemc-1.17.0.jar` (from the Releases page)
+   - `claudemc-1.18.0.jar` (from the Releases page)
 5. Launch the **Fabric 1.21.1** profile in TLauncher.
 6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
 
@@ -655,16 +669,20 @@ ClaudeMC includes a built-in **Alt Manager** (press `.` → `[Alts]` in the foot
 
 ## Editing Module Settings
 
-As of **v1.10** module settings are edited live in the ClickGUI — no rebuilding required.
+As of **v1.18** every module setting — including free-text fields — is editable live in the ClickGUI. No file editing, no rebuilding required.
 
 1. Press **`.`** to open the ClickGUI.
 2. **Right-click** a module to expand its settings.
-3. Click a setting value:
-   - **Numbers** (e.g. `Range`, `Radius`, `Speed`) — **left-click increases**, **right-click decreases**, clamped to a sensible range and step.
-   - **Toggles** (e.g. `Rotate`, `ShowFull`) — either click flips on/off.
-   - **Options** (e.g. ESP `Filter` = All/Players/Hostile) — **left-click = next**, **right-click = previous**.
+3. Interact with the setting row:
 
-Settings are written to `config/claudemc/modules.json` the moment you change them and restored on the next launch. Free-text settings (a few exploit command strings) are shown in grey and are not click-editable; edit `modules.json` directly if you need to change those.
+| Setting type | Left-click | Right-click |
+|---|---|---|
+| **Number** (e.g. Range, Speed) | Increase by one step | Decrease by one step |
+| **Toggle** (e.g. Rotate, ShowFull) | Flip on/off | Flip on/off |
+| **Option** (e.g. Mode, Filter) | Next option | Previous option |
+| **Text** (e.g. Query, Password) | Enter edit mode — cursor appears, type freely, **Enter** or click away to save, **Esc** to cancel | Clear the field |
+
+Settings are written to `config/claudemc/modules.json` the moment you change them and restored on the next launch.
 
 > Module **enabled/disabled** state is intentionally *not* restored on startup — only setting values are — so nothing activates before you join a world.
 
