@@ -112,6 +112,7 @@ public class ModuleManager {
         register(new ServerFinder());
         register(new ForeachCmd());
         register(new AutoAuth());
+        register(new AuthMeBypass());
         register(new BookColors());
         register(new AutoReconnect());
     }

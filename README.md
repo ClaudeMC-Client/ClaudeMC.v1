@@ -402,6 +402,7 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **AutoAuth** | Auto-sends your password on AuthMe / NLogin / FastLogin / JPremium login prompts |
 | **BookColors** | Translates `&x` colour codes to `§x` Minecraft format in book text |
 | **AutoReconnect** | Reconnects to the last server after disconnect, after a random configurable delay; optionally rotates to an offline alt first |
+| **AuthMeBypass** | Bypasses AuthMe login on cracked BungeeCord servers — sends `/server <backend>` via the proxy during the auth phase, before AuthMe can block you |
 
 ---
 
@@ -858,6 +859,53 @@ Three techniques, all run simultaneously:
 
 **What you get on a vulnerable server:** flight, no fall damage, no hunger, instant block break, infinite items from the creative inventory.  
 **What you get on a patched server:** client-side spoof only (local break speed / reach) — the server will reset your actual game mode.
+
+---
+
+## AuthMeBypass — Proxy Auth Escape
+
+**Module:** Misc → `AuthMeBypass`
+
+Exploits the command-processing order in BungeeCord/Velocity proxies to skip AuthMe authentication entirely on cracked servers.
+
+### How it works
+
+BungeeCord (and Velocity) processes the `/server` command at the **proxy layer**, before the packet ever reaches the backend Spigot/Paper server where AuthMe is installed. During the AuthMe login phase the proxy still accepts `/server`, so sending it transfers you to a backend sub-server that has no authentication requirement — you arrive authenticated as whatever username you connected with.
+
+```
+Client  ──/server hub──▶  BungeeCord  ──routes──▶  backend "hub" server
+                         (no AuthMe here)           (no auth required)
+```
+
+### Steps
+
+1. **Set your username** to the target player's name in the Alt Manager (press `.` → `[Alts]` → `[+ Offline]`).
+2. **Connect** to the cracked server normally. BungeeCord routes you to the lobby/auth server.
+3. **Enable `AuthMeBypass`** before AuthMe completes its setup, or leave `AutoTrigger` on so it fires automatically the moment a `/login` or `/register` prompt appears.
+4. The module discovers available sub-servers by sending a tab-complete request (`/server<TAB>`) to the proxy, then tries them in sequence with `/server <name>`.
+5. On successful transfer you receive `Bypass successful — on backend server` in local chat.
+
+### Settings
+
+| Setting | Default | Effect |
+|---|---|---|
+| `AutoTrigger` | on | Fire automatically when an AuthMe login/register prompt is detected |
+| `DelayTicks` | 10 | Ticks to wait after detecting the prompt before probing (lets the prompt fully render) |
+| `RetryTicks` | 30 | Ticks between `/server` attempts when trying multiple names |
+
+### Works against
+
+- BungeeCord / Waterfall + AuthMe (all versions) in offline mode
+- Velocity proxies (Velocity also processes `/server` before backend forwarding)
+
+### Does NOT work against
+
+- **BungeeGuard** — adds a forwarding secret that backends verify; direct sub-server connections are rejected
+- **IP whitelist on backends** — backends only accept connections from the proxy IP, not directly
+- **Online-mode servers** — requires a valid Microsoft session; offline bypass is irrelevant
+- Servers where the proxy restricts `/server` to specific game-modes only (e.g. only `hub`)
+
+> **Note:** If you have a list of backend server names (e.g. from a friend or `/server` error messages), the module will try those first via the tab-complete response. Otherwise it falls back to 20 common sub-server names automatically.
 
 ---
 

@@ -1,9 +1,11 @@
 package com.claudemc.mixin;
 
 import com.claudemc.hud.HudManager;
+import com.claudemc.module.impl.misc.AuthMeBypass;
 import com.claudemc.server.ServerInfo;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.s2c.common.CustomPayloadS2CPacket;
+import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
 import net.minecraft.network.message.MessageType;
@@ -66,6 +68,22 @@ public class ClientPlayNetworkHandlerMixin {
                     }
                 } catch (Exception ignored) {}
             }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Intercept the proxy's /server tab-complete response and forward to AuthMeBypass.
+     * The proxy (BungeeCord/Velocity) fills in available backend server names.
+     */
+    @Inject(method = "onCommandSuggestions", at = @At("HEAD"), require = 0)
+    private void claudemc$onCommandSuggestions(CommandSuggestionsS2CPacket packet, CallbackInfo ci) {
+        try {
+            AuthMeBypass ab = AuthMeBypass.INSTANCE;
+            if (ab == null || !ab.isEnabled()) return;
+            java.util.List<String> names = new java.util.ArrayList<>();
+            for (com.mojang.brigadier.suggestion.Suggestion s : packet.getSuggestions().getList())
+                names.add(s.getText());
+            ab.onTabCompletions(packet.id(), names);
         } catch (Exception ignored) {}
     }
 
