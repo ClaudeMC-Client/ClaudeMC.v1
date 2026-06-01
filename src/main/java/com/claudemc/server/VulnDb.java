@@ -204,7 +204,22 @@ public class VulnDb {
         new VulnEntry("skript", Severity.HIGH,
             "Skript < 2.8.0 with eval",
             "If server uses Skript with eval/parse support, chat injection can execute arbitrary Skript code.",
-            "2.8.0 or disable eval", null)
+            "2.8.0 or disable eval", null),
+
+        new VulnEntry("simpleteams", Severity.HIGH,
+            "SimpleTeams 2.0.0 (all versions)",
+            "Team prefix injection: /team edit prefix accepts raw MiniMessage tags. Setting a prefix with <click:run_command:…> causes the payload to fire for any player who runs /team info <name>. 16-char display limit but no tag stripping.",
+            "no patch yet — disable /team edit prefix permissions", null),
+
+        new VulnEntry("zelchat", Severity.HIGH,
+            "ZelChat (pre-patch, Java non-vanilla servers)",
+            "MiniMessage escape bypass: <<aqua>aqua ><click:run_command:…> payload survives ZelChat's tag-stripping sanitiser. Second-pass bypass (<<click:run_command:…>click:run_command:…>) defeats the follow-up fix.",
+            "update ZelChat or apply double-strip patch", null),
+
+        new VulnEntry("discordsrv", Severity.MEDIUM,
+            "DiscordSRV with relay to game chat (all versions)",
+            "MiniMessage tags sent via a linked Discord channel are passed to in-game chat without sanitisation. Payload: <aqua><click:run_command:/op [username]>[click for free robux]. Requires access to the linked Discord server.",
+            "sanitise incoming Discord messages before MiniMessage parsing", null)
     ));
 
     /** Adds a dynamically discovered entry. Ignored if pluginName already exists in DB. */
