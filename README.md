@@ -4,6 +4,30 @@
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
 </p>
 
+⚠️ **EDUCATIONAL DISCLAIMER**
+
+---
+
+**This tool is provided strictly for EDUCATIONAL PURPOSES ONLY.**
+
+### Authorized Use Only:
+- **Testing your own servers** and your organization's systems
+- **Testing your own anti-cheat systems** for security vulnerabilities
+- **Educational research** and learning about security mechanisms
+- **Authorized penetration testing** with explicit written permission from server owners
+
+### Prohibited Use:
+- ❌ Using this tool on any server without explicit written authorization from the server owner/operator
+- ❌ Unauthorized access to game servers or systems
+- ❌ Circumventing anti-cheat systems for competitive advantage on public servers
+- ❌ Any activity that violates the terms of service of Minecraft or the target server
+- ❌ Commercial exploitation or resale of this tool's capabilities
+
+### Legal Notice:
+The author(s) and contributors are **NOT RESPONSIBLE** for any misuse of this tool. Users assume all legal liability for any unauthorized access, damage, or violations of applicable laws. Unauthorized computer access and breach of terms of service may violate criminal and civil laws including the Computer Fraud and Abuse Act (CFAA) in the United States and equivalent laws in other jurisdictions.
+
+**By using this tool, you acknowledge that you have read this disclaimer and agree to use it only for authorized testing of systems you own or have explicit permission to test.**
+
 A **Meteor Client-style** Fabric mod for Minecraft **1.21.1** — with a built-in **AI engine** that analyses the server you're on, searches the web for recent exploits, and tells you exactly what to type.
 
 ---
