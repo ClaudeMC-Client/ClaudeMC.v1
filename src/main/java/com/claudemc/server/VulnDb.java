@@ -181,6 +181,11 @@ public class VulnDb {
             "Default password hash (SHA256 unsalted) crackable. /login bypass via hash collision on old builds.",
             "5.6.0", null),
 
+        new VulnEntry("bungeecord-authbypass", Severity.CRITICAL,
+            "BungeeCord/Velocity + AuthMe on cracked servers (all versions)",
+            "Proxy processes /server before AuthMe authenticates the player. Connecting with a target's username and sending /server <backend> during the login phase bypasses auth entirely — player lands on backend sub-server with target's permissions.",
+            "BungeeGuard or IP-whitelist on backends", null),
+
         new VulnEntry("citizensapi", Severity.MEDIUM,
             "Citizens2 < 2.0.33",
             "NPC right-click command injection: NPC commands run as console on misconfigured servers.",
