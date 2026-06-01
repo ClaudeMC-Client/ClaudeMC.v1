@@ -23,12 +23,4 @@ public class ScreenMixin {
         }
     }
 
-    @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
-    private void claudemc$charTyped(char c, int modifiers,
-                                    CallbackInfoReturnable<Boolean> cir) {
-        if (ChatOverlay.INSTANCE.isActive()) {
-            boolean consumed = ChatOverlay.INSTANCE.charTyped(c);
-            if (consumed) cir.setReturnValue(true);
-        }
-    }
 }

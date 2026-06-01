@@ -19,6 +19,7 @@ import com.claudemc.server.VulnDbUpdater;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import org.lwjgl.glfw.GLFWCharCallbackI;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
@@ -37,6 +38,8 @@ public class ClaudeMCClient implements ClientModInitializer {
     private static final int SCAN_DELAY_TICKS = 100;
     private int joinTick  = -1;
     private boolean alertSent = false;
+    private boolean charCallbackInstalled = false;
+    private GLFWCharCallbackI prevCharCallback = null;
 
     @Override
     public void onInitializeClient() {
@@ -62,6 +65,24 @@ public class ClaudeMCClient implements ClientModInitializer {
             ServerInfo.INSTANCE.reset();
             joinTick  = 0;
             alertSent = false;
+        });
+
+        // charTyped for ChatOverlay — GLFW char callback, chained so vanilla input still works.
+        // ScreenMixin cannot inject into Screen.charTyped because Screen never overrides the
+        // default Element.charTyped method, so there is no injection target in Screen's bytecode.
+        ClientTickEvents.START_CLIENT_TICK.register(c -> {
+            if (c.getWindow() != null && !charCallbackInstalled) {
+                charCallbackInstalled = true;
+                long win = c.getWindow().getHandle();
+                GLFWCharCallbackI prev = GLFW.glfwSetCharCallback(win, (window, codepoint) -> {
+                    if (c.currentScreen != null && ChatOverlay.INSTANCE.isActive()) {
+                        ChatOverlay.INSTANCE.charTyped((char) codepoint);
+                    } else if (prevCharCallback != null) {
+                        prevCharCallback.invoke(window, codepoint);
+                    }
+                });
+                prevCharCallback = prev;
+            }
         });
 
         HUD.register();
