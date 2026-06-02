@@ -74,6 +74,11 @@ public class ClickGui extends Screen {
     // ── Search ────────────────────────────────────────────────────────────
     private String searchQuery = "";
 
+    // ── Description tooltip (middle-click) ────────────────────────────────
+    private String tooltipTitle = null;
+    private String tooltipDesc  = null;
+    private int    tooltipX, tooltipY;
+
     public ClickGui() { super(Text.literal("ClaudeMC")); }
 
     @Override
@@ -93,11 +98,14 @@ public class ClickGui extends Screen {
             drawSearchResults(ctx, mx, my);
         }
 
+        // Tooltip (middle-click module description)
+        if (tooltipTitle != null) drawTooltip(ctx);
+
         // Footer
         ctx.fill(0, height - 16, width, height, 0xFF18181F);
         ctx.drawText(textRenderer, Text.literal("§7[" +
                 KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
-                "] close  §8|  §7LClick=toggle  RClick=settings/type  Drag#=slider  Scroll=step"),
+                "] close  §8|  §7L=toggle  R=settings  Mid=info  Drag#=slider  Scroll=step"),
             4, height - 11, 0x888888, false);
         int bY = height - 13, bH = 11, bX = width - 4;
         bX = drawFooterBtn(ctx, bX, bY, bH, "§f[Keybinds]",   0xFF4ADE80) - 4;
@@ -249,6 +257,7 @@ public class ClickGui extends Screen {
     @Override
     public boolean mouseClicked(double mxd, double myd, int button) {
         int x = (int) mxd, y = (int) myd;
+        if (button != 2) tooltipTitle = null;  // any non-middle-click dismisses the tooltip
         if (editing != null) commitEdit();
 
         // Search bar focus / clear
@@ -320,6 +329,11 @@ public class ClickGui extends Screen {
         if (inRect(x, y, px + 2, yy, PW - 4, 12)) {
             if (button == 0) m.toggle();
             else if (button == 1) { if (!expanded.remove(m)) expanded.add(m); }
+            else if (button == 2) {   // middle-click → show description tooltip
+                tooltipTitle = m.getName();
+                tooltipDesc  = m.getDescription();
+                tooltipX     = x; tooltipY = y;
+            }
             return Boolean.TRUE;
         }
         yy += 12;
@@ -444,6 +458,42 @@ public class ClickGui extends Screen {
         }
         if (chr >= 32) { searchQuery += chr; return true; }   // type into the search box
         return super.charTyped(chr, modifiers);
+    }
+
+    // ── Tooltip ───────────────────────────────────────────────────────────
+
+    private void drawTooltip(DrawContext ctx) {
+        if (tooltipTitle == null) return;
+        String title = "§b" + tooltipTitle;
+        String desc  = tooltipDesc != null && !tooltipDesc.isBlank() ? tooltipDesc : "§7No description.";
+        // Word-wrap description at ~200 px
+        List<String> lines = wrapText(desc, 200);
+        int tw = Math.max(textRenderer.getWidth(title.replaceAll("§.", "")),
+                          lines.stream().mapToInt(l -> textRenderer.getWidth(l.replaceAll("§.", ""))).max().orElse(0));
+        int th = 10 + lines.size() * 10;
+        int tx = Math.min(tooltipX + 8, width  - tw - 8);
+        int ty = Math.min(tooltipY + 4, height - th - 20);
+        ctx.fill(tx - 4, ty - 4, tx + tw + 4, ty + th + 4, 0xEE0D0D14);
+        ctx.fill(tx - 4, ty - 4, tx - 2, ty + th + 4, 0xFF4ADE80);
+        ctx.drawText(textRenderer, Text.literal(title), tx, ty, 0xFFFFFF, true);
+        int ly = ty + 11;
+        for (String line : lines) { ctx.drawText(textRenderer, Text.literal(line), tx, ly, 0xFFCCCCCC, false); ly += 10; }
+    }
+
+    private List<String> wrapText(String text, int maxPx) {
+        List<String> out = new ArrayList<>();
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+        for (String w : words) {
+            String test = line.isEmpty() ? w : line + " " + w;
+            if (textRenderer.getWidth(test.replaceAll("§.", "")) > maxPx) {
+                if (!line.isEmpty()) { out.add(line.toString()); line.setLength(0); }
+            }
+            if (!line.isEmpty()) line.append(' ');
+            line.append(w);
+        }
+        if (!line.isEmpty()) out.add(line.toString());
+        return out.isEmpty() ? List.of(text) : out;
     }
 
     private void closeGui() { if (client != null) client.setScreen(null); }

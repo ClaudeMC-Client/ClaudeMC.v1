@@ -85,7 +85,7 @@ public class ServerInfoScreen extends Screen {
             for (String p : plugins) pluginRows.add(new PluginRow(p, false, severityForName(p)));
         }
     }
-    public boolean isPauseScreen() { return false; }
+    public boolean shouldPause() { return false; }
 
     // ── Render ────────────────────────────────────────────────────────────
 

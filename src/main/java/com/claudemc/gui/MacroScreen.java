@@ -50,7 +50,7 @@ public class MacroScreen extends Screen {
         super(Text.literal("ClaudeMC — Macros"));
     }
 
-    public boolean isPauseScreen() { return false; }
+    public boolean shouldPause() { return false; }
 
     @Override
     public void render(DrawContext ctx, int mx, int my, float delta) {

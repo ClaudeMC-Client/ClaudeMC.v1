@@ -2,6 +2,8 @@ package com.claudemc.module.impl.combat;
 
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
+import com.claudemc.module.setting.BoolSetting;
+import com.claudemc.module.setting.NumberSetting;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -12,16 +14,18 @@ import net.minecraft.util.Hand;
 
 public class KillAura extends Module {
 
+    private final NumberSetting rangeSetting;
+    private final BoolSetting   rotateSetting;
+    private final BoolSetting   fullChargeSetting;
+    private final NumberSetting delayMsSetting;
+
     public KillAura() {
         super("KillAura", "Automatically attacks nearby entities", Category.COMBAT);
-        addNumber("Range",      4.0, 2.0, 6.0, 0.5, false);
+        rangeSetting      = addNumber("Range",     4.0, 2.0, 6.0, 0.5, false);
         addMode("Target", "Hostile+Players", "Hostile+Players", "Players", "Hostile", "All");
-        addBool("Rotate",       true);
-        // When true, only swing once the vanilla attack cooldown has fully recharged, so each
-        // hit deals full (sharpness/charged) damage instead of weak no-cooldown spam taps.
-        addBool("FullCharge",   true);
-        // Extra delay (ms) between attacks on top of the cooldown, for a configurable CPS cap.
-        addNumber("DelayMs",   50, 0, 1000, 10, true);
+        rotateSetting     = addBool("Rotate",      true);
+        fullChargeSetting = addBool("FullCharge",  true);
+        delayMsSetting    = addNumber("DelayMs",  50, 0, 1000, 10, true);
     }
 
     private long lastAttack = 0L;
@@ -32,13 +36,12 @@ public class KillAura extends Module {
         if (client.currentScreen != null) return;
 
         long now = System.currentTimeMillis();
-        if (now - lastAttack < parseDouble(getSetting("DelayMs"), 50)) return;
+        if (now - lastAttack < delayMsSetting.get()) return;
 
-        // Respect the vanilla 1.9+ attack cooldown so hits actually land full damage.
-        if (Boolean.parseBoolean(getSetting("FullCharge"))
-                && client.player.getAttackCooldownProgress(0f) < 1.0f) return;
+        // Wait for full 1.9 attack charge so every hit deals full damage.
+        if (fullChargeSetting.get() && client.player.getAttackCooldownProgress(0f) < 1.0f) return;
 
-        double range  = parseDouble(getSetting("Range"), 4.0);
+        double range  = rangeSetting.get();
         String target = getSetting("Target");
 
         Entity best = null;
@@ -56,7 +59,7 @@ public class KillAura extends Module {
 
         if (best == null) return;
 
-        if (Boolean.parseBoolean(getSetting("Rotate"))) {
+        if (rotateSetting.get()) {
             faceEntity(client, best);
         }
         client.interactionManager.attackEntity(client.player, best);

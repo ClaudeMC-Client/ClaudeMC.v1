@@ -54,7 +54,7 @@ public class BlockESPScreen extends Screen {
         filteredBlocks = new ArrayList<>(allBlocks);
     }
 
-    public boolean isPauseScreen() { return false; }
+    public boolean shouldPause() { return false; }
 
     @Override
     public void render(DrawContext ctx, int mx, int my, float delta) {

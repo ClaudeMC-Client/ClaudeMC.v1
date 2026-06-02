@@ -98,28 +98,63 @@ public final class CompanionServer {
 
     public boolean isStarted() { return started; }
 
-    /** Opens the companion page in the default browser. */
+    /**
+     * Opens the companion page in the default browser with multiple fallback strategies,
+     * and copies the URL to the clipboard as a last resort.
+     */
     public void open() {
         if (!started) start();
-        // Brief spin-wait to let the async start() bind before we try to open (≤ 1 s)
         long deadline = System.currentTimeMillis() + 1000;
         while (!started && System.currentTimeMillis() < deadline) {
             try { Thread.sleep(10); } catch (InterruptedException ignored) {}
         }
         String url = getUrl();
         ClaudeMCMod.LOGGER.info("[Companion] Web app available at {}", url);
-        // Desktop.browse only works on a graphical desktop session with AWT support; many
-        // setups (headless, Wayland, some Linux JREs) throw. Failing to auto-open is fine —
-        // the URL is logged and shown in chat so the user can open it manually.
+        Thread.ofVirtual().start(() -> openBrowser(url));
+    }
+
+    private static void openBrowser(String url) {
+        // 1. Java Desktop.browse (works on Windows + some Mac/Linux)
         try {
-            if (java.awt.Desktop.isDesktopSupported()
-                    && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
-                java.awt.Desktop.getDesktop().browse(URI.create(url));
+            if (java.awt.Desktop.isDesktopSupported()) {
+                var desktop = java.awt.Desktop.getDesktop();
+                if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+                    desktop.browse(URI.create(url));
+                    return;
+                }
             }
-        } catch (Throwable e) {
-            ClaudeMCMod.LOGGER.warn("[Companion] Auto-open failed ({}). Open {} manually.",
-                e.getMessage(), url);
+        } catch (Throwable ignored) {}
+
+        // 2. Platform-specific OS command
+        String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT);
+        try {
+            ProcessBuilder pb;
+            if (os.contains("win")) {
+                pb = new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url);
+            } else if (os.contains("mac")) {
+                pb = new ProcessBuilder("open", url);
+            } else {
+                // Linux: try xdg-open, then sensible-browser, then firefox
+                pb = new ProcessBuilder("xdg-open", url);
+            }
+            pb.start();
+            return;
+        } catch (Throwable ignored) {}
+
+        // Linux fallback: try more browsers
+        if (!os.contains("win") && !os.contains("mac")) {
+            for (String browser : new String[]{"sensible-browser", "firefox", "chromium-browser", "google-chrome"}) {
+                try { new ProcessBuilder(browser, url).start(); return; } catch (Throwable ignored) {}
+            }
         }
+
+        // 3. Last resort: copy to clipboard so user can paste it
+        try {
+            var sel = new java.awt.datatransfer.StringSelection(url);
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(sel, null);
+            ClaudeMCMod.LOGGER.info("[Companion] URL copied to clipboard: {}", url);
+        } catch (Throwable ignored) {}
+        ClaudeMCMod.LOGGER.warn("[Companion] Could not auto-open browser. Navigate to: {}", url);
     }
 
     // ── Static file ───────────────────────────────────────────────────────
