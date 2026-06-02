@@ -8,7 +8,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -21,13 +25,18 @@ public class AutoMine extends Module {
 
     public static AutoMine INSTANCE;
 
-    public enum Phase { IDLE, FORWARD, BRANCH, RETURNING }
+    public enum Phase { IDLE, FORWARD, POKE, BRANCH, RETURNING }
     private volatile Phase phase = Phase.IDLE;
 
     private float mainYaw, branchYaw;
     private int   blocksForward, blocksBranch, returnBlocksLeft;
     private int   branchSide = 1;
     private int   lastBranchAt = 0; // blocksForward value when last branch was started
+    private int   lastPokeAt   = 0; // blocksForward value when last poke-hole was dug
+
+    // Poke-hole sub-state: we dig left side then right side at the current position.
+    private int     pokeStep = 0;       // 0=left, 1=right, 2=done
+    private BlockPos pokeTarget = null;
 
     private BlockPos mineTarget;
     private boolean  miningOre;
@@ -35,6 +44,10 @@ public class AutoMine extends Module {
 
     private final Random rng = new Random();
     private int pauseTicksLeft;
+
+    // ── Safety ──────────────────────────────────────────────────────────────
+    private float prevHealth = 20f;
+    private int   sealCooldown = 0;
 
     // ── Ore tracking ──────────────────────────────────────────────────────
     private final Set<BlockPos> seenOres    = new HashSet<>();
@@ -76,14 +89,23 @@ public class AutoMine extends Module {
     }
 
     public AutoMine() {
-        super("AutoMine", "Human-like strip miner with staff-aware evasion", Category.UTILITY);
+        super("AutoMine", "Human-like strip miner: pokehole/branch layouts with lava, water & fall safety", Category.UTILITY);
         addMode("Ores", "Diamond+Iron", "Diamond+Iron", "Diamond", "Iron", "All Valuable", "Everything");
-        addNumber("BranchEvery", 16,  4,  64,  4, true);
-        addNumber("BranchLen",    8,  2,  32,  2, true);
+        // Layout: how the side strips are dug.
+        //  Pokehole = 2x1 main tunnel, dig 1x1 holes left+right every "PokeEvery" blocks (xisuma style)
+        //  Branch   = long perpendicular branches every "BranchEvery" blocks (antennae style)
+        //  Tunnel   = straight 2x1 only, no side work
+        addMode("Layout", "Pokehole", "Pokehole", "Branch", "Tunnel");
+        addNumber("PokeEvery",    4,  2,  12,  1, true);  // blocks between poke-holes
+        addNumber("PokeDepth",    2,  1,   4,  1, true);  // how deep each poke-hole goes
+        addNumber("BranchEvery", 11,  4,  64,  1, true);  // blocks between full branches (~6 gap = good)
+        addNumber("BranchLen",   32,  4,  64,  2, true);
         addNumber("OreRadius",    3,  1,   5,  1, true);
         addNumber("MissChance",  15,  0,  60,  5, true);
         addNumber("PauseChance", 20,  0,  60,  5, true);
         addNumber("MaxPause",    30,  5, 100,  5, true);
+        addBool("Safety",  true);   // avoid falls, lava and water
+        addBool("Bridge",  true);   // bridge >2 block drops by placing blocks
         addBool("UseAI", false);
         INSTANCE = this;
     }
@@ -92,14 +114,17 @@ public class AutoMine extends Module {
     public void onEnable() {
         phase = Phase.IDLE;
         blocksForward = blocksBranch = returnBlocksLeft = 0;
-        branchSide = 1; lastBranchAt = 0;
+        branchSide = 1; lastBranchAt = 0; lastPokeAt = 0;
+        pokeStep = 0; pokeTarget = null;
         mineTarget = null; miningOre = false; prevMineWasAir = true;
         pauseTicksLeft = aiTimer = oreSnapTimer = 0;
         consecutiveOres = surpriseTicks = staffBreakLeft = elevatedMissTicks = 0;
         seenOres.clear(); skippedOres.clear(); ignoredOres.clear();
         knownOres.clear(); oreSnapInit = false;
         wasPaused = wantForward = wantBack = false;
-        lastPos = null;
+        lastPos = null; sealCooldown = 0;
+        var c = MinecraftClient.getInstance();
+        if (c.player != null) prevHealth = c.player.getHealth();
     }
 
     @Override
@@ -111,6 +136,17 @@ public class AutoMine extends Module {
     public void onTick(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
         wantForward = wantBack = false;
+        if (sealCooldown > 0) sealCooldown--;
+
+        // ── Damage protection: if we just took damage and are in/near a fluid,
+        //    seal the flow with blocks before doing anything else. ────────────
+        if (Boolean.parseBoolean(getSetting("Safety"))) {
+            float hp = client.player.getHealth();
+            if (hp < prevHealth - 0.01f) {
+                if (protectFromFluid(client)) { prevHealth = hp; lastPos = client.player.getBlockPos(); return; }
+            }
+            prevHealth = hp;
+        }
 
         // ── Staff detection ───────────────────────────────────────────────
         boolean staffActive = AntiAFK.INSTANCE != null && AntiAFK.INSTANCE.isEnabled()
@@ -121,8 +157,6 @@ public class AutoMine extends Module {
             elevatedMissTicks = 12000;                  // 10 min elevated miss
             mineTarget        = null;
             seenOres.clear();
-            // Snapshot look direction — player stays completely still during break.
-            // Locking overrides AntiAFK's look-around (AutoMine ticks after AntiAFK).
             breakYaw   = client.player.getYaw();
             breakPitch = client.player.getPitch();
         }
@@ -130,8 +164,6 @@ public class AutoMine extends Module {
 
         if (staffBreakLeft > 0) {
             staffBreakLeft--;
-            // Stay absolutely still — don't move eyes, don't mine.
-            // Random looking would look like xray scanning.
             client.player.setYaw(breakYaw);
             client.player.setPitch(breakPitch);
             lastPos = client.player.getBlockPos();
@@ -160,12 +192,14 @@ public class AutoMine extends Module {
             mainYaw = snapToCardinal(client.player.getYaw());
             client.player.setYaw(mainYaw);
             blocksForward = blocksBranch = 0; branchSide = 1;
+            lastBranchAt = 0; lastPokeAt = 0;
             lastPos = client.player.getBlockPos();
             seenOres.clear(); skippedOres.clear(); ignoredOres.clear();
             knownOres.clear(); oreSnapInit = false;
             phase = Phase.FORWARD;
             client.player.sendMessage(
-                Text.literal("§a[AutoMine] §7Starting — " + dirName(yawToDir(mainYaw))), false);
+                Text.literal("§a[AutoMine] §7Starting — " + dirName(yawToDir(mainYaw))
+                    + " §8(" + getSetting("Layout") + ")"), false);
         }
 
         checkOreSpawns(client);
@@ -175,6 +209,7 @@ public class AutoMine extends Module {
 
         switch (phase) {
             case FORWARD   -> tickForward(client);
+            case POKE      -> tickPoke(client);
             case BRANCH    -> tickBranch(client);
             case RETURNING -> tickReturn(client);
             default        -> {}
@@ -198,24 +233,16 @@ public class AutoMine extends Module {
         }
         if (!oreSnapInit) { oreSnapInit = true; knownOres.addAll(current); return; }
 
-        // Find ores that appeared this second (potential staff /setblock)
         List<BlockPos> newOres = current.stream()
             .filter(pos -> !knownOres.contains(pos) && !seenOres.contains(pos))
             .collect(Collectors.toList());
 
-        if (newOres.size() >= 3) { // 3+ ores appearing at once = suspicious
+        if (newOres.size() >= 3) {
             for (BlockPos pos : newOres) {
                 if (isOffPath(client.player, pos)) {
-                    // Off to the side — a normal player with no xray wouldn't notice
-                    ignoredOres.add(pos);
-                    seenOres.add(pos);
-                    skippedOres.add(pos);
-                }
-                // In-path ores: let the tunnel mine them naturally — mark as seen
-                // so scanForOre won't actively deviate toward them either
-                else {
-                    seenOres.add(pos); // mine if in path, but don't seek
-                    skippedOres.add(pos);
+                    ignoredOres.add(pos); seenOres.add(pos); skippedOres.add(pos);
+                } else {
+                    seenOres.add(pos); skippedOres.add(pos);
                 }
             }
         }
@@ -238,35 +265,60 @@ public class AutoMine extends Module {
     private void tickForward(MinecraftClient client) {
         var p = client.player; var world = client.world;
         Direction dir = yawToDir(mainYaw);
-        int interval = parseInt(getSetting("BranchEvery"), 16);
-        if (blocksForward > 0 && (blocksForward - lastBranchAt) >= interval) { startBranch(p); return; }
+        String layout = getSetting("Layout");
+
+        // Time for a poke-hole or a full branch?
+        if ("Pokehole".equals(layout) && blocksForward > 0
+                && (blocksForward - lastPokeAt) >= parseInt(getSetting("PokeEvery"), 4)) {
+            lastPokeAt = blocksForward; pokeStep = 0; pokeTarget = null;
+            phase = Phase.POKE; return;
+        }
+        if ("Branch".equals(layout) && blocksForward > 0
+                && (blocksForward - lastBranchAt) >= parseInt(getSetting("BranchEvery"), 11)) {
+            startBranch(p); return;
+        }
 
         // Seek nearby ore
-        BlockPos ore = scanForOre(client, dir);
-        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir()))
-            { mineTarget = ore; miningOre = true; }
+        if (mineExposedOre(client, dir)) return;
 
-        if (miningOre && mineTarget != null) {
-            boolean isAir = world.getBlockState(mineTarget).isAir();
-            if (!prevMineWasAir && isAir) onOreMined(); // just mined one
-            prevMineWasAir = isAir;
-            if (!isAir) {
-                lookAt(p, mineTarget);
-                client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget));
-                return;
-            }
-            miningOre = false;
-        } else { consecutiveOres = 0; }
+        // Safety: refuse to step into a fall or a fluid; turn around if blocked.
+        if (Boolean.parseBoolean(getSetting("Safety")) && !ensureSafeStep(client, dir, mainYaw)) return;
 
-        // Mine 2-tall forward path
-        BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
-        if (!world.getBlockState(ahead).isAir() && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
-            { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
-        if (!world.getBlockState(above).isAir() && world.getBlockState(above).getHardness(world, above) >= 0)
-            { lookAt(p, above); client.interactionManager.attackBlock(above, dir.getOpposite()); return; }
+        // Mine the 2-tall forward path
+        if (mineColumnAhead(client, dir)) return;
 
         wantForward = true; smoothYaw(p, mainYaw);
         if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { blocksForward++; maybeRandomPause(); }
+    }
+
+    // ── POKE (1x1 holes left & right at current position) ──────────────────
+
+    private void tickPoke(MinecraftClient client) {
+        var p = client.player; var world = client.world;
+        Direction fwd = yawToDir(mainYaw);
+        int depth = parseInt(getSetting("PokeDepth"), 2);
+
+        // Determine the side direction for this step
+        Direction side = (pokeStep == 0)
+            ? rotate(fwd, branchSide)        // left
+            : rotate(fwd, -branchSide);      // right
+        if (pokeStep >= 2) { phase = Phase.FORWARD; return; }
+
+        // Mine `depth` blocks out to the side at foot + head level.
+        BlockPos foot = p.getBlockPos();
+        for (int d = 1; d <= depth; d++) {
+            BlockPos at  = foot.offset(side, d);
+            BlockPos top = at.up();
+            // Don't breach into lava/water — seal instead and stop this poke.
+            if (Boolean.parseBoolean(getSetting("Safety")) && (isFluidAround(world, at) || isFluidAround(world, top))) {
+                pokeStep++; return;
+            }
+            if (mineIfSolid(client, at, side.getOpposite()))  return;
+            if (mineIfSolid(client, top, side.getOpposite())) return;
+        }
+        // This side fully cleared — advance to next step
+        pokeStep++;
+        if (pokeStep >= 2) phase = Phase.FORWARD;
     }
 
     // ── BRANCH ────────────────────────────────────────────────────────────
@@ -280,25 +332,20 @@ public class AutoMine extends Module {
     private void tickBranch(MinecraftClient client) {
         var p = client.player; var world = client.world;
         Direction dir = yawToDir(branchYaw);
-        if (blocksBranch >= parseInt(getSetting("BranchLen"), 8))
-            { returnBlocksLeft = blocksBranch; phase = Phase.RETURNING; p.setYaw(normalYaw(branchYaw+180f)); return; }
-
-        BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
-        if (!world.getBlockState(ahead).isAir() && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
-            { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
-        if (!world.getBlockState(above).isAir() && world.getBlockState(above).getHardness(world, above) >= 0)
-            { lookAt(p, above); client.interactionManager.attackBlock(above, dir.getOpposite()); return; }
-
-        BlockPos ore = scanForOre(client, dir);
-        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir()))
-            { mineTarget = ore; miningOre = true; }
-        if (miningOre && mineTarget != null) {
-            boolean isAir = world.getBlockState(mineTarget).isAir();
-            if (!prevMineWasAir && isAir) onOreMined();
-            prevMineWasAir = isAir;
-            if (!isAir) { lookAt(p, mineTarget); client.interactionManager.attackBlock(mineTarget, faceTo(p.getBlockPos(), mineTarget)); return; }
-            miningOre = false;
+        if (blocksBranch >= parseInt(getSetting("BranchLen"), 32)) {
+            returnBlocksLeft = blocksBranch; phase = Phase.RETURNING;
+            p.setYaw(normalYaw(branchYaw+180f)); return;
         }
+
+        if (mineExposedOre(client, dir)) return;
+
+        if (Boolean.parseBoolean(getSetting("Safety")) && !ensureSafeStep(client, dir, branchYaw)) {
+            // Can't continue branch safely — return early.
+            returnBlocksLeft = blocksBranch; phase = Phase.RETURNING;
+            p.setYaw(normalYaw(branchYaw+180f)); return;
+        }
+
+        if (mineColumnAhead(client, dir)) return;
 
         wantForward = true; smoothYaw(p, branchYaw);
         if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { blocksBranch++; maybeRandomPause(); }
@@ -318,12 +365,171 @@ public class AutoMine extends Module {
         if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { returnBlocksLeft--; maybeRandomPause(); }
     }
 
+    // ── Mining helpers ──────────────────────────────────────────────────────
+
+    /** Mines the 2-tall column directly ahead. Returns true if it issued a mine action. */
+    private boolean mineColumnAhead(MinecraftClient client, Direction dir) {
+        var p = client.player; var world = client.world;
+        BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
+        if (mineIfSolid(client, ahead, dir.getOpposite())) return true;
+        if (mineIfSolid(client, above, dir.getOpposite())) return true;
+        return false;
+    }
+
+    /** If the block is solid (and not a fluid), look at it and start breaking it. */
+    private boolean mineIfSolid(MinecraftClient client, BlockPos pos, Direction face) {
+        var world = client.world;
+        var state = world.getBlockState(pos);
+        if (state.isAir()) return false;
+        if (!state.getFluidState().isEmpty()) return false;  // never "mine" a fluid
+        if (state.getHardness(world, pos) < 0) return false;  // unbreakable (bedrock)
+        lookAt(client.player, pos);
+        client.interactionManager.attackBlock(pos, face);
+        return true;
+    }
+
+    private boolean mineExposedOre(MinecraftClient client, Direction dir) {
+        var world = client.world;
+        BlockPos ore = scanForOre(client, dir);
+        if (ore != null && (mineTarget == null || world.getBlockState(mineTarget).isAir()))
+            { mineTarget = ore; miningOre = true; }
+        if (miningOre && mineTarget != null) {
+            boolean isAir = world.getBlockState(mineTarget).isAir();
+            if (!prevMineWasAir && isAir) onOreMined();
+            prevMineWasAir = isAir;
+            if (!isAir) {
+                lookAt(client.player, mineTarget);
+                client.interactionManager.attackBlock(mineTarget, faceTo(client.player.getBlockPos(), mineTarget));
+                return true;
+            }
+            miningOre = false;
+        } else { consecutiveOres = 0; }
+        return false;
+    }
+
+    // ── Safety: falls, lava & water ──────────────────────────────────────────
+
+    /**
+     * Ensures it is safe to step forward in `dir`. Returns true if safe to proceed,
+     * false if it handled a hazard this tick (caller should return).
+     */
+    private boolean ensureSafeStep(MinecraftClient client, Direction dir, float yaw) {
+        var p = client.player; var world = client.world;
+        BlockPos foot   = p.getBlockPos();
+        BlockPos ahead  = foot.offset(dir);
+        BlockPos above  = ahead.up();
+        BlockPos floor  = ahead.down();
+
+        // 1. Fluid directly ahead or above → seal the opening instead of mining into it.
+        if (isFluid(world, ahead) || isFluid(world, above)) {
+            BlockPos fluidPos = isFluid(world, ahead) ? ahead : above;
+            if (!placeAgainstNeighbor(client, fluidPos)) {
+                // Can't seal — turn around to avoid swimming into it.
+                turnAround(yaw);
+            }
+            return false;
+        }
+
+        // 2. Fall detection: if standing floor ahead is air for >2 blocks down.
+        if (world.getBlockState(floor).isAir()
+                && world.getBlockState(floor.down()).isAir()
+                && world.getBlockState(floor.down(2)).isAir()) {
+            // Lava/water at the bottom of the drop? definitely avoid.
+            if (Boolean.parseBoolean(getSetting("Bridge")) && placeFloor(client, floor, dir)) {
+                return false; // bridged this tick
+            }
+            // Can't/won't bridge → turn around so we don't walk off the edge.
+            turnAround(yaw);
+            return false;
+        }
+        return true;
+    }
+
+    private void turnAround(float yaw) {
+        if (phase == Phase.FORWARD) {
+            // Flip the main heading 90° to start a fresh tunnel away from the hazard.
+            mainYaw = normalYaw(yaw + 90f);
+            lastBranchAt = blocksForward; lastPokeAt = blocksForward;
+        }
+    }
+
+    /** Place a block at `floor` (a gap below the step-ahead) to bridge it. */
+    private boolean placeFloor(MinecraftClient client, BlockPos floor, Direction dir) {
+        // Support: the floor block under the player (behind the gap).
+        return placeAgainstNeighbor(client, floor);
+    }
+
+    /**
+     * When taking damage near a fluid, wall it off: place blocks on every horizontal
+     * neighbour of the player that is currently a fluid source/flow.
+     */
+    private boolean protectFromFluid(MinecraftClient client) {
+        if (sealCooldown > 0) return false;
+        var p = client.player; var world = client.world;
+        BlockPos foot = p.getBlockPos();
+        BlockPos[] around = {
+            foot, foot.up(), foot.down(),
+            foot.north(), foot.south(), foot.east(), foot.west(),
+            foot.up().north(), foot.up().south(), foot.up().east(), foot.up().west()
+        };
+        for (BlockPos pos : around) {
+            if (isFluid(world, pos)) {
+                if (placeAgainstNeighbor(client, pos)) { sealCooldown = 4; return true; }
+            }
+        }
+        return false;
+    }
+
+    // ── Block placement ──────────────────────────────────────────────────────
+
+    /** Finds a solid neighbour of `target` and places a held block against it to fill `target`. */
+    private boolean placeAgainstNeighbor(MinecraftClient client, BlockPos target) {
+        var p = client.player; var world = client.world;
+        if (!world.getBlockState(target).isAir() && world.getBlockState(target).getFluidState().isEmpty()) return false;
+        int slot = findBuildingBlock(client);
+        if (slot < 0) return false;
+
+        for (Direction d : Direction.values()) {
+            BlockPos neighbor = target.offset(d);
+            var nState = world.getBlockState(neighbor);
+            if (nState.isAir() || !nState.getFluidState().isEmpty()) continue;
+            // Hit the face of `neighbor` that points toward `target`.
+            Direction face = d.getOpposite();
+            Vec3d hit = Vec3d.ofCenter(neighbor).add(Vec3d.of(face.getVector()).multiply(0.5));
+            int prevSlot = p.getInventory().selectedSlot;
+            p.getInventory().selectedSlot = slot;
+            lookAt(p, target);
+            BlockHitResult bhr = new BlockHitResult(hit, face, neighbor, false);
+            var result = client.interactionManager.interactBlock(p, Hand.MAIN_HAND, bhr);
+            p.swingHand(Hand.MAIN_HAND);
+            p.getInventory().selectedSlot = prevSlot;
+            return result.isAccepted();
+        }
+        return false;
+    }
+
+    /** Returns a hotbar slot (0-8) holding a safe, full building block, or -1. */
+    private int findBuildingBlock(MinecraftClient client) {
+        var inv = client.player.getInventory();
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (stack.isEmpty()) continue;
+            if (!(stack.getItem() instanceof BlockItem bi)) continue;
+            Block b = bi.getBlock();
+            // Avoid gravity blocks, fluids, and non-full blocks for a reliable seal.
+            if (b == Blocks.SAND || b == Blocks.GRAVEL || b == Blocks.RED_SAND
+                || b == Blocks.ANVIL) continue;
+            return i;
+        }
+        return -1;
+    }
+
     // ── Vein surprise ─────────────────────────────────────────────────────
 
     private void onOreMined() {
         consecutiveOres++;
         if (consecutiveOres >= 3 && rng.nextFloat() < 0.65f) {
-            surpriseTicks   = 25 + rng.nextInt(40); // 1.25–3.25 s look-around
+            surpriseTicks   = 25 + rng.nextInt(40);
             consecutiveOres = 0;
         }
     }
@@ -347,7 +553,6 @@ public class AutoMine extends Module {
 
     private BlockPos scanForOre(MinecraftClient client, Direction mainDir) {
         int   radius = parseInt(getSetting("OreRadius"), 3);
-        // Elevated miss after staff detection: at least 55%, up to configured max
         float miss = elevatedMissTicks > 0
             ? Math.max(0.55f, parseFloat(getSetting("MissChance"), 15f) / 100f)
             : parseFloat(getSetting("MissChance"), 15f) / 100f;
@@ -401,6 +606,22 @@ public class AutoMine extends Module {
         return d.getZ()>0?Direction.SOUTH:Direction.NORTH;
     }
 
+    /** Rotate a cardinal direction 90°: side>0 = left of forward, side<0 = right. */
+    private Direction rotate(Direction fwd, int side) {
+        return side > 0 ? fwd.rotateYCounterclockwise() : fwd.rotateYClockwise();
+    }
+
+    private boolean isFluid(net.minecraft.world.World world, BlockPos pos) {
+        return !world.getBlockState(pos).getFluidState().isEmpty();
+    }
+
+    /** True if any of the 6 neighbours (or the block itself) is a fluid. */
+    private boolean isFluidAround(net.minecraft.world.World world, BlockPos pos) {
+        if (isFluid(world, pos)) return true;
+        for (Direction d : Direction.values()) if (isFluid(world, pos.offset(d))) return true;
+        return false;
+    }
+
     private Direction yawToDir(float yaw) {
         float y=normalYaw(yaw);
         if(y<45||y>=315) return Direction.SOUTH;
@@ -443,6 +664,6 @@ public class AutoMine extends Module {
             pauseTicksLeft=rng.nextInt(parseInt(getSetting("MaxPause"),30))+1;
     }
 
-    private int   parseInt(String s,int def)   {try{return Integer.parseInt(s.trim());}catch(Exception e){return def;}}
+    private int   parseInt(String s,int def)   {try{return (int)Double.parseDouble(s.trim());}catch(Exception e){return def;}}
     private float parseFloat(String s,float d) {try{return Float.parseFloat(s.trim());}catch(Exception e){return d;}}
 }
