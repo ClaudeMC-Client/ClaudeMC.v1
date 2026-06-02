@@ -25,6 +25,7 @@ public class FreeCam extends Module {
             savedYaw   = c.player.getYaw();
             savedPitch = c.player.getPitch();
             c.player.getAbilities().flying = true;
+            c.player.noClip = true;
         }
     }
 
@@ -35,12 +36,14 @@ public class FreeCam extends Module {
             c.player.refreshPositionAndAngles(savedPos.x, savedPos.y, savedPos.z, savedYaw, savedPitch);
             if (!c.player.getAbilities().allowFlying) c.player.getAbilities().flying = false;
             c.player.setVelocity(Vec3d.ZERO);
+            c.player.noClip = false;
         }
     }
 
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
+        client.player.noClip = true;
         float spd;
         try { spd = Float.parseFloat(getSetting("Speed")); } catch (Exception e) { spd = 0.2f; }
         var opts = client.options;

@@ -14,6 +14,9 @@ import net.minecraft.util.math.Vec3d;
  * from {@code RenderLayer.LINES} to {@code RenderLayers.LINES}. Boxes are now drawn
  * as twelve explicit edges via the still-supported {@code VertexConsumer.vertex(Entry, …)}
  * / {@code normal(Entry, …)} default overloads.
+ *
+ * The RenderLayers.LINES render layer is configured to render without depth testing
+ * in the 1.21.11 pipeline, allowing lines/boxes to render through walls.
  */
 public final class RenderUtils {
 

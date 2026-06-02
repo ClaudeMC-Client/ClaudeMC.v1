@@ -42,12 +42,15 @@ public class ClickGui extends Screen {
     // ── Panel state ───────────────────────────────────────────────────────
     private static final Map<Category, int[]> panelPos = new LinkedHashMap<>();
 
+    // Row 1 categories (y=32): COMBAT, MOVEMENT, PLAYER, RENDER, WORLD
+    // Row 2 categories (y=260): EXPLOIT, CHAT, UTILITY, MISC
     static {
+        Category[] row1 = {Category.COMBAT, Category.MOVEMENT, Category.PLAYER, Category.RENDER, Category.WORLD};
+        Category[] row2 = {Category.EXPLOIT, Category.CHAT, Category.UTILITY, Category.MISC};
         int x = 10;
-        for (Category cat : Category.values()) {
-            panelPos.put(cat, new int[]{x, 20});
-            x += 130;
-        }
+        for (Category cat : row1) { panelPos.put(cat, new int[]{x, 32}); x += 130; }
+        x = 10;
+        for (Category cat : row2) { panelPos.put(cat, new int[]{x, 260}); x += 130; }
     }
 
     private static final Map<Category, Boolean> collapsed = new EnumMap<>(Category.class);
@@ -61,11 +64,22 @@ public class ClickGui extends Screen {
     private StringSetting editingSetting = null;
     private String        editBuffer     = "";
 
+    // ── Search bar ────────────────────────────────────────────────────────
+    private String searchQuery = "";
+
+    // ── Tooltip popup (middle-click module description) ───────────────────
+    private String tooltipText = null;
+    private int    tooltipX, tooltipY;
+
+    // ── Slider drag state ─────────────────────────────────────────────────
+    private com.claudemc.module.setting.NumberSetting draggingSlider = null;
+    private int sliderPanelX, sliderWidth;
+
     public ClickGui() {
         super(Text.literal("ClaudeMC"));
     }
 
-    public boolean isPauseScreen() { return false; }
+    @Override public boolean shouldPause() { return false; }
 
     // ── Render ────────────────────────────────────────────────────────────
 
@@ -74,14 +88,34 @@ public class ClickGui extends Screen {
         // dim world
         ctx.fill(0, 0, width, height, 0x55000000);
 
+        // ── Search bar ────────────────────────────────────────────────────
+        ctx.fill(0, 0, width, 18, 0xFF18181F);
+        ctx.fill(4, 2, width - 4, 16, 0xFF111117);
+        String searchDisplay = searchQuery.isEmpty() ? "§8Search modules…" : "§f" + searchQuery;
+        ctx.drawText(textRenderer, Text.literal(searchDisplay), 8, 5, 0xFFFFFF, false);
+        if (!searchQuery.isEmpty() && (System.currentTimeMillis() / 500) % 2 == 0) {
+            int cx2 = 8 + textRenderer.getWidth(searchQuery);
+            ctx.fill(cx2, 4, cx2 + 1, 14, 0xFFAAAAAA);
+        }
+
         for (Category cat : Category.values()) {
             drawPanel(ctx, mx, my, cat);
         }
-        // Footer bar (taller to fit all buttons)
+
+        // ── Tooltip popup ─────────────────────────────────────────────────
+        if (tooltipText != null) {
+            int tw = textRenderer.getWidth(tooltipText.replaceAll("§.", ""));
+            int tx = Math.min(tooltipX, width - tw - 10);
+            int ty = Math.max(0, tooltipY - 20);
+            ctx.fill(tx - 2, ty - 2, tx + tw + 6, ty + 12, 0xDD000000);
+            ctx.fill(tx - 2, ty - 2, tx - 1, ty + 12, 0xFFFFAA44);
+            ctx.drawText(textRenderer, Text.literal("§7" + tooltipText), tx + 2, ty + 2, 0xFFFFFF, false);
+        }
+
+        // Footer bar
         ctx.fill(0, height - 16, width, height, 0xFF18181F);
-        ctx.drawText(textRenderer, Text.literal("§7[" +
-                KeybindManager.keyName(KeybindManager.INSTANCE.getGuiKey()) +
-                "] close  §8|  §7LClick=toggle  RClick=settings  §eClick text=edit  Enter=save"),
+        ctx.drawText(textRenderer, Text.literal(
+                "§7L=toggle §8| §7R=settings §8| §7Mid=info §8| §7Drag#=slider §8| §7Scroll=step"),
             4, height - 11, 0x888888, false);
         // Buttons right-to-left: [Keybinds] [Macros] [Alts] [Server Info]
         int bY = height - 13, bH = 11;
@@ -96,10 +130,16 @@ public class ClickGui extends Screen {
 
     private void drawPanel(DrawContext ctx, int mx, int my, Category cat) {
         int[] pos  = panelPos.get(cat);
+        if (pos == null) return;
         int px = pos[0], py = pos[1];
         int pw = 124;
 
-        List<Module> mods = ClaudeMCClient.MODULES.getByCategory(cat);
+        List<Module> allMods = new ArrayList<>(ClaudeMCClient.MODULES.getByCategory(cat));
+        // Sort alphabetically within category
+        allMods.sort(Comparator.comparing(Module::getName));
+        // Filter by search query
+        List<Module> mods = searchQuery.isEmpty() ? allMods
+            : allMods.stream().filter(m -> m.getName().toLowerCase().contains(searchQuery.toLowerCase())).toList();
         boolean col = collapsed.getOrDefault(cat, false);
 
         // Calculate panel height
@@ -146,7 +186,7 @@ public class ClickGui extends Screen {
 
             my_ += 12;
 
-            // Settings (expanded) — left-click value to cycle up, right-click to cycle down
+            // Settings (expanded)
             if (expanded.contains(m)) {
                 for (com.claudemc.module.setting.Setting s : m.getSettings()) {
                     boolean rowHover = inRect(mx, my, px + 4, my_, pw - 6, 12);
@@ -154,23 +194,42 @@ public class ClickGui extends Screen {
                     int rowBg = isEditing ? 0xFF1A1A2E : (rowHover ? 0xFF15151F : 0xFF0D0D14);
                     ctx.fill(px + 4, my_, px + pw - 2, my_ + 12, rowBg);
 
-                    String val;
-                    if (isEditing) {
-                        // Show edit buffer with blinking cursor; truncate from left if too wide
-                        String buf = editBuffer;
-                        int maxW = pw - 16 - textRenderer.getWidth(s.getName() + ": ");
-                        String raw = buf + "|";
-                        if (textRenderer.getWidth(raw) > maxW && buf.length() > 0) {
-                            raw = textRenderer.trimToWidth(new StringBuilder(raw).reverse().toString(), maxW);
-                            raw = new StringBuilder(raw).reverse().toString();
+                    if (s instanceof com.claudemc.module.setting.NumberSetting ns) {
+                        // Draw slider bar
+                        int slotX = px + 4, slotW = pw - 6;
+                        double frac = ns.getFraction();
+                        int fillW = (int)(frac * (slotW - 2));
+                        ctx.fill(slotX + 1, my_ + 8, slotX + 1 + fillW, my_ + 11, 0xFF4E6EF2);
+                        ctx.fill(slotX + 1 + fillW, my_ + 8, slotX + slotW - 1, my_ + 11, 0xFF333344);
+                        if (isEditing) {
+                            String buf = editBuffer;
+                            String raw = buf + "|";
+                            ctx.drawText(textRenderer,
+                                Text.literal("§8 " + s.getName() + ": §e" + raw),
+                                px + 6, my_ + 1, C_SUB, false);
+                        } else {
+                            ctx.drawText(textRenderer,
+                                Text.literal("§8 " + s.getName() + ": §a" + ns.asString()),
+                                px + 6, my_ + 1, C_SUB, false);
                         }
-                        val = "§e" + raw;
                     } else {
-                        val = (s.isEditable() ? "§a" : "§7") + s.asString();
+                        String val;
+                        if (isEditing) {
+                            String buf = editBuffer;
+                            int maxW = pw - 16 - textRenderer.getWidth(s.getName() + ": ");
+                            String raw = buf + "|";
+                            if (textRenderer.getWidth(raw) > maxW && buf.length() > 0) {
+                                raw = textRenderer.trimToWidth(new StringBuilder(raw).reverse().toString(), maxW);
+                                raw = new StringBuilder(raw).reverse().toString();
+                            }
+                            val = "§e" + raw;
+                        } else {
+                            val = (s.isEditable() ? "§a" : "§7") + s.asString();
+                        }
+                        ctx.drawText(textRenderer,
+                            Text.literal("§8 " + s.getName() + ": " + val),
+                            px + 6, my_ + 2, C_SUB, false);
                     }
-                    ctx.drawText(textRenderer,
-                        Text.literal("§8 " + s.getName() + ": " + val),
-                        px + 6, my_ + 2, C_SUB, false);
                     my_ += 12;
                 }
                 my_ += 4;
@@ -233,6 +292,7 @@ public class ClickGui extends Screen {
 
         for (Category cat : Category.values()) {
             int[] pos = panelPos.get(cat);
+            if (pos == null) continue;
             int px = pos[0], py = pos[1], pw = 124;
 
             // Header click: left-click collapses/expands; either button starts drag
@@ -248,23 +308,49 @@ public class ClickGui extends Screen {
 
             if (collapsed.getOrDefault(cat, false)) continue;
 
+            // Get same filtered+sorted list as render
+            List<Module> allMods = new ArrayList<>(ClaudeMCClient.MODULES.getByCategory(cat));
+            allMods.sort(Comparator.comparing(Module::getName));
+            List<Module> mods = searchQuery.isEmpty() ? allMods
+                : allMods.stream().filter(m -> m.getName().toLowerCase().contains(searchQuery.toLowerCase())).toList();
+
             int my_ = py + 14;
-            for (Module m : ClaudeMCClient.MODULES.getByCategory(cat)) {
+            for (Module m : mods) {
                 if (inRect(x, y, px + 2, my_, pw - 4, 12)) {
                     if (button == 0) m.toggle();
                     else if (button == 1) {
                         if (expanded.contains(m)) expanded.remove(m);
                         else expanded.add(m);
+                    } else if (button == 2) {
+                        // Middle-click: show description tooltip
+                        tooltipText = m.getDescription();
+                        tooltipX = x; tooltipY = y;
                     }
                     return true;
                 }
                 my_ += 12;
-                // Setting rows (only when expanded): left-click = next, right-click = previous
+                // Setting rows (only when expanded)
                 if (expanded.contains(m)) {
                     for (com.claudemc.module.setting.Setting s : m.getSettings()) {
                         if (inRect(x, y, px + 4, my_, pw - 6, 12)) {
-                            if (s instanceof StringSetting ss) {
-                                // Left-click enters edit mode; right-click clears the value
+                            if (s instanceof com.claudemc.module.setting.NumberSetting ns) {
+                                if (button == 0) {
+                                    // Start slider drag
+                                    draggingSlider = ns;
+                                    sliderPanelX = px + 5;
+                                    sliderWidth = pw - 8;
+                                    double frac = Math.max(0, Math.min(1.0, (double)(x - sliderPanelX) / sliderWidth));
+                                    ns.setFraction(frac);
+                                    com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                                } else if (button == 1) {
+                                    // Right-click: open text edit for number setting
+                                    editBuffer = ns.asString();
+                                    editingSetting = new StringSetting(s.getName(), ns.asString()) {
+                                        @Override public String get() { return ns.asString(); }
+                                        @Override public void set(String v) { ns.fromString(v); com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES); }
+                                    };
+                                }
+                            } else if (s instanceof StringSetting ss) {
                                 if (button == 0) {
                                     editingSetting = ss;
                                     editBuffer = ss.get();
@@ -288,11 +374,18 @@ public class ClickGui extends Screen {
         return false;
     }
 
-    // ── Keyboard (string editor) ──────────────────────────────────────────
+    // ── Keyboard (string editor + search bar) ────────────────────────────
 
     @Override
     public boolean keyPressed(KeyInput input) {
         int keyCode = input.key(); int scanCode = input.scancode(); int modifiers = input.modifiers();
+
+        // Close GUI with the same key that opens it
+        if (keyCode == KeybindManager.INSTANCE.getGuiKey()) {
+            close();
+            return true;
+        }
+
         if (editingSetting != null) {
             switch (keyCode) {
                 case 257, 335 -> { // ENTER / numpad enter → commit
@@ -308,6 +401,17 @@ public class ClickGui extends Screen {
             }
             return true;          // consume all keys while editing
         }
+
+        // Search bar backspace
+        if (keyCode == 259 && !searchQuery.isEmpty()) { // BACKSPACE
+            searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+            return true;
+        }
+        // ESC clears search or closes
+        if (keyCode == 256) {
+            if (!searchQuery.isEmpty()) { searchQuery = ""; return true; }
+        }
+
         return super.keyPressed(input);
     }
 
@@ -318,12 +422,23 @@ public class ClickGui extends Screen {
             if (chr >= 32) editBuffer += chr;
             return true;
         }
+        // Type into search bar
+        if (chr >= 32) {
+            searchQuery += chr;
+            return true;
+        }
         return super.charTyped(input);
     }
 
     @Override
     public boolean mouseDragged(Click click, double dx, double dy) {
         double mx = click.x(); double my = click.y(); int button = click.button();
+        if (draggingSlider != null) {
+            double frac = Math.max(0, Math.min(1.0, (mx - sliderPanelX) / sliderWidth));
+            draggingSlider.setFraction(frac);
+            com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+            return true;
+        }
         if (dragging != null) {
             int[] pos = panelPos.get(dragging);
             pos[0] = (int) mx - dragOffX;
@@ -338,12 +453,42 @@ public class ClickGui extends Screen {
     @Override
     public boolean mouseReleased(Click click) {
         double mx = click.x(); double my = click.y(); int button = click.button();
+        if (draggingSlider != null) { draggingSlider = null; return true; }
         dragging = null;
+        // Clear tooltip on any mouse release
+        tooltipText = null;
         return true;
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double hScroll, double vScroll) {
+        // Scroll over a number setting row to step it
+        int x = (int) mx, y = (int) my;
+        for (Category cat : Category.values()) {
+            int[] pos = panelPos.get(cat);
+            if (pos == null) continue;
+            int px = pos[0], py = pos[1], pw = 124;
+            if (collapsed.getOrDefault(cat, false)) continue;
+            List<Module> allMods = new ArrayList<>(ClaudeMCClient.MODULES.getByCategory(cat));
+            allMods.sort(Comparator.comparing(Module::getName));
+            List<Module> mods = searchQuery.isEmpty() ? allMods
+                : allMods.stream().filter(m -> m.getName().toLowerCase().contains(searchQuery.toLowerCase())).toList();
+            int my_ = py + 14;
+            for (Module m : mods) {
+                my_ += 12;
+                if (expanded.contains(m)) {
+                    for (com.claudemc.module.setting.Setting s : m.getSettings()) {
+                        if (inRect(x, y, px + 4, my_, pw - 6, 12) && s instanceof com.claudemc.module.setting.NumberSetting ns) {
+                            if (vScroll > 0) ns.onLeftClick(); else ns.onRightClick();
+                            com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                            return true;
+                        }
+                        my_ += 12;
+                    }
+                    my_ += 4;
+                }
+            }
+        }
         return false;
     }
 

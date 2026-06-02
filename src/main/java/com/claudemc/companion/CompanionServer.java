@@ -93,7 +93,12 @@ public final class CompanionServer {
         });
     }
 
-    /** Opens the companion page in the default browser. */
+    /** Returns the companion URL. */
+    public String getUrl() {
+        return started ? "http://localhost:" + boundPort : "";
+    }
+
+    /** Opens the companion page in the default browser with a multi-tier fallback chain. */
     public void open() {
         if (!started) start();
         // Brief spin-wait to let the async start() bind before we try to open (≤ 200 ms)
@@ -101,11 +106,39 @@ public final class CompanionServer {
         while (!started && System.currentTimeMillis() < deadline) {
             try { Thread.sleep(10); } catch (InterruptedException ignored) {}
         }
-        try {
-            java.awt.Desktop.getDesktop().browse(URI.create("http://localhost:" + boundPort));
-        } catch (Exception e) {
-            ClaudeMCMod.LOGGER.warn("[Companion] Cannot open browser: {}", e.getMessage());
-        }
+        final String url = "http://localhost:" + boundPort;
+        Thread.ofVirtual().start(() -> {
+            // 1. Try Desktop.browse
+            try {
+                java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+                if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+                    desktop.browse(URI.create(url));
+                    return;
+                }
+            } catch (Exception ignored) {}
+
+            // 2. OS-specific ProcessBuilder fallback
+            String os = System.getProperty("os.name", "").toLowerCase();
+            String[] cmd = null;
+            if (os.contains("win"))  cmd = new String[]{"rundll32", "url.dll,FileProtocolHandler", url};
+            else if (os.contains("mac")) cmd = new String[]{"open", url};
+            else                         cmd = new String[]{"xdg-open", url};
+            try { new ProcessBuilder(cmd).start(); return; } catch (Exception ignored) {}
+
+            // 3. Try common Linux browsers
+            for (String browser : new String[]{"sensible-browser","firefox","chromium-browser","google-chrome"}) {
+                try { new ProcessBuilder(browser, url).start(); return; } catch (Exception ignored) {}
+            }
+
+            // 4. Last resort: copy to clipboard
+            try {
+                java.awt.datatransfer.StringSelection sel = new java.awt.datatransfer.StringSelection(url);
+                java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(sel, sel);
+                ClaudeMCMod.LOGGER.info("[Companion] URL copied to clipboard: {}", url);
+            } catch (Exception e) {
+                ClaudeMCMod.LOGGER.warn("[Companion] Cannot open browser: {}", e.getMessage());
+            }
+        });
     }
 
     // ── Static file ───────────────────────────────────────────────────────

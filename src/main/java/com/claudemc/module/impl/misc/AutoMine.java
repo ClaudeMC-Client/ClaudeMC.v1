@@ -74,15 +74,23 @@ public class AutoMine extends Module {
         ORE_GROUPS.put("Copper",        Set.of(Blocks.COPPER_ORE,    Blocks.DEEPSLATE_COPPER_ORE));
     }
 
+    // ── Pokehole tracking ─────────────────────────────────────────────────
+    private int lastPokeAt = 0; // blocksForward when last poke was dug
+
     public AutoMine() {
         super("AutoMine", "Human-like strip miner with staff-aware evasion", Category.MISC);
+        addMode("Layout",    "Pokehole",   "Pokehole", "Branch", "Tunnel");
         addMode("Ores", "Diamond+Iron", "Diamond+Iron", "Diamond", "Iron", "All Valuable", "Everything");
         addNumber("BranchEvery", 16,  4,  64,  4, true);
         addNumber("BranchLen",    8,  2,  32,  2, true);
+        addNumber("PokeEvery",    4,  2,  16,  1, true);
+        addNumber("PokeDepth",    2,  1,   6,  1, true);
         addNumber("OreRadius",    3,  1,   5,  1, true);
         addNumber("MissChance",  15,  0,  60,  5, true);
         addNumber("PauseChance", 20,  0,  60,  5, true);
         addNumber("MaxPause",    30,  5, 100,  5, true);
+        addBool("Safety", true);
+        addBool("Bridge", true);
         addBool("UseAI", false);
         INSTANCE = this;
     }
@@ -95,6 +103,7 @@ public class AutoMine extends Module {
         mineTarget = null; miningOre = false; prevMineWasAir = true;
         pauseTicksLeft = aiTimer = oreSnapTimer = 0;
         consecutiveOres = surpriseTicks = staffBreakLeft = elevatedMissTicks = 0;
+        lastPokeAt = 0;
         seenOres.clear(); skippedOres.clear(); ignoredOres.clear();
         knownOres.clear(); oreSnapInit = false;
         wasPaused = wantForward = wantBack = false;
@@ -237,8 +246,23 @@ public class AutoMine extends Module {
     private void tickForward(MinecraftClient client) {
         var p = client.player; var world = client.world;
         Direction dir = yawToDir(mainYaw);
-        int interval = parseInt(getSetting("BranchEvery"), 16);
-        if (blocksForward > 0 && blocksForward % interval == 0) { startBranch(p); return; }
+        String layout = getSetting("Layout");
+
+        // Branch layout: branch every N blocks
+        if ("Branch".equals(layout)) {
+            int interval = parseInt(getSetting("BranchEvery"), 16);
+            if (blocksForward > 0 && blocksForward % interval == 0) { startBranch(p); return; }
+        }
+
+        // Pokehole layout: poke side holes every PokeEvery blocks
+        if ("Pokehole".equals(layout)) {
+            int pokeEvery = parseInt(getSetting("PokeEvery"), 4);
+            if (blocksForward > 0 && (blocksForward - lastPokeAt) >= pokeEvery) {
+                lastPokeAt = blocksForward;
+                doPokehole(client, dir);
+                return;
+            }
+        }
 
         // Seek nearby ore
         BlockPos ore = scanForOre(client, dir);
@@ -257,8 +281,42 @@ public class AutoMine extends Module {
             miningOre = false;
         } else { consecutiveOres = 0; }
 
+        // Safety: check floor ahead before stepping forward
+        if (Boolean.parseBoolean(getSetting("Safety"))) {
+            BlockPos aheadFloor = p.getBlockPos().offset(dir).down();
+            if (isDropTooFar(client, aheadFloor)) {
+                // Try to bridge or turn
+                if (Boolean.parseBoolean(getSetting("Bridge"))) {
+                    int slot = findBuildingBlock(client);
+                    if (slot >= 0) {
+                        client.player.getInventory().setSelectedSlot(slot);
+                        placeAgainstNeighbor(client, aheadFloor);
+                        return;
+                    }
+                }
+                // Turn 90 degrees as fallback
+                mainYaw = normalYaw(mainYaw + 90f);
+                p.setYaw(mainYaw);
+                return;
+            }
+        }
+
         // Mine 2-tall forward path
         BlockPos ahead = p.getBlockPos().offset(dir), above = ahead.up();
+        // Don't mine into fluid
+        if (world.getBlockState(ahead).isLiquid() || world.getBlockState(above).isLiquid()) {
+            // Seal if possible
+            if (Boolean.parseBoolean(getSetting("Bridge"))) {
+                int slot = findBuildingBlock(client);
+                if (slot >= 0) {
+                    client.player.getInventory().setSelectedSlot(slot);
+                    if (world.getBlockState(ahead).isLiquid()) placeAgainstNeighbor(client, ahead);
+                    else placeAgainstNeighbor(client, above);
+                    return;
+                }
+            }
+            mainYaw = normalYaw(mainYaw + 90f); p.setYaw(mainYaw); return;
+        }
         if (!world.getBlockState(ahead).isAir() && world.getBlockState(ahead).getHardness(world, ahead) >= 0)
             { lookAt(p, ahead); client.interactionManager.attackBlock(ahead, dir.getOpposite()); return; }
         if (!world.getBlockState(above).isAir() && world.getBlockState(above).getHardness(world, above) >= 0)
@@ -266,6 +324,79 @@ public class AutoMine extends Module {
 
         wantForward = true; smoothYaw(p, mainYaw);
         if (lastPos != null && movedIn(lastPos, p.getBlockPos(), dir)) { blocksForward++; maybeRandomPause(); }
+    }
+
+    /** Dig pokehole side-tunnels PokeDepth blocks in both perpendicular directions. */
+    private void doPokehole(MinecraftClient client, Direction mainDir) {
+        var p = client.player; var world = client.world;
+        int depth = parseInt(getSetting("PokeDepth"), 2);
+        // Two perpendicular directions
+        Direction left  = mainDir.rotateYCounterclockwise();
+        Direction right = mainDir.rotateYClockwise();
+        for (Direction side : new Direction[]{left, right}) {
+            for (int d = 1; d <= depth; d++) {
+                BlockPos target = p.getBlockPos().offset(side, d);
+                BlockPos targetAbove = target.up();
+                if (!world.getBlockState(target).isAir()
+                        && !world.getBlockState(target).isLiquid()
+                        && world.getBlockState(target).getHardness(world, target) >= 0) {
+                    lookAt(p, target);
+                    client.interactionManager.attackBlock(target, side.getOpposite());
+                    return;
+                }
+                if (!world.getBlockState(targetAbove).isAir()
+                        && !world.getBlockState(targetAbove).isLiquid()
+                        && world.getBlockState(targetAbove).getHardness(world, targetAbove) >= 0) {
+                    lookAt(p, targetAbove);
+                    client.interactionManager.attackBlock(targetAbove, side.getOpposite());
+                    return;
+                }
+            }
+        }
+        // All poke blocks are air — done
+    }
+
+    /** Check if there's a drop > 2 blocks below pos. */
+    private boolean isDropTooFar(MinecraftClient client, BlockPos pos) {
+        var world = client.world;
+        int drop = 0;
+        BlockPos check = pos;
+        while (drop <= 2) {
+            if (world.getBlockState(check).isSolidBlock(world, check)) return false;
+            check = check.down(); drop++;
+        }
+        return drop > 2;
+    }
+
+    /** Find a hotbar slot with a safe, solid, placeable block. Returns -1 if none. */
+    private int findBuildingBlock(MinecraftClient client) {
+        var inv = client.player.getInventory();
+        for (int i = 0; i < 9; i++) {
+            var stack = inv.getStack(i);
+            if (stack.isEmpty()) continue;
+            var block = net.minecraft.block.Block.getBlockFromItem(stack.getItem());
+            if (block == Blocks.AIR) continue;
+            // Skip sand/gravel/etc that fall
+            if (block == Blocks.SAND || block == Blocks.GRAVEL
+                    || block == Blocks.RED_SAND || block == Blocks.SOUL_SAND) continue;
+            if (block.getDefaultState().isSolidBlock(client.world, client.player.getBlockPos())) return i;
+        }
+        return -1;
+    }
+
+    /** Place a block against a solid neighbor of target. */
+    private void placeAgainstNeighbor(MinecraftClient client, BlockPos target) {
+        var world = client.world;
+        for (Direction d : Direction.values()) {
+            BlockPos neighbor = target.offset(d);
+            if (world.getBlockState(neighbor).isSolidBlock(world, neighbor)) {
+                var hitResult = new net.minecraft.util.hit.BlockHitResult(
+                    Vec3d.ofCenter(neighbor), d.getOpposite(), neighbor, false);
+                client.interactionManager.interactBlock(client.player,
+                    net.minecraft.util.Hand.MAIN_HAND, hitResult);
+                return;
+            }
+        }
     }
 
     // ── BRANCH ────────────────────────────────────────────────────────────

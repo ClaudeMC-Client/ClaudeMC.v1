@@ -21,7 +21,7 @@ public class ScreenMixin {
     private void claudemc$keyPressed(KeyInput input, CallbackInfoReturnable<Boolean> cir) {
         if (ChatOverlay.INSTANCE.isActive()) {
             boolean consumed = ChatOverlay.INSTANCE.keyPressed(input.key(), net.minecraft.client.MinecraftClient.getInstance());
-            if (consumed) cir.setReturnValue(true);
+            if (consumed) { cir.setReturnValue(true); cir.cancel(); }
         }
     }
 

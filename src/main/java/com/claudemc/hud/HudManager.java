@@ -28,6 +28,40 @@ public class HudManager {
     private static long   lastTimePacket   = -1;
     private static double smoothedTps      = 20.0;
 
+    // Draggable stats strip position (initialized lazily to bottom-left)
+    public static int statsX = -1;
+    public static int statsY = -1;
+
+    // Drag state
+    private boolean statsDragging = false;
+    private int     statsDragOffX, statsDragOffY;
+
+    /** Called from event handlers to support right-click drag on the stats strip. */
+    public boolean onMouseClick(double mx, double my, int button) {
+        if (statsX < 0) return false;
+        if (button == 1 && mx >= statsX - 2 && mx < statsX + 102 && my >= statsY - 2 && my < statsY + 14) {
+            statsDragging = true;
+            statsDragOffX = (int) mx - statsX;
+            statsDragOffY = (int) my - statsY;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean onMouseRelease(int button) {
+        if (button == 1 && statsDragging) { statsDragging = false; return true; }
+        return false;
+    }
+
+    public boolean onMouseDrag(double mx, double my) {
+        if (statsDragging) {
+            statsX = (int) mx - statsDragOffX;
+            statsY = (int) my - statsDragOffY;
+            return true;
+        }
+        return false;
+    }
+
     public static void onWorldTimeUpdate() {
         long now = System.currentTimeMillis();
         if (lastTimePacket > 0) {
@@ -128,13 +162,15 @@ public class HudManager {
 
     private void renderStats(DrawContext ctx, MinecraftClient client) {
         int screenH = client.getWindow().getScaledHeight();
-        int x = 4, y = screenH - 60;
+        // Initialize default position once
+        if (statsX < 0) { statsX = 4; statsY = screenH - 60; }
+        int x = statsX, y = statsY;
 
         int fps = MinecraftClient.getInstance().getCurrentFps();
         String tps = String.format("§7TPS §f%.1f", smoothedTps);
         int ping = getPing(client);
 
-        ctx.fill(x - 2, y - 2, 100, y + 12, 0x88000000);
+        ctx.fill(x - 2, y - 2, x + 102, y + 12, 0x88000000);
         ctx.drawText(client.textRenderer,
             Text.literal(String.format("§7FPS §f%d  %s  §7Ping §f%dms", fps, tps, ping)),
             x, y, 0xFFFFFF, true);

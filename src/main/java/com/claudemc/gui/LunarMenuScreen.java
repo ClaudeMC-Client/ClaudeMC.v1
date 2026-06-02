@@ -73,7 +73,7 @@ public class LunarMenuScreen extends Screen {
         categories.addAll(byCategory.keySet());
         if (!categories.isEmpty()) selectedCategory = categories.get(0);
     }
-    public boolean isPauseScreen() { return false; }
+    @Override public boolean shouldPause() { return false; }
 
     @Override
     public boolean shouldCloseOnEsc() { return true; }

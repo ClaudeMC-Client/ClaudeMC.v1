@@ -76,11 +76,11 @@ public class Radar extends Module {
             if (Math.abs(dx) > range || Math.abs(dz) > range) continue;
 
             // Rotate so forward is up on the radar
-            double rx =  dx * cosYaw - dz * sinYaw;
-            double rz = -dx * sinYaw - dz * cosYaw;
+            double rx =  dx * cosYaw + dz * sinYaw;
+            double rz = -dx * sinYaw + dz * cosYaw;
 
             int dotX = ox + half + (int)(rx * scale);
-            int dotZ = oy + half + (int)(rz * scale);
+            int dotZ = oy + half - (int)(rz * scale);
 
             if (dotX < ox || dotX >= ox + size || dotZ < oy || dotZ >= oy + size) continue;
 

@@ -44,7 +44,6 @@ public abstract class BlockScanModule extends Module {
             var matrices  = context.matrices();
             if (matrices == null) return;
             var consumers = context.consumers();
-            if (consumers == null) return;
 
             for (Highlight h : found) {
                 double bx = h.x() - cam.x, by = h.y() - cam.y, bz = h.z() - cam.z;

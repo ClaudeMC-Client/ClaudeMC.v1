@@ -46,6 +46,20 @@ public class NumberSetting extends Setting {
     @Override public void onLeftClick()  { value = clamp(value + step); }
     @Override public void onRightClick() { value = clamp(value - step); }
 
+    public double getMin()  { return min; }
+    public double getMax()  { return max; }
+    public boolean isInteger() { return integer || (step >= 1.0 && min == Math.floor(min) && max == Math.floor(max)); }
+
+    public void setFraction(double fraction) {
+        value = clamp(min + fraction * (max - min));
+        if (isInteger()) value = Math.round(value);
+    }
+
+    public double getFraction() {
+        if (max == min) return 0.0;
+        return Math.max(0.0, Math.min(1.0, (value - min) / (max - min)));
+    }
+
     private double clamp(double v) {
         return Math.max(min, Math.min(max, v));
     }

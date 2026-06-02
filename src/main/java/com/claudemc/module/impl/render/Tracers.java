@@ -30,12 +30,15 @@ public class Tracers extends Module {
             var matrices = context.matrices();
             if (matrices == null) return;
             var consumers = context.consumers();
-            if (consumers == null) return;
 
             String filter = INSTANCE.getSetting("Filter");
             double range  = parseDouble(INSTANCE.getSetting("Range"), 64);
 
-            Vec3d origin = Vec3d.ZERO; // relative to camera in world-space render
+            float yaw   = client.player.getYaw();
+            float pitch = client.player.getPitch();
+            double ry = Math.toRadians(yaw), rp = Math.toRadians(pitch);
+            Vec3d look = new Vec3d(-Math.sin(ry)*Math.cos(rp), -Math.sin(rp), Math.cos(ry)*Math.cos(rp));
+            Vec3d origin = look.multiply(1.0).add(0, -0.15, 0);
 
             for (Entity e : client.world.getEntities()) {
                 if (e == client.player) continue;

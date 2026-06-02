@@ -91,4 +91,19 @@ public class ClientPlayNetworkHandlerMixin {
     private void claudemc$onDisconnect(DisconnectS2CPacket packet, CallbackInfo ci) {
         ServerInfo.INSTANCE.reset();
     }
+
+    @Inject(method = "onEntityVelocityUpdate", at = @At("HEAD"), cancellable = true, require = 0)
+    private void claudemc$velocity(net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket packet, CallbackInfo ci) {
+        com.claudemc.module.impl.combat.Velocity vel = com.claudemc.module.impl.combat.Velocity.INSTANCE;
+        if (vel == null || !vel.isEnabled()) return;
+        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+        if (client.player == null || packet.getEntityId() != client.player.getId()) return;
+        double h = vel.getHorizontalMultiplier(), v = vel.getVerticalMultiplier();
+        net.minecraft.util.math.Vec3d pv = packet.getVelocity();
+        double vx = pv.x * h;
+        double vy = pv.y * v;
+        double vz = pv.z * h;
+        client.player.setVelocity(vx, vy, vz);
+        ci.cancel();
+    }
 }
