@@ -55,8 +55,15 @@ public class Radar extends Module {
         ctx.fill(ox,          oy,          ox + 1,        oy + size,     0xFF555555);
         ctx.fill(ox + size-1, oy,          ox + size,     oy + size,     0xFF555555);
 
-        // Player dot (white, centre)
-        ctx.fill(ox + half - 1, oy + half - 1, ox + half + 1, oy + half + 1, 0xFFFFFFFF);
+        // Self dot — yellow cross so it's unmistakeable
+        ctx.fill(ox + half - 2, oy + half - 1, ox + half + 2, oy + half + 1, 0xFFFFFF00);
+        ctx.fill(ox + half - 1, oy + half - 2, ox + half + 1, oy + half + 2, 0xFFFFFF00);
+
+        // Legend: colours in bottom-left corner of the radar
+        ctx.fill(ox + 3, oy + size - 23, ox + 7, oy + size - 21, 0xFFFF4444);
+        ctx.drawText(client.textRenderer, net.minecraft.text.Text.literal("§cP"), ox + 9, oy + size - 24, 0xFFFFFF, false);
+        ctx.fill(ox + 3, oy + size - 13, ox + 7, oy + size - 11, 0xFFFF8800);
+        ctx.drawText(client.textRenderer, net.minecraft.text.Text.literal("§6H"), ox + 9, oy + size - 14, 0xFFFFFF, false);
 
         // Entity dots
         double scale = half / range;
@@ -73,18 +80,20 @@ public class Radar extends Module {
             double dz = e.getZ() - eyePos.z;
             if (Math.abs(dx) > range || Math.abs(dz) > range) continue;
 
-            // Rotate so forward is up on the radar
-            double rx =  dx * cosYaw - dz * sinYaw;
-            double rz = -dx * sinYaw - dz * cosYaw;
+            // Rotate so player forward is up on the radar.
+            // Standard 2D rotation by -yaw: forward (+Z when yaw=0) maps to top.
+            double rx =  dx * cosYaw + dz * sinYaw;
+            double rz = -dx * sinYaw + dz * cosYaw;
 
             int dotX = ox + half + (int)(rx * scale);
-            int dotZ = oy + half + (int)(rz * scale);
+            int dotZ = oy + half - (int)(rz * scale); // negate rz: +Z forward = up on screen
 
             if (dotX < ox || dotX >= ox + size || dotZ < oy || dotZ >= oy + size) continue;
 
             int colour = 0xFF00FF00;
-            if (le instanceof PlayerEntity)  colour = 0xFFFF4444;
-            else if (le instanceof HostileEntity) colour = 0xFFFF8800;
+            if (le instanceof PlayerEntity)                                colour = 0xFFFF4444;
+            else if (le instanceof HostileEntity
+                  || le instanceof net.minecraft.entity.mob.SlimeEntity)   colour = 0xFFFF8800;
 
             ctx.fill(dotX - 1, dotZ - 1, dotX + 1, dotZ + 1, colour);
         }

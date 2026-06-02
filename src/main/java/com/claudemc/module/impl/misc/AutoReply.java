@@ -30,7 +30,7 @@ public class AutoReply extends Module {
     private String pendingReply = null;
 
     public AutoReply() {
-        super("AutoReply", "Auto-replies to chat messages matching staff AFK-check patterns", Category.MISC);
+        super("AutoReply", "Auto-replies to chat messages matching staff AFK-check patterns", Category.CHAT);
         addNumber("DelayTicks", 20, 5, 100, 5, true);
         addBool("ReplyAll", false);   // reply to every DM, not just matched patterns
         INSTANCE = this;

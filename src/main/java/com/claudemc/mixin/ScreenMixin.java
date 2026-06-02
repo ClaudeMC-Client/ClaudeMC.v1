@@ -19,7 +19,7 @@ public class ScreenMixin {
                                      CallbackInfoReturnable<Boolean> cir) {
         if (ChatOverlay.INSTANCE.isActive()) {
             boolean consumed = ChatOverlay.INSTANCE.keyPressed(keyCode, net.minecraft.client.MinecraftClient.getInstance());
-            if (consumed) cir.setReturnValue(true);
+            if (consumed) { cir.setReturnValue(true); cir.cancel(); }
         }
     }
 

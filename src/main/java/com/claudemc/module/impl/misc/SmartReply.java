@@ -36,7 +36,7 @@ public class SmartReply extends Module {
     public SmartReply() {
         super("SmartReply",
               "AI-generated replies to AFK checks and DMs — sounds genuinely human",
-              Category.MISC);
+              Category.CHAT);
         addNumber("DelayTicks", 25, 5, 120, 5, true);
         addBool("AnyDM",        false);  // reply to any whisper, not just AFK phrases
         INSTANCE = this;

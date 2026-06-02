@@ -24,7 +24,7 @@ public class AutoAuth extends Module {
     private String  pendingCmd = null;
 
     public AutoAuth() {
-        super("AutoAuth", "Auto-registers/logs in on cracked servers (AuthMe, NLogin, etc.)", Category.MISC);
+        super("AutoAuth", "Auto-registers/logs in on cracked servers (AuthMe, NLogin, etc.)", Category.EXPLOIT);
         addSetting("Password", "changeme123");
         addNumber("DelayTicks", 20, 5, 100, 5, true);
         INSTANCE = this;

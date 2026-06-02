@@ -22,8 +22,9 @@ public class Jesus extends Module {
 
         if (inFluid && !client.player.isSneaking()) {
             var vel = client.player.getVelocity();
-            if (vel.y < 0) {
-                client.player.setVelocity(vel.x, 0.04, vel.z);
+            // Gravity is ~0.08/tick; use 0.1 to reliably counter it and keep the player afloat
+            if (vel.y < 0.1) {
+                client.player.setVelocity(vel.x, 0.1, vel.z);
             }
         }
     }

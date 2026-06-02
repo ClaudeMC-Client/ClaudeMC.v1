@@ -37,7 +37,7 @@ public class ForceOP extends Module {
     }
 
     public ForceOP() {
-        super("ForceOP", "Attempts to grant yourself OP on vulnerable servers", Category.MISC);
+        super("ForceOP", "Attempts to grant yourself OP on vulnerable servers", Category.EXPLOIT);
         addSetting("Technique", "All");
     }
 

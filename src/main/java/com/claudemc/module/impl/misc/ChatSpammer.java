@@ -9,7 +9,7 @@ public class ChatSpammer extends Module {
     private int tickCounter = 0;
 
     public ChatSpammer() {
-        super("ChatSpammer", "Sends a chat message on a configurable interval", Category.MISC);
+        super("ChatSpammer", "Sends a chat message on a configurable interval", Category.CHAT);
         addSetting("Message",      "Hello world!");
         addNumber("IntervalTicks", 200, 20, 1200, 20, true);
         addBool("UseCommand",      false);
@@ -39,6 +39,6 @@ public class ChatSpammer extends Module {
     }
 
     private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
+        try { return (int) Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

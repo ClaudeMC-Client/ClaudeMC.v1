@@ -57,7 +57,7 @@ public class AuctionDupe extends Module {
     public AuctionDupe() {
         super("AuctionDupe",
               "Automates auction-house dupe exploits (WindowClose / DoubleCancel / Reconnect)",
-              Category.MISC);
+              Category.EXPLOIT);
         addSetting("Technique", "WindowClose"); // WindowClose | DoubleCancel | Reconnect
         addSetting("Packets", "5");             // how many rapid packets to send (DoubleCancel)
         addSetting("DelayTicks", "3");          // ticks to wait before firing

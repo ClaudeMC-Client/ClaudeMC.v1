@@ -16,7 +16,7 @@ public class AntiSpam extends Module {
     private final Deque<String> recentMessages = new ArrayDeque<>();
 
     public AntiSpam() {
-        super("AntiSpam", "Hides duplicate and repetitive chat messages", Category.MISC);
+        super("AntiSpam", "Hides duplicate and repetitive chat messages", Category.CHAT);
         addNumber("HistorySize", 5, 1, 20, 1, true);
         addBool("FilterDupes", true);
         addBool("FilterAds",   false);

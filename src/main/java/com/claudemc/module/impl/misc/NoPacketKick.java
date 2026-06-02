@@ -13,7 +13,7 @@ public class NoPacketKick extends Module {
     public static NoPacketKick INSTANCE;
 
     public NoPacketKick() {
-        super("NoPacketKick", "Prevents being kicked for certain invalid packets", Category.MISC);
+        super("NoPacketKick", "Prevents being kicked for certain invalid packets", Category.UTILITY);
         INSTANCE = this;
     }
 

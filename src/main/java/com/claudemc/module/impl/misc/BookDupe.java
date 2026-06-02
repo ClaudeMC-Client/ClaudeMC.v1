@@ -25,7 +25,7 @@ public class BookDupe extends Module {
     private int triggered = 0;
 
     public BookDupe() {
-        super("BookDupe", "dupedb.net — Duplicates signed books via packet spam", Category.MISC);
+        super("BookDupe", "dupedb.net — Duplicates signed books via packet spam", Category.EXPLOIT);
         addSetting("Copies", "5");
         addSetting("Title",  "Duped Book");
     }

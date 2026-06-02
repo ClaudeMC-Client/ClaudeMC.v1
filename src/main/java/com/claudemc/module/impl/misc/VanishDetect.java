@@ -46,7 +46,7 @@ public class VanishDetect extends Module {
     public VanishDetect() {
         super("VanishDetect",
               "Tracks vanished/invisible players via tab-list + packet-leak detection",
-              Category.MISC);
+              Category.UTILITY);
         INSTANCE = this;
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {

@@ -21,7 +21,7 @@ public class BookColors extends Module {
     private static final String COLOR_CHARS = "0123456789abcdefklmnorABCDEFKLMNOR";
 
     public BookColors() {
-        super("BookColors", "Converts &x colour codes to §x in books while writing", Category.MISC);
+        super("BookColors", "Converts &x colour codes to §x in books while writing", Category.CHAT);
         INSTANCE = this;
     }
 

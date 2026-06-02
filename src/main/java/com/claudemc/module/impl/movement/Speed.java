@@ -12,6 +12,15 @@ public class Speed extends Module {
     }
 
     @Override
+    public void onDisable() {
+        var c = MinecraftClient.getInstance();
+        if (c.player != null) {
+            var vel = c.player.getVelocity();
+            c.player.setVelocity(0, vel.y, 0);
+        }
+    }
+
+    @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
         var opts = client.options;

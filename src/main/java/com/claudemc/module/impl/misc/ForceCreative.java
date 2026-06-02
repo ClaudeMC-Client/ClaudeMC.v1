@@ -14,7 +14,7 @@ public class ForceCreative extends Module {
     private int ticker = 0;
 
     public ForceCreative() {
-        super("ForceCreative", "Attempts to switch to Creative mode on the server", Category.MISC);
+        super("ForceCreative", "Attempts to switch to Creative mode on the server", Category.EXPLOIT);
         addSetting("Technique", "All");
     }
 

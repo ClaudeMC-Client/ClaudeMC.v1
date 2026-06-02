@@ -93,18 +93,32 @@ public final class CompanionServer {
         });
     }
 
+    /** The URL the companion web app is served at. */
+    public String getUrl() { return "http://localhost:" + boundPort; }
+
+    public boolean isStarted() { return started; }
+
     /** Opens the companion page in the default browser. */
     public void open() {
         if (!started) start();
-        // Brief spin-wait to let the async start() bind before we try to open (≤ 200 ms)
-        long deadline = System.currentTimeMillis() + 200;
+        // Brief spin-wait to let the async start() bind before we try to open (≤ 1 s)
+        long deadline = System.currentTimeMillis() + 1000;
         while (!started && System.currentTimeMillis() < deadline) {
             try { Thread.sleep(10); } catch (InterruptedException ignored) {}
         }
+        String url = getUrl();
+        ClaudeMCMod.LOGGER.info("[Companion] Web app available at {}", url);
+        // Desktop.browse only works on a graphical desktop session with AWT support; many
+        // setups (headless, Wayland, some Linux JREs) throw. Failing to auto-open is fine —
+        // the URL is logged and shown in chat so the user can open it manually.
         try {
-            java.awt.Desktop.getDesktop().browse(URI.create("http://localhost:" + boundPort));
-        } catch (Exception e) {
-            ClaudeMCMod.LOGGER.warn("[Companion] Cannot open browser: {}", e.getMessage());
+            if (java.awt.Desktop.isDesktopSupported()
+                    && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.awt.Desktop.getDesktop().browse(URI.create(url));
+            }
+        } catch (Throwable e) {
+            ClaudeMCMod.LOGGER.warn("[Companion] Auto-open failed ({}). Open {} manually.",
+                e.getMessage(), url);
         }
     }
 

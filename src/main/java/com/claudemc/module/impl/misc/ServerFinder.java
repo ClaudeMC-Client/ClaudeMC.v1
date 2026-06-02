@@ -66,7 +66,7 @@ public class ServerFinder extends Module {
     public ServerFinder() {
         super("ServerFinder",
               "Scans mcscans.fi for live vulnerable / P2W servers. Results in local chat.",
-              Category.MISC);
+              Category.UTILITY);
         addMode("Mode",        "Both",  "Both", "Vulnerable", "P2W", "AI Search");
         addBool("UseAI",       true);
         addBool("OfflineOnly", false);   // restrict to offline-mode (cracked) servers

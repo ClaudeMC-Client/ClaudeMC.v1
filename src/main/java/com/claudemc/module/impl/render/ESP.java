@@ -30,7 +30,6 @@ public class ESP extends Module {
             var matrices = context.matrixStack();
             if (matrices == null) return;
             var consumers = context.consumers();
-            if (consumers == null) return;
 
             String filter  = INSTANCE.getSetting("Filter");
 

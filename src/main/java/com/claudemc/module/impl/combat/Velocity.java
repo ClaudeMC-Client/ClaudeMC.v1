@@ -15,8 +15,8 @@ public class Velocity extends Module {
 
     public Velocity() {
         super("Velocity", "Reduces knockback taken from hits", Category.COMBAT);
-        addSetting("H-Mult", "0.0"); // 0.0 = no horizontal knockback
-        addSetting("V-Mult", "1.0"); // 1.0 = normal vertical
+        addNumber("H-Mult", 0.0, 0.0, 1.0, 0.05, false); // 0.0 = no horizontal knockback
+        addNumber("V-Mult", 1.0, 0.0, 1.0, 0.05, false); // 1.0 = normal vertical
         INSTANCE = this;
     }
 

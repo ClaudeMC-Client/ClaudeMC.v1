@@ -68,7 +68,7 @@ public class AuthMeBypass extends Module {
     public AuthMeBypass() {
         super("AuthMeBypass",
               "Bypasses AuthMe on cracked BungeeCord servers — jumps to a backend via proxy /server before auth completes",
-              Category.MISC);
+              Category.EXPLOIT);
         addBool("AutoTrigger", true);
         addNumber("DelayTicks", 10, 1, 60, 1, true);
         addNumber("RetryTicks", 30, 10, 100, 5, true);

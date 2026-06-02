@@ -26,6 +26,23 @@ public class NumberSetting extends Setting {
     public int    getInt()   { return (int) Math.round(value); }
     public void   set(double v) { this.value = clamp(v); }
 
+    public double  getMin()   { return min; }
+    public double  getMax()   { return max; }
+    public boolean isInteger(){ return integer; }
+
+    /** Set the value from a 0..1 slider fraction, snapping integer settings to whole steps. */
+    public void setFraction(double f) {
+        double v = min + Math.max(0, Math.min(1, f)) * (max - min);
+        if (integer) v = Math.round(v);
+        this.value = clamp(v);
+    }
+
+    /** Current value as a 0..1 fraction of the [min,max] range. */
+    public double getFraction() {
+        if (max <= min) return 0;
+        return (value - min) / (max - min);
+    }
+
     @Override
     public String asString() {
         if (integer) return Integer.toString((int) Math.round(value));

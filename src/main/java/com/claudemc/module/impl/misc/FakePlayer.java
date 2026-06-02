@@ -16,7 +16,7 @@ public class FakePlayer extends Module {
     private OtherClientPlayerEntity fakeEntity = null;
 
     public FakePlayer() {
-        super("FakePlayer", "Spawns a fake client-side player entity at your position", Category.MISC);
+        super("FakePlayer", "Spawns a fake client-side player entity at your position", Category.UTILITY);
         addSetting("Name", "FakePlayer");
     }
 
@@ -34,7 +34,17 @@ public class FakePlayer extends Module {
         fakeEntity.setPos(client.player.getX(), client.player.getY(), client.player.getZ());
         fakeEntity.setYaw(client.player.getYaw());
         fakeEntity.setPitch(client.player.getPitch());
-        world.addEntity(fakeEntity);
+        // copyFrom syncs equipment/skin layers from the real player
+        fakeEntity.copyFrom(client.player);
+        fakeEntity.setPos(client.player.getX(), client.player.getY(), client.player.getZ());
+        try {
+            world.addEntity(fakeEntity);
+        } catch (Exception e) {
+            // Some server environments reject client-side entity addition
+            net.minecraft.client.MinecraftClient.getInstance().player
+                .sendMessage(net.minecraft.text.Text.literal("§c[FakePlayer] Failed to spawn: " + e.getMessage()), true);
+            fakeEntity = null;
+        }
     }
 
     @Override

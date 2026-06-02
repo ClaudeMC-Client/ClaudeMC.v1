@@ -34,7 +34,7 @@ public class AIAssist extends Module {
     public AIAssist() {
         super("AIAssist",
               "In-game AI chat assistant (!ai <question>) + periodic packet narration",
-              Category.MISC);
+              Category.UTILITY);
         addSetting("Prefix",        "!ai ");
         addBool("PacketNarration",  false);
         addNumber("NarrateTicks",   600, 100, 6000, 100, true);

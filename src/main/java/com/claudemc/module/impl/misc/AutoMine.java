@@ -27,6 +27,7 @@ public class AutoMine extends Module {
     private float mainYaw, branchYaw;
     private int   blocksForward, blocksBranch, returnBlocksLeft;
     private int   branchSide = 1;
+    private int   lastBranchAt = 0; // blocksForward value when last branch was started
 
     private BlockPos mineTarget;
     private boolean  miningOre;
@@ -75,7 +76,7 @@ public class AutoMine extends Module {
     }
 
     public AutoMine() {
-        super("AutoMine", "Human-like strip miner with staff-aware evasion", Category.MISC);
+        super("AutoMine", "Human-like strip miner with staff-aware evasion", Category.UTILITY);
         addMode("Ores", "Diamond+Iron", "Diamond+Iron", "Diamond", "Iron", "All Valuable", "Everything");
         addNumber("BranchEvery", 16,  4,  64,  4, true);
         addNumber("BranchLen",    8,  2,  32,  2, true);
@@ -91,7 +92,7 @@ public class AutoMine extends Module {
     public void onEnable() {
         phase = Phase.IDLE;
         blocksForward = blocksBranch = returnBlocksLeft = 0;
-        branchSide = 1;
+        branchSide = 1; lastBranchAt = 0;
         mineTarget = null; miningOre = false; prevMineWasAir = true;
         pauseTicksLeft = aiTimer = oreSnapTimer = 0;
         consecutiveOres = surpriseTicks = staffBreakLeft = elevatedMissTicks = 0;
@@ -238,7 +239,7 @@ public class AutoMine extends Module {
         var p = client.player; var world = client.world;
         Direction dir = yawToDir(mainYaw);
         int interval = parseInt(getSetting("BranchEvery"), 16);
-        if (blocksForward > 0 && blocksForward % interval == 0) { startBranch(p); return; }
+        if (blocksForward > 0 && (blocksForward - lastBranchAt) >= interval) { startBranch(p); return; }
 
         // Seek nearby ore
         BlockPos ore = scanForOre(client, dir);
@@ -271,6 +272,7 @@ public class AutoMine extends Module {
     // ── BRANCH ────────────────────────────────────────────────────────────
 
     private void startBranch(ClientPlayerEntity p) {
+        lastBranchAt = blocksForward;
         branchYaw = normalYaw(mainYaw - branchSide * 90f);
         blocksBranch = 0; phase = Phase.BRANCH; p.setYaw(branchYaw);
     }

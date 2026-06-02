@@ -24,7 +24,7 @@ public class ServerCrash extends Module {
     public ServerCrash() {
         super("ServerCrash",
               "Sends crash-inducing packets to vulnerable servers (Spigot/CB, unpatched)",
-              Category.MISC);
+              Category.EXPLOIT);
         addSetting("Technique", "BookOverflow");
         addSetting("Packets",   "20");
     }

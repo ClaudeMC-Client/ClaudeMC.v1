@@ -1,21 +1,20 @@
 package com.claudemc.mixin;
 
 import com.claudemc.hud.HudManager;
+import com.claudemc.module.impl.combat.Velocity;
 import com.claudemc.module.impl.misc.AuthMeBypass;
 import com.claudemc.server.ServerInfo;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
+import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
-import net.minecraft.network.message.MessageType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
@@ -84,6 +83,26 @@ public class ClientPlayNetworkHandlerMixin {
                 names.add(s.getText());
             ab.onTabCompletions(packet.id(), names);
         } catch (Exception ignored) {}
+    }
+
+    /** Scale knockback when Velocity module is active. */
+    @Inject(method = "onEntityVelocityUpdate", at = @At("HEAD"), cancellable = true, require = 0)
+    private void claudemc$velocity(EntityVelocityUpdateS2CPacket packet, CallbackInfo ci) {
+        Velocity vel = Velocity.INSTANCE;
+        if (vel == null || !vel.isEnabled()) return;
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || packet.getEntityId() != client.player.getId()) return;
+
+        double h = vel.getHorizontalMultiplier();
+        double v = vel.getVerticalMultiplier();
+
+        // Scale the packet velocity values instead of post-applying, so the handler
+        // stores the already-multiplied values into the entity.
+        double vx = packet.getVelocityX() / 8000.0 * h;
+        double vy = packet.getVelocityY() / 8000.0 * v;
+        double vz = packet.getVelocityZ() / 8000.0 * h;
+        client.player.setVelocity(vx, vy, vz);
+        ci.cancel();
     }
 
     /** Reset server info when we disconnect. */

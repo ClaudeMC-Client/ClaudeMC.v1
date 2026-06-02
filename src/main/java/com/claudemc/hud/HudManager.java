@@ -28,6 +28,9 @@ public class HudManager {
     private static long   lastTimePacket   = -1;
     private static double smoothedTps      = 20.0;
 
+    // Draggable stats strip position (bottom-left by default)
+    public static int statsX = 4, statsY = -60; // negative = offset from bottom
+
     public static void onWorldTimeUpdate() {
         long now = System.currentTimeMillis();
         if (lastTimePacket > 0) {
@@ -45,9 +48,15 @@ public class HudManager {
     // Main render dispatch
     // ────────────────────────────────────────────────────────────────────
 
+    private boolean statsDragging = false;
+    private int statsDragOffX, statsDragOffY;
+
     private void render(DrawContext ctx, RenderTickCounter tickCounter) {
         var client = MinecraftClient.getInstance();
         if (client.player == null || client.inGameHud.getDebugHud().shouldShowDebugHud()) return;
+
+        // Handle stats strip drag (right-click drag while no screen open)
+        if (client.currentScreen == null) handleStatsDrag(client);
 
         renderWatermark(ctx, client);
         renderModuleList(ctx, client);
@@ -56,6 +65,33 @@ public class HudManager {
         renderArmor(ctx, client);
         if (Radar.INSTANCE != null) Radar.INSTANCE.render(ctx, client);
         ChatOverlay.INSTANCE.render(ctx, client);
+    }
+
+    private void handleStatsDrag(MinecraftClient client) {
+        long win = client.getWindow().getHandle();
+        double scale = client.getWindow().getScaleFactor();
+        int mx = (int)(client.mouse.getX() / scale);
+        int my = (int)(client.mouse.getY() / scale);
+        boolean rmb = org.lwjgl.glfw.GLFW.glfwGetMouseButton(win, org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT)
+                      == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+
+        if (rmb) {
+            if (!statsDragging && statsHitTest(mx, my, client)) {
+                statsDragging = true;
+                statsDragOffX = mx - statsX;
+                int screenH = client.getWindow().getScaledHeight();
+                int absY = statsY < 0 ? screenH + statsY : statsY;
+                statsDragOffY = my - absY;
+            }
+            if (statsDragging) {
+                statsX = mx - statsDragOffX;
+                int newY = my - statsDragOffY;
+                int screenH = client.getWindow().getScaledHeight();
+                statsY = newY - screenH; // store as negative offset from bottom
+            }
+        } else {
+            statsDragging = false;
+        }
     }
 
     // ── Watermark ────────────────────────────────────────────────────────
@@ -124,20 +160,29 @@ public class HudManager {
             4, y, 0xFFFFFF, true);
     }
 
-    // ── Stats strip ──────────────────────────────────────────────────────
+    // ── Stats strip (draggable) ──────────────────────────────────────────
 
     private void renderStats(DrawContext ctx, MinecraftClient client) {
         int screenH = client.getWindow().getScaledHeight();
-        int x = 4, y = screenH - 60;
+        int x = statsX;
+        int y = statsY < 0 ? screenH + statsY : statsY;
 
         int fps = MinecraftClient.getInstance().getCurrentFps();
         String tps = String.format("§7TPS §f%.1f", smoothedTps);
         int ping = getPing(client);
+        String line = String.format("§7FPS §f%d  %s  §7Ping §f%dms", fps, tps, ping);
+        int w = client.textRenderer.getWidth(line.replaceAll("§.", "")) + 4;
 
-        ctx.fill(x - 2, y - 2, 100, y + 12, 0x88000000);
-        ctx.drawText(client.textRenderer,
-            Text.literal(String.format("§7FPS §f%d  %s  §7Ping §f%dms", fps, tps, ping)),
-            x, y, 0xFFFFFF, true);
+        ctx.fill(x - 2, y - 2, x + w, y + 10, 0x88000000);
+        ctx.drawText(client.textRenderer, Text.literal(line), x, y, 0xFFFFFF, true);
+    }
+
+    /** Returns true if the point (mx, my) is over the stats strip. */
+    public static boolean statsHitTest(int mx, int my, MinecraftClient client) {
+        int screenH = client.getWindow().getScaledHeight();
+        int x = statsX;
+        int y = statsY < 0 ? screenH + statsY : statsY;
+        return mx >= x - 2 && mx < x + 120 && my >= y - 2 && my < y + 12;
     }
 
     // ── Armour display ───────────────────────────────────────────────────
