@@ -35,6 +35,15 @@ public class Speed extends Module {
         client.player.setVelocity(mx * spd, vel.y, mz * spd);
     }
 
+    @Override
+    public void onDisable() {
+        var c = net.minecraft.client.MinecraftClient.getInstance();
+        if (c.player != null) {
+            var vel = c.player.getVelocity();
+            c.player.setVelocity(0, vel.y, 0);
+        }
+    }
+
     private double parseDouble(String s, double d) {
         try { return Double.parseDouble(s); } catch (Exception e) { return d; }
     }

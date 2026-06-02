@@ -2,6 +2,8 @@ package com.claudemc.module.impl.combat;
 
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
+import com.claudemc.module.setting.NumberSetting;
+import com.claudemc.module.setting.BoolSetting;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -12,11 +14,20 @@ import net.minecraft.util.Hand;
 
 public class KillAura extends Module {
 
+    private final NumberSetting rangeSetting;
+    private final NumberSetting delayMsSetting;
+    private final BoolSetting   rotateSetting;
+    private final BoolSetting   fullChargeSetting;
+
+    private long lastAttackMs = 0L;
+
     public KillAura() {
         super("KillAura", "Automatically attacks nearby entities", Category.COMBAT);
-        addSetting("Range",   "4.0");
-        addSetting("Target",  "Hostile+Players");  // Hostile+Players | Players | Hostile | All
-        addSetting("Rotate",  "true");
+        rangeSetting      = addNumber("Range",      4.0,  1.0, 10.0, 0.5, false);
+        delayMsSetting    = addNumber("DelayMs",    0.0,  0.0, 1000.0, 50.0, false);
+        rotateSetting     = addBool("Rotate",       true);
+        fullChargeSetting = addBool("FullCharge",   false);
+        addMode("Target", "Hostile+Players", "Hostile+Players", "Players", "Hostile", "All");
     }
 
     @Override
@@ -24,7 +35,13 @@ public class KillAura extends Module {
         if (client.player == null || client.world == null) return;
         if (client.currentScreen != null) return;
 
-        double range  = parseDouble(getSetting("Range"), 4.0);
+        // Delay check
+        if (delayMsSetting.get() > 0 && System.currentTimeMillis() - lastAttackMs < delayMsSetting.get()) return;
+
+        // Full charge check
+        if (fullChargeSetting.get() && client.player.getAttackCooldownProgress(0f) < 1.0f) return;
+
+        double range  = rangeSetting.get();
         String target = getSetting("Target");
 
         Entity best = null;
@@ -42,11 +59,12 @@ public class KillAura extends Module {
 
         if (best == null) return;
 
-        if (Boolean.parseBoolean(getSetting("Rotate"))) {
+        if (rotateSetting.get()) {
             faceEntity(client, best);
         }
         client.interactionManager.attackEntity(client.player, best);
         client.player.swingHand(Hand.MAIN_HAND);
+        lastAttackMs = System.currentTimeMillis();
     }
 
     private boolean shouldTarget(LivingEntity e, String mode) {
@@ -67,9 +85,5 @@ public class KillAura extends Module {
         float pitch = (float) -Math.toDegrees(Math.atan2(d.y, h));
         client.player.setYaw(yaw);
         client.player.setPitch(pitch);
-    }
-
-    private double parseDouble(String s, double def) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
     }
 }

@@ -21,7 +21,7 @@ public class Radar extends Module {
         super("Radar", "HUD minimap showing nearby players and mobs as dots", Category.RENDER);
         addNumber("Range", 64.0, 16.0, 128.0, 8.0, false);
         addNumber("Size",  80.0, 40.0, 160.0, 8.0, false);
-        addMode("Anchor", "TopRight", "TopRight", "TopLeft", "BottomLeft", "BottomRight");
+        addMode("Anchor", "BottomRight", "TopRight", "TopLeft", "BottomLeft", "BottomRight");
         INSTANCE = this;
     }
 
@@ -55,15 +55,17 @@ public class Radar extends Module {
         ctx.fill(ox,          oy,          ox + 1,        oy + size,     0xFF555555);
         ctx.fill(ox + size-1, oy,          ox + size,     oy + size,     0xFF555555);
 
-        // Player dot (white, centre)
-        ctx.fill(ox + half - 1, oy + half - 1, ox + half + 1, oy + half + 1, 0xFFFFFFFF);
+        // Player self-marker (yellow cross)
+        ctx.fill(ox + half - 2, oy + half - 1, ox + half + 2, oy + half + 1, 0xFFFFFF00);
+        ctx.fill(ox + half - 1, oy + half - 2, ox + half + 1, oy + half + 2, 0xFFFFFF00);
 
         // Entity dots
         double scale = half / range;
         var eyePos = client.player.getEntityPos();
         float yaw = client.player.getYaw();
-        double sinYaw = Math.sin(Math.toRadians(yaw));
-        double cosYaw = Math.cos(Math.toRadians(yaw));
+        double yawRad = Math.toRadians(yaw);
+        double sinYaw = Math.sin(yawRad);
+        double cosYaw = Math.cos(yawRad);
 
         for (Entity e : client.world.getEntities()) {
             if (e == client.player) continue;

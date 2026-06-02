@@ -30,11 +30,22 @@ public class FakePlayer extends Module {
         var profile = new com.mojang.authlib.GameProfile(
             java.util.UUID.randomUUID(), name.isBlank() ? "FakePlayer" : name);
 
-        fakeEntity = new OtherClientPlayerEntity(world, profile);
-        fakeEntity.setPos(client.player.getX(), client.player.getY(), client.player.getZ());
-        fakeEntity.setYaw(client.player.getYaw());
-        fakeEntity.setPitch(client.player.getPitch());
-        world.addEntity(fakeEntity);
+        try {
+            fakeEntity = new OtherClientPlayerEntity(world, profile);
+            fakeEntity.setPos(client.player.getX(), client.player.getY(), client.player.getZ());
+            fakeEntity.setYaw(client.player.getYaw());
+            fakeEntity.setPitch(client.player.getPitch());
+            // Copy equipment slot by slot (copyFrom corrupts entity state)
+            for (var slot : net.minecraft.entity.EquipmentSlot.values()) {
+                net.minecraft.item.ItemStack stack = client.player.getEquippedStack(slot);
+                if (!stack.isEmpty()) fakeEntity.equipStack(slot, stack.copy());
+            }
+            world.addEntity(fakeEntity);
+            client.player.sendMessage(net.minecraft.text.Text.literal("§a[FakePlayer] Spawned."), false);
+        } catch (Exception ex) {
+            client.player.sendMessage(net.minecraft.text.Text.literal("§c[FakePlayer] Failed: " + ex.getMessage()), false);
+            fakeEntity = null;
+        }
     }
 
     @Override
