@@ -21,7 +21,8 @@ public class Radar extends Module {
         super("Radar", "HUD minimap showing nearby players and mobs as dots", Category.RENDER);
         addNumber("Range", 64.0, 16.0, 128.0, 8.0, false);
         addNumber("Size",  80.0, 40.0, 160.0, 8.0, false);
-        addMode("Anchor", "TopRight", "TopRight", "TopLeft", "BottomLeft", "BottomRight");
+        // BottomRight by default — TopRight clashes with the enabled-module list.
+        addMode("Anchor", "BottomRight", "BottomRight", "TopRight", "TopLeft", "BottomLeft");
         INSTANCE = this;
     }
 

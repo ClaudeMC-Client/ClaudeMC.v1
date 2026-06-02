@@ -34,7 +34,17 @@ public class Tracers extends Module {
             String filter = INSTANCE.getSetting("Filter");
             double range  = parseDouble(INSTANCE.getSetting("Range"), 64);
 
-            Vec3d origin = Vec3d.ZERO; // relative to camera in world-space render
+            // Start the tracer ~1 block in front of the camera (and slightly below) so the
+            // line isn't clipped by the near plane — starting it exactly at the camera
+            // position (Vec3d.ZERO relative to cam) made every line invisible.
+            float yaw   = context.camera().getYaw();
+            float pitch = context.camera().getPitch();
+            double ry = Math.toRadians(yaw), rp = Math.toRadians(pitch);
+            Vec3d look = new Vec3d(
+                -Math.sin(ry) * Math.cos(rp),
+                -Math.sin(rp),
+                 Math.cos(ry) * Math.cos(rp));
+            Vec3d origin = look.multiply(1.0).add(0, -0.15, 0);
 
             for (Entity e : client.world.getEntities()) {
                 if (e == client.player) continue;
