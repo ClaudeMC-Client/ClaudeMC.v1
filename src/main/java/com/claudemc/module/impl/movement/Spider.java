@@ -3,6 +3,7 @@ package com.claudemc.module.impl.movement;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.BlockPos;
 
 /**
  * Spider – climb any block face like a spider.
