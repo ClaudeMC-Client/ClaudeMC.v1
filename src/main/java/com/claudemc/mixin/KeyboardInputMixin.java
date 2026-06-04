@@ -1,6 +1,7 @@
 package com.claudemc.mixin;
 
 import com.claudemc.module.impl.misc.AutoMine;
+import com.claudemc.module.impl.movement.AutoWalk;
 import com.claudemc.module.impl.movement.InventoryMove;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.input.Input;
@@ -57,6 +58,13 @@ public class KeyboardInputMixin {
                 self.playerInput = new PlayerInput(false, true, cur.left(), cur.right(),
                                                    cur.jump(), cur.sneak(), cur.sprint());
             }
+        }
+
+        // ── AutoWalk ──────────────────────────────────────────────────────
+        if (AutoWalk.INSTANCE != null && AutoWalk.INSTANCE.isEnabled()) {
+            PlayerInput cur = self.playerInput;
+            self.playerInput = new PlayerInput(true, cur.backward(), cur.left(), cur.right(),
+                                               cur.jump(), cur.sneak(), cur.sprint());
         }
     }
 

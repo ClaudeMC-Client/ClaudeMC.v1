@@ -22,7 +22,7 @@ public class Parkour extends Module {
         if (client.player == null || client.world == null) return;
         if (!client.player.isOnGround()) return;
         if (client.player.isSneaking()) return;
-        if (client.player.isJumping) return;
+        if (client.player.isJumping()) return;
 
         var opts = client.options;
         boolean moving = opts.forwardKey.isPressed() || opts.backKey.isPressed()

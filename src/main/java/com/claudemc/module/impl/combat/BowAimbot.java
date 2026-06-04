@@ -109,11 +109,11 @@ public class BowAimbot extends Module {
 
         // Movement prediction: extrapolate target position
         double d = dist * predict;
-        double posX = target.getX() + (target.getX() - target.prevX) * d - client.player.getX();
-        double posY = target.getY() + (target.getY() - target.prevY) * d
+        double posX = target.getX() + (target.getX() - target.lastX) * d - client.player.getX();
+        double posY = target.getY() + (target.getY() - target.lastY) * d
                 + target.getHeight() * 0.5
                 - client.player.getY() - client.player.getStandingEyeHeight();
-        double posZ = target.getZ() + (target.getZ() - target.prevZ) * d - client.player.getZ();
+        double posZ = target.getZ() + (target.getZ() - target.lastZ) * d - client.player.getZ();
 
         // Yaw
         float neededYaw = (float) Math.toDegrees(Math.atan2(posZ, posX)) - 90f;

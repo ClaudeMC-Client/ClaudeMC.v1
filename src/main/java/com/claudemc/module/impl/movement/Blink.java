@@ -32,7 +32,7 @@ public class Blink extends Module {
     public void onEnable() {
         var c = MinecraftClient.getInstance();
         if (c.player == null) return;
-        startPos = c.player.getPos();
+        startPos = new Vec3d(c.player.getX(), c.player.getY(), c.player.getZ());
         positions.clear();
         c.player.noClip = true;
     }
@@ -56,6 +56,6 @@ public class Blink extends Module {
         if (client.player == null) return;
         // Keep noClip active and record current position
         client.player.noClip = true;
-        positions.add(client.player.getPos());
+        positions.add(new Vec3d(client.player.getX(), client.player.getY(), client.player.getZ()));
     }
 }
