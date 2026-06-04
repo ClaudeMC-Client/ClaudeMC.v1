@@ -121,7 +121,7 @@ public class ForceOP extends Module {
         // index == 0 → try username as password (first attempt)
         // index >  0 → try passwords[index-1]
         if (index == 0) {
-            String username = client.player.getGameProfile().getName();
+            String username = client.player.getGameProfile().name();
             sendLogin(client, username);
             msg("§8[" + index + "/" + (passwords.length + 1) + "] §7Trying username: §f" + username);
         } else if (index - 1 < passwords.length) {
@@ -201,7 +201,7 @@ public class ForceOP extends Module {
     private String currentPassword(MinecraftClient client) {
         if (index == 0) {
             return client != null && client.player != null
-                ? client.player.getGameProfile().getName() : "?";
+                ? client.player.getGameProfile().name() : "?";
         }
         int pwIdx = index - 1;
         return (pwIdx < passwords.length) ? passwords[pwIdx] : "?";
