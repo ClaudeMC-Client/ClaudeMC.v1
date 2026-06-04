@@ -4,6 +4,7 @@ import com.claudemc.ClaudeMCClient;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 
 public class Panic extends Module {
 
@@ -28,10 +29,9 @@ public class Panic extends Module {
         }
 
         // Disconnect from server
-        if (mc.world != null) {
-            mc.world.disconnect();
+        if (mc.getNetworkHandler() != null) {
+            mc.getNetworkHandler().getConnection().disconnect(Text.literal("Panic"));
         }
-        mc.disconnect();
 
         setEnabled(false);
     }

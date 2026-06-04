@@ -56,7 +56,7 @@ public class Kaboom extends Module {
                 setEnabled(false);
                 return;
             }
-            mc.player.getInventory().selectedSlot = tntSlot;
+            mc.player.getInventory().setSelectedSlot(tntSlot);
 
             BlockPos playerPos = mc.player.getBlockPos();
             // Place TNT on the block below player
@@ -85,7 +85,7 @@ public class Kaboom extends Module {
             }
 
             if (flintSlot >= 0) {
-                mc.player.getInventory().selectedSlot = flintSlot;
+                mc.player.getInventory().setSelectedSlot(flintSlot);
                 // Ignite TNT blocks near player
                 BlockPos playerPos = mc.player.getBlockPos();
                 for (int i = 0; i < count; i++) {

@@ -15,6 +15,7 @@ public class Navigator extends Module {
         addNumber("TargetX", 0, -30000000, 30000000, 1, true);
         addNumber("TargetZ", 0, -30000000, 30000000, 1, true);
         addNumber("Tolerance", 3, 1, 20, 1, true);
+        addNumber("Speed", 0.2, 0.05, 1.0, 0.05, false);
     }
 
     @Override
@@ -24,6 +25,7 @@ public class Navigator extends Module {
         double targetX = parseDouble(getSetting("TargetX"), 0);
         double targetZ = parseDouble(getSetting("TargetZ"), 0);
         double tolerance = parseDouble(getSetting("Tolerance"), 3);
+        double speed = parseDouble(getSetting("Speed"), 0.2);
 
         double dx = targetX - mc.player.getX();
         double dz = targetZ - mc.player.getZ();
@@ -31,27 +33,26 @@ public class Navigator extends Module {
 
         if (dist <= tolerance) {
             mc.player.sendMessage(Text.literal("§aNavigator: Arrived at destination!"), false);
-            mc.options.forwardKey.setPressed(false);
+            mc.player.setVelocity(0, mc.player.getVelocity().y, 0);
             setEnabled(false);
             return;
         }
 
+        // Calculate direction and apply velocity
+        double nx = dx / dist * speed;
+        double nz = dz / dist * speed;
+        mc.player.setVelocity(nx, mc.player.getVelocity().y, nz);
+
         // Calculate yaw angle toward target
         double angle = Math.toDegrees(Math.atan2(dz, dx)) - 90.0;
         mc.player.setYaw((float) angle);
-
-        mc.options.forwardKey.setPressed(true);
-        mc.player.input.movementForward = 1.0f;
     }
 
     @Override
     public void onDisable() {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.options != null) {
-            mc.options.forwardKey.setPressed(false);
-        }
         if (mc.player != null) {
-            mc.player.input.movementForward = 0;
+            mc.player.setVelocity(0, mc.player.getVelocity().y, 0);
         }
     }
 

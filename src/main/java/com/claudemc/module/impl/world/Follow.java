@@ -14,6 +14,7 @@ public class Follow extends Module {
         INSTANCE = this;
         addSetting("Target", "");
         addNumber("Distance", 3, 1, 20, 1, true);
+        addNumber("Speed", 0.2, 0.05, 1.0, 0.05, false);
     }
 
     @Override
@@ -22,7 +23,8 @@ public class Follow extends Module {
 
         String target = getSetting("Target").toLowerCase();
         if (target.isBlank()) return;
-        double minDist = parseInt(getSetting("Distance"), 3);
+        double minDist = parseDouble(getSetting("Distance"), 3);
+        double speed = parseDouble(getSetting("Speed"), 0.2);
 
         AbstractClientPlayerEntity targetPlayer = null;
         for (AbstractClientPlayerEntity p : mc.world.getPlayers()) {
@@ -38,29 +40,31 @@ public class Follow extends Module {
         double dz = targetPlayer.getZ() - mc.player.getZ();
         double dist = Math.sqrt(dx * dx + dz * dz);
 
-        if (dist <= minDist) return;
+        if (dist <= minDist) {
+            mc.player.setVelocity(0, mc.player.getVelocity().y, 0);
+            return;
+        }
 
-        // Point toward target and move forward
+        // Normalize and apply velocity toward target
+        double nx = dx / dist * speed;
+        double nz = dz / dist * speed;
+
+        mc.player.setVelocity(nx, mc.player.getVelocity().y, nz);
+
+        // Turn player toward target
         double angle = Math.toDegrees(Math.atan2(dz, dx)) - 90.0;
         mc.player.setYaw((float) angle);
-
-        // Simulate forward movement
-        mc.player.input.movementForward = 1.0f;
-        mc.options.forwardKey.setPressed(true);
     }
 
     @Override
     public void onDisable() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null) {
-            mc.player.input.movementForward = 0;
-        }
-        if (mc.options != null) {
-            mc.options.forwardKey.setPressed(false);
+            mc.player.setVelocity(0, mc.player.getVelocity().y, 0);
         }
     }
 
-    private int parseInt(String s, int d) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return d; }
+    private double parseDouble(String s, double d) {
+        try { return Double.parseDouble(s); } catch (Exception e) { return d; }
     }
 }

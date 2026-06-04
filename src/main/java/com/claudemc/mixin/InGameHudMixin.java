@@ -1,5 +1,7 @@
 package com.claudemc.mixin;
 
+import com.claudemc.module.impl.player.NoPumpkin;
+import com.claudemc.module.impl.player.NoVignette;
 import com.claudemc.module.impl.render.NoRender;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.gui.DrawContext;
@@ -35,5 +37,20 @@ public class InGameHudMixin {
             at = @At("HEAD"), cancellable = true, require = 0)
     private void claudemc$noScoreboard(DrawContext context, net.minecraft.scoreboard.ScoreboardObjective objective, CallbackInfo ci) {
         if (NoRender.INSTANCE != null && NoRender.INSTANCE.noScoreboard()) ci.cancel();
+    }
+
+    /**
+     * NoVignette / NoPumpkin: renderMiscOverlays handles both.
+     * Cancel the whole method when either module is active.
+     * require = 0 so the game still loads if the method is renamed.
+     */
+    @Inject(method = "renderMiscOverlays", at = @At("HEAD"), cancellable = true, require = 0)
+    private void claudemc$miscOverlays(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
+        boolean noVignette  = NoVignette.INSTANCE  != null && NoVignette.INSTANCE.isEnabled();
+        boolean noPumpkin   = NoPumpkin.INSTANCE   != null && NoPumpkin.INSTANCE.isEnabled();
+        // Only cancel if both are active; otherwise allow normal rendering.
+        // For a partial solution we cancel the whole method when NoVignette is on,
+        // since vignette is the dominant element rendered here.
+        if (noVignette || noPumpkin) ci.cancel();
     }
 }

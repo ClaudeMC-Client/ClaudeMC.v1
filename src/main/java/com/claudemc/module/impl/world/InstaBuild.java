@@ -39,7 +39,7 @@ public class InstaBuild extends Module {
             }
         }
         if (blockSlot < 0) return;
-        mc.player.getInventory().selectedSlot = blockSlot;
+        mc.player.getInventory().setSelectedSlot(blockSlot);
 
         BlockPos playerPos = mc.player.getBlockPos();
         int placed = 0;

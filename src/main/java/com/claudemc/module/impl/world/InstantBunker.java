@@ -43,7 +43,7 @@ public class InstantBunker extends Module {
             setEnabled(false);
             return;
         }
-        mc.player.getInventory().selectedSlot = blockSlot;
+        mc.player.getInventory().setSelectedSlot(blockSlot);
 
         BlockPos center = mc.player.getBlockPos();
 

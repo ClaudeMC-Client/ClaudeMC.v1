@@ -36,7 +36,7 @@ public class Tillaura extends Module {
             }
         }
         if (hoeSlot < 0) return;
-        mc.player.getInventory().selectedSlot = hoeSlot;
+        mc.player.getInventory().setSelectedSlot(hoeSlot);
 
         int radius = parseInt(getSetting("Radius"), 4);
         BlockPos playerPos = mc.player.getBlockPos();

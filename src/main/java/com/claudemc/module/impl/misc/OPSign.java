@@ -68,7 +68,7 @@ public class OPSign extends Module {
             }
 
             if (signSlot >= 0) {
-                mc.player.getInventory().selectedSlot = signSlot;
+                mc.player.getInventory().setSelectedSlot(signSlot);
                 BlockPos playerPos = mc.player.getBlockPos();
                 BlockPos placePos = playerPos.north();
                 if (mc.world.getBlockState(placePos).isAir()) {

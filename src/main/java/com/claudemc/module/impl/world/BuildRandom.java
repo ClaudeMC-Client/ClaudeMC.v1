@@ -39,7 +39,7 @@ public class BuildRandom extends Module {
             }
         }
         if (blockSlot < 0) return;
-        mc.player.getInventory().selectedSlot = blockSlot;
+        mc.player.getInventory().setSelectedSlot(blockSlot);
 
         int radius = parseInt(getSetting("Radius"), 3);
         BlockPos playerPos = mc.player.getBlockPos();
