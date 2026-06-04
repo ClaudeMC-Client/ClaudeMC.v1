@@ -8,8 +8,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.SwordItem;
 import net.minecraft.item.AxeItem;
+import net.minecraft.item.Items;
 import net.minecraft.util.Hand;
 
 /**
@@ -45,10 +45,14 @@ public class BlockHit extends Module {
         if (client.player == null || client.world == null) return;
         if (client.currentScreen != null) return;
 
-        // Check weapon requirement
+        // Check weapon requirement (SwordItem was removed in 1.21.x; check via known sword/axe items)
         if (onlyWithSwordSetting.get()) {
             var mainItem = client.player.getMainHandStack().getItem();
-            if (!(mainItem instanceof SwordItem) && !(mainItem instanceof AxeItem)) return;
+            boolean isSword = mainItem == Items.WOODEN_SWORD || mainItem == Items.STONE_SWORD
+                    || mainItem == Items.IRON_SWORD || mainItem == Items.GOLDEN_SWORD
+                    || mainItem == Items.DIAMOND_SWORD || mainItem == Items.NETHERITE_SWORD;
+            boolean isAxe = mainItem instanceof AxeItem;
+            if (!isSword && !isAxe) return;
         }
 
         // Check shield requirement
