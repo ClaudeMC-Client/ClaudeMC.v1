@@ -43,8 +43,8 @@ public class AutoSwitch extends Module {
         Block block    = blockState.getBlock();
 
         int bestSlot = getBestToolSlot(client, block, blockState);
-        if (bestSlot != -1 && bestSlot != client.player.getInventory().selectedSlot) {
-            if (prevSlot == -1) prevSlot = client.player.getInventory().selectedSlot;
+        if (bestSlot != -1 && bestSlot != client.player.getInventory().getSelectedSlot()) {
+            if (prevSlot == -1) prevSlot = client.player.getInventory().getSelectedSlot();
             client.player.getInventory().setSelectedSlot(bestSlot);
         }
     }

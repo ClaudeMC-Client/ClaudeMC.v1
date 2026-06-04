@@ -44,7 +44,9 @@ public class Protect extends Module {
         if (client.player.distanceTo(targetPlayer) > range) return;
 
         // Move toward the target player
-        Vec3d dir = targetPlayer.getPos().subtract(client.player.getPos()).normalize();
+        Vec3d targetVec = new Vec3d(targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ());
+        Vec3d playerVec = new Vec3d(client.player.getX(), client.player.getY(), client.player.getZ());
+        Vec3d dir = targetVec.subtract(playerVec).normalize();
         client.player.setVelocity(dir.x * 0.3, client.player.getVelocity().y, dir.z * 0.3);
     }
 

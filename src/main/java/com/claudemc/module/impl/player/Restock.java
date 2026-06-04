@@ -57,10 +57,9 @@ public class Restock extends Module {
     private boolean shouldTake(ItemStack stack) {
         if (bool("Food") && stack.get(net.minecraft.component.DataComponentTypes.FOOD) != null)
             return true;
-        if (bool("Weapons") && stack.getItem() instanceof net.minecraft.item.SwordItem)
+        if (bool("Weapons") && stack.get(net.minecraft.component.DataComponentTypes.WEAPON) != null)
             return true;
-        if (bool("Tools") && (stack.getItem() instanceof net.minecraft.item.PickaxeItem
-                || stack.getItem() instanceof net.minecraft.item.AxeItem))
+        if (bool("Tools") && stack.get(net.minecraft.component.DataComponentTypes.TOOL) != null)
             return true;
         if (bool("Blocks") && stack.getItem() instanceof net.minecraft.item.BlockItem)
             return true;

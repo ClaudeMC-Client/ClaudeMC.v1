@@ -8,7 +8,7 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.SwordItem;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 
@@ -48,8 +48,8 @@ public class AutoSword extends Module {
 
             if (relevant) {
                 int swordSlot = findSwordSlot(client);
-                if (swordSlot != -1 && swordSlot != client.player.getInventory().selectedSlot) {
-                    if (prevSlot == -1) prevSlot = client.player.getInventory().selectedSlot;
+                if (swordSlot != -1 && swordSlot != client.player.getInventory().getSelectedSlot()) {
+                    if (prevSlot == -1) prevSlot = client.player.getInventory().getSelectedSlot();
                     client.player.getInventory().setSelectedSlot(swordSlot);
                 }
                 return;
@@ -67,7 +67,7 @@ public class AutoSword extends Module {
         var inv = client.player.getInventory();
         for (int i = 0; i < 9; i++) {
             ItemStack stack = inv.getStack(i);
-            if (!stack.isEmpty() && stack.getItem() instanceof SwordItem) return i;
+            if (!stack.isEmpty() && stack.isIn(ItemTags.SWORDS)) return i;
         }
         return -1;
     }

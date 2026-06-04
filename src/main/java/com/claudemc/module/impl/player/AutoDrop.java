@@ -4,7 +4,10 @@ import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
 
 /**
@@ -52,37 +55,28 @@ public class AutoDrop extends Module {
     }
 
     private boolean shouldDrop(ItemStack stack) {
-        var item = stack.getItem();
-
         if (bool("Food") && stack.get(DataComponentTypes.FOOD) != null)
             return true;
 
-        if (bool("Weapons")) {
-            if (item instanceof net.minecraft.item.SwordItem) return true;
-            if (item instanceof net.minecraft.item.BowItem)   return true;
-            if (item instanceof net.minecraft.item.CrossbowItem) return true;
-        }
+        if (bool("Weapons") && stack.get(DataComponentTypes.WEAPON) != null)
+            return true;
 
-        if (bool("Armor") && stack.get(DataComponentTypes.EQUIPPABLE) != null) {
+        if (bool("Armor")) {
             var eq = stack.get(DataComponentTypes.EQUIPPABLE);
-            if (eq != null && eq.slot().getType() == net.minecraft.entity.EquipmentSlot.Type.HUMANOID_ARMOR)
+            if (eq != null && eq.slot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR)
                 return true;
         }
 
-        if (bool("Tools")) {
-            if (item instanceof net.minecraft.item.PickaxeItem) return true;
-            if (item instanceof net.minecraft.item.AxeItem)     return true;
-            if (item instanceof net.minecraft.item.ShovelItem)  return true;
-            if (item instanceof net.minecraft.item.HoeItem)     return true;
-        }
+        if (bool("Tools") && stack.get(DataComponentTypes.TOOL) != null)
+            return true;
 
         if (bool("Junk")) {
-            // Drop common low-value items
-            if (item == net.minecraft.item.Items.COBBLESTONE)    return true;
-            if (item == net.minecraft.item.Items.DIRT)           return true;
-            if (item == net.minecraft.item.Items.GRAVEL)         return true;
-            if (item == net.minecraft.item.Items.SAND)           return true;
-            if (item == net.minecraft.item.Items.NETHERRACK)     return true;
+            var item = stack.getItem();
+            if (item == Items.COBBLESTONE)  return true;
+            if (item == Items.DIRT)         return true;
+            if (item == Items.GRAVEL)       return true;
+            if (item == Items.SAND)         return true;
+            if (item == Items.NETHERRACK)   return true;
         }
 
         return false;

@@ -25,7 +25,6 @@ public class AutoSwim extends Module {
                 Math.max(client.player.getVelocity().y, 0.12),
                 client.player.getVelocity().z
             );
-            client.player.jumping = true;
         }
     }
 }
