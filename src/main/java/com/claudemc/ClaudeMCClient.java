@@ -63,6 +63,9 @@ public class ClaudeMCClient implements ClientModInitializer {
             alertSent = false;
         });
 
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+            ServerInfo.INSTANCE.reset());
+
         // charTyped for ChatOverlay — GLFW char callback, chained so vanilla input still works.
         // ScreenMixin cannot inject into Screen.charTyped because Screen never overrides the
         // default Element.charTyped method, so there is no injection target in Screen's bytecode.

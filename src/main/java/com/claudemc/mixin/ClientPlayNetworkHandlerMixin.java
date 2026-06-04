@@ -7,15 +7,10 @@ import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.network.packet.s2c.play.CommandSuggestionsS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
-import net.minecraft.network.message.MessageType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
@@ -84,12 +79,6 @@ public class ClientPlayNetworkHandlerMixin {
                 names.add(s.getText());
             ab.onTabCompletions(packet.id(), names);
         } catch (Exception ignored) {}
-    }
-
-    /** Reset server info when we disconnect. */
-    @Inject(method = "onDisconnect", at = @At("HEAD"), require = 0)
-    private void claudemc$onDisconnect(DisconnectS2CPacket packet, CallbackInfo ci) {
-        ServerInfo.INSTANCE.reset();
     }
 
     @Inject(method = "onEntityVelocityUpdate", at = @At("HEAD"), cancellable = true, require = 0)
