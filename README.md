@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.2
+# ClaudeMC v1.20.4
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -48,7 +48,7 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.20.0:** Minecraft **1.21.11** support. The mod has been migrated from 1.21.1 across every breaking API change in the 1.21.2 → 1.21.11 line: the new `Click`/`KeyInput`/`CharInput` input records (all ClickGUI/screen input handlers rewritten), the immutable `PlayerInput` movement record (InventoryMove/AutoMine input mixin), the 1.21.5 render-pipeline changes (`RenderLayers.LINES`, manual box edges in `RenderUtils`), the 1.21.9 decoupled render-state camera (`ctx.worldState().cameraRenderState.pos`), `WorldRenderEvents` moving to the `.world` subpackage, `PlayerInventory.getSelectedSlot()/setSelectedSlot()`, `getEntityPos()`, `isGliding()`, the `EquippableComponent`/attribute-based armor system (AutoArmor), the record-based `GameProfile` (`name()`/`id()`), and the new `Session` constructor. Build toolchain bumped to Gradle 8.14, fabric-loom 1.13.4, Fabric Loader 0.19.3, Fabric API 0.141.4+1.21.11. All mixins verified to apply cleanly at runtime. **v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception (`!lower.contains("server")`) to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick` — both `START_FALL_FLYING` packet sends now guard `getNetworkHandler()`. **v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt (affected SmartReply, ExploitAdvisor, ServerFinder, AutoMine, Companion Chat/Analyze). `AIClient.ask()` now accepts an explicit system-prompt parameter so modules never mutate global config. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays. Fixes unreachable dead-code branch in `ClickGui` header click. Fixes `DupeDbClient.storeTokens` NPE on missing token fields. **v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
+> **What's new in v1.20.4:** Massive Wurst Client module port — **80+ new modules** across all categories, bringing ClaudeMC to feature-parity with Wurst 7. New XSS exploit module: **WebConsoleXSS** sends jQuery/script payloads that ForceOP via vulnerable web-based server console panels (documented CVE by LiveOverflow, 2022). Mixin fixes: broken `onDisconnect` injection replaced with proper `ClientPlayConnectionEvents.DISCONNECT` event; binary-encoded source file fixed. All new modules compile and remap cleanly on MC 1.21.11. **v1.20.3:** All v1.19.6/v1.19.7 fixes ported to MC 1.21.11. **v1.20.0:** Minecraft **1.21.11** support. The mod has been migrated from 1.21.1 across every breaking API change in the 1.21.2 → 1.21.11 line: the new `Click`/`KeyInput`/`CharInput` input records (all ClickGUI/screen input handlers rewritten), the immutable `PlayerInput` movement record (InventoryMove/AutoMine input mixin), the 1.21.5 render-pipeline changes (`RenderLayers.LINES`, manual box edges in `RenderUtils`), the 1.21.9 decoupled render-state camera (`ctx.worldState().cameraRenderState.pos`), `WorldRenderEvents` moving to the `.world` subpackage, `PlayerInventory.getSelectedSlot()/setSelectedSlot()`, `getEntityPos()`, `isGliding()`, the `EquippableComponent`/attribute-based armor system (AutoArmor), the record-based `GameProfile` (`name()`/`id()`), and the new `Session` constructor. Build toolchain bumped to Gradle 8.14, fabric-loom 1.13.4, Fabric Loader 0.19.3, Fabric API 0.141.4+1.21.11. All mixins verified to apply cleanly at runtime. **v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception (`!lower.contains("server")`) to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick` — both `START_FALL_FLYING` packet sends now guard `getNetworkHandler()`. **v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt (affected SmartReply, ExploitAdvisor, ServerFinder, AutoMine, Companion Chat/Analyze). `AIClient.ask()` now accepts an explicit system-prompt parameter so modules never mutate global config. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays. Fixes unreachable dead-code branch in `ClickGui` header click. Fixes `DupeDbClient.storeTokens` NPE on missing token fields. **v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
 
 ---
 
@@ -317,14 +317,25 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 |---|---|---|
 | **AimAssist** | Smoothly rotates toward the nearest valid target | Range (1–60), Smoothing (0.01–1.0), Target (Players/Hostile+Players/Hostile/All) |
 | **KillAura** | Auto-attacks nearby entities each tick | Range (blocks), Target (Hostile+Players/Players/Hostile/All), Rotate |
+| **KillauraLegit** | Human-like KillAura with smooth gradual rotation and randomised attack delay | Range, RotSpeed, MinDelay, MaxDelay |
+| **MultiAura** | Attacks ALL valid targets simultaneously each tick | Range, Target |
+| **ClickAura** | Attacks only when left-click is pressed, with FOV targeting | Range, FOV |
 | **Velocity** | Reduces knockback received when hit | H-Mult (0=none), V-Mult (1=normal) |
 | **AutoTotem** | Moves Totem of Undying to offhand automatically | — |
 | **Criticals** | Makes every swing a critical hit (tiny hop) | Mode (Jump/Packet) |
 | **AutoCrystal** | Places and detonates end crystals on nearby players | Range, MinDamage, AutoSwitch, AntiSuicide |
+| **AnchorAura** | Charges and detonates Respawn Anchors near enemies | Range |
 | **Surround** | Places obsidian around your feet against crystal explosions | Material, Center |
 | **TriggerBot** | Attacks when crosshair is on a valid target | Target, Delay |
 | **Reach** | Extends melee and block interaction range | AttackReach, BlockReach |
 | **AntiBot** | Filters bot entities from targeting | FilterTablist, FilterNoPing, FilterInvalid |
+| **BowAimbot** | Auto-aims bow shots with gravity and movement prediction | Range |
+| **BlockHit** | Blocks with shield then immediately counterattacks | — |
+| **ArrowDMG** | Increases arrow damage | — |
+| **MaceDMG** | Increases mace fall-damage hits | — |
+| **FeedAura** | Auto-feeds/breeds nearby passive animals with breeding items | Range |
+| **BonemealAura** | Auto-applies bonemeal to nearby crops, saplings and stems | Range, Crops, Saplings |
+| **TrollPotion** | Throws splash/lingering potions at nearby players | Range, Type |
 
 ### Movement Modules
 
@@ -341,6 +352,29 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **ElytraFlight** | Boost/Packet/Pitch elytra flight control | Mode, Speed |
 | **PacketFly** | Bypasses basic anti-fly via alternating ground-state packets | Speed, Height |
 | **InventoryMove** | WASD movement while GUI is open | Sprint, Jump |
+| **ExtraElytra** | Boost elytra with fireworks automatically | MinDurability |
+| **AutoWalk** | Continuously walks forward until disabled | — |
+| **HighJump** | Applies jump boost before each jump | Power |
+| **Spider** | Climb any wall surface like a spider | — |
+| **Dolphin** | Swim faster through water by boosting each tick | Speed |
+| **Glide** | Slow descent when falling (no elytra required) | Speed |
+| **Jetpack** | Boost upward by holding jump | Speed |
+| **BoatFly** | Fly while seated in a boat | Speed |
+| **NoClip** | Phase through blocks using position packet manipulation | — |
+| **Phase** | Walk through specific blocks | — |
+| **Blink** | Freeze your position client-side, then teleport when disabled | — |
+| **Parkour** | Auto-jumps at the edge of blocks for parkour | — |
+| **Sneak** | Auto-sneaks to protect fall-off edges | — |
+| **SnowShoe** | Walk on powder snow without sinking | — |
+| **NoSlowdown** | Removes slowdown from blocks, items and effects | Blocks, Usingitem, Webs |
+| **NoWeb** | Prevents cobwebs from slowing you | — |
+| **CameraNoClip** | Camera clips through blocks in FreeCam | — |
+| **AntiCactus** | Cancels cactus damage | — |
+| **AntiFire** | Cancels fire / lava damage | — |
+| **AntiEntityPush** | Prevents entities pushing you | — |
+| **AntiWaterPush** | Prevents water current from pushing you | — |
+| **AntiWobble** | Removes screen wobble on damage | — |
+| **MountBypass** | Dismount or move while riding a mount | — |
 | **BunnyHop** | Auto-jumps on landing to keep sprint speed | SpeedBoost |
 
 ### Player Modules
@@ -355,7 +389,37 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **AutoFish** | Reels in and recasts on fish bite automatically | RecastDelay |
 | **AutoFarm** | Harvests mature crops and replants seeds | Radius |
 | **FastPlace** | Removes the 4-tick block placement cooldown | — |
+| **FastEat** | Reduces food eating animation time | Speed |
+| **FastBow** | Instantly fully draws a bow | — |
+| **FastLadder** | Climb ladders at full walk speed | — |
+| **AntiBlind** | Removes Blindness potion effect client-side | — |
+| **AntiPotion** | Blocks specific negative potion effects | Effects list |
+| **AutoSwitch** | Automatically switches to best tool when breaking blocks | — |
+| **AutoSword** | Switches to sword when a mob gets in range | Range |
+| **AutoTool** | Selects the most efficient tool for the targeted block | — |
+| **AutoDrop** | Auto-drops configured items from inventory | Items |
+| **AutoSign** | Auto-types configured text on sign placement | Lines 1–4 |
+| **AutoSoup** | Eats mushroom soup when low on health | Threshold |
+| **AutoSwim** | Automatically swims upward in water | — |
+| **AutoLeave** | Leaves server when health drops below threshold | Threshold |
+| **AutoPotion** | Throws splash potions at yourself automatically | Type, Threshold |
+| **AirPlace** | Place blocks against air faces (no solid support needed) | — |
+| **Liquids** | Place blocks against liquid surfaces | — |
+| **Throw** | Auto-throws items from hotbar | Slot, Delay |
+| **Restock** | Moves items from inventory to fill depleted hotbar stacks | — |
+| **Protect** | Teleports you away when a nearby named player takes damage | Target, Range |
+| **Regen** | Restores health passively using saturation/absorption | Rate |
+| **PotionSaver** | Suppresses drinking a potion if the effect is already active | — |
+| **ItemGenerator** | Generates items by repeatedly dropping and picking them up | Slot, Delay |
 | **NoMiningFatigue** | Removes Mining Fatigue effect client-side | — |
+| **NoHurtcam** | Removes camera tilt on taking damage | — |
+| **NoLevitation** | Cancels Levitation effect movement | — |
+| **NoPumpkin** | Removes pumpkin blur overlay | — |
+| **NoShieldOverlay** | Removes shield block overlay when blocking | — |
+| **NoVignette** | Removes the vignette darkening at screen edges | — |
+| **NoBackground** | Removes the blur / dark background behind GUIs | — |
+| **NameProtect** | Replaces your real username with a fake name in local chat | FakeName |
+| **SkinDerp** | Rotates head to random angles as a cosmetic troll | — |
 | **InvManager** | Auto-drops junk items from inventory | DropJunk, Delay |
 
 ### Render / ESP Modules
@@ -380,6 +444,25 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **Radar** | HUD minimap with player/mob dots | Range, Size, Anchor |
 | **TimeChanger** | Locks client-side time (visual only) | Time (Day/Noon/Sunset/Night/Midnight/Custom) |
 | **WeatherChanger** | Locks client-side weather (visual only) | Weather (Clear/Rain/Thunder) |
+| **BarrierESP** | Shows invisible barrier blocks as red outlines | Radius |
+| **PortalESP** | Highlights Nether/End portal frames | — |
+| **ItemESP** | Shows dropped items through walls | Radius, Filter |
+| **MobSpawnESP** | Highlights blocks where mobs can spawn | Radius |
+| **CaveFinder** | Marks cave openings and underground voids | Radius |
+| **BaseFinder** | Detects player-modified chunks (placed/broken blocks) | Radius |
+| **NewChunks** | Highlights freshly generated chunks (no player activity) | — |
+| **OpenWaterESP** | Shows ocean/river surface cracks and underwater caves | — |
+| **Search** | Highlights any configurable block type | Block, Radius |
+| **XRay** | Hides all non-ore blocks for transparent x-ray view | Ores list |
+| **ProphuntESP** | Highlights prop-hunt disguised players | — |
+| **TrueSight** | Shows invisible entities at full opacity | — |
+| **HealthTags** | Shows health bar above players | — |
+| **RemoteView** | Attaches camera to another entity's perspective | Target |
+| **Overlay** | Draws a configurable coloured overlay on screen | Color, Alpha |
+| **RainbowUI** | Applies rainbow colour cycling to GUI elements | Speed |
+| **LSD** | Psychedelic world colour distortion effect | Speed |
+| **PlayerFinder** | Prints coordinates of all online players to chat | — |
+| **Headless** | Renders your own model without a head | — |
 | **NoRender** | Suppress HUD elements | Totem, Fire, BossBar, Scoreboard, PotionHUD, Particles |
 
 #### Colours
@@ -402,6 +485,18 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **Timer** | Speed up or slow down game time | Speed (1.0=normal, 2.0=double) |
 | **VeinMiner** | Breaks entire ore veins when you mine one block | MaxBlocks |
 | **PacketMine** | Instant mine attempt via simultaneous start/stop packets | OnlyInstant |
+| **NukerLegit** | Breaks blocks at legit mining speed with anti-cheat bypass timing | Range, Mode |
+| **SpeedNuker** | Mines blocks at maximum safe packet rate | Range |
+| **Excavator** | Digs a configurable rectangular area automatically | Width, Height, Depth |
+| **Tillaura** | Auto-tills nearby farmland | Radius |
+| **TreeBot** | Chops entire trees by breaking the base | — |
+| **InstaBuild** | Places entire configurable structures in one tick | Shape |
+| **InstantBunker** | Places a 3×3×3 obsidian bunker around you instantly | Material |
+| **BuildRandom** | Places random blocks in a pattern for griefing | Radius |
+| **Kaboom** | Places and detonates TNT rapidly | Count, Fuse |
+| **Follow** | Follows a named player or nearest entity | Target, Speed |
+| **Navigator** | Pathfinds to a set coordinate using built-in BFS | X, Y, Z |
+| **Panic** | Immediately disables all enabled modules on keypress | — |
 | **AutoBuild** | Places blocks in Floor/Bridge/Column shapes | Shape, Radius |
 
 ### Misc / Exploit Modules
@@ -433,6 +528,18 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 | **BookColors** | Translates `&x` colour codes to `§x` Minecraft format in book text |
 | **AutoReconnect** | Reconnects to the last server after disconnect, after a random configurable delay; optionally rotates to an offline alt first |
 | **AuthMeBypass** | Bypasses AuthMe login on cracked BungeeCord servers — sends `/server <backend>` via the proxy during the auth phase, before AuthMe can block you |
+| **NocomCrash** | Sends the nocom chunk-loading crash payload targeting unpatched vanilla/Spigot servers |
+| **OPSign** | Places a sign with a `/op` command payload (works on servers running old CraftBukkit sign-command exploit) |
+| **CMDBlock** | Sends a `UpdateCommandBlockC2SPacket` to execute arbitrary commands on servers that don't validate sender permissions |
+| **ForcePush** | Spams `PlayerInteractEntityC2SPacket` to push entities through walls via desync | 
+| **MassTPA** | Sends `/tpa` requests to every player in the tab list rapidly | Delay |
+| **InfiniChat** | Sends an infinitely long chat message to crash servers with small packet buffers | — |
+| **FancyChat** | Converts chat text to Unicode fancy/bold/italic font characters | Font |
+| **AutoComplete** | Auto-uses tab-complete on every message for server information leaking | — |
+| **Derp** | Rotates your head to random yaw/pitch angles each tick | — |
+| **HeadRoll** | Continuously rolls your head sideways | Speed |
+| **MileyCyrus** | Swings your head in a rhythmic pattern | — |
+| **WebConsoleXSS** | Sends XSS payloads in chat targeting vulnerable web-based console panels — executes jQuery to ForceOP via the admin's browser session | Target, Panel, DelayTicks, CoverTracks |
 
 ---
 
@@ -1167,6 +1274,60 @@ When a victim runs `/team info`, the prefixed click event appears in their chat.
 5. Enable `MiniMessageExploit` with `Technique = TotemHand`. The module sends `[item]` in chat.
 
 Many servers broadcast the item name verbatim. If the chat plugin passes item names through MiniMessage without stripping, the click event executes for anyone who clicks it.
+
+---
+
+## WebConsoleXSS — ForceOP via Browser XSS
+
+**Module:** Misc → `WebConsoleXSS`
+
+Exploits web-based Minecraft server console panels that render player chat as raw HTML. Publicly disclosed by LiveOverflow (2022).
+
+### How it works
+
+Many hosting providers give admins a browser-based console where server output is displayed. If the panel renders player chat using `innerHTML` instead of `innerText`, sending a chat message containing a `<script>` tag causes the browser to execute arbitrary JavaScript in the admin's authenticated session.
+
+The canonical payload targets panels using jQuery with standard RCON input IDs:
+
+```html
+<script>
+  $("#rconCommand")[0].value='op playername';
+  $("#sendRconCommand")[0].click();
+  $(".row-standard").remove();  <!-- erase evidence from console view -->
+</script>
+```
+
+For this to succeed:
+1. The admin must have the web console open in a browser tab when the message arrives.
+2. The panel must inject chat using `innerHTML` (not sanitised).
+3. The panel must match one of the supported jQuery selector variants.
+
+### Panel variants
+
+| Variant | Selector pair | Known panels |
+|---|---|---|
+| **jQuery-RCON** | `#rconCommand` / `#sendRconCommand` | AMP, similar hosting panels (canonical LiveOverflow payload) |
+| **jQuery-CMD** | `#commandInput` / `#sendCommand` | Common alternate panel builds |
+| **Multicraft** | `#command` / `#sendcommand` | Multicraft hosting |
+| **InputForm** | First `input[type=text]` + first `button` | Generic fallback for unknown panels |
+
+**Auto mode** cycles through all four variants with a configurable delay, then self-disables.
+
+### Settings
+
+| Setting | Default | Effect |
+|---|---|---|
+| `Target` | *(own username)* | Player name to OP — leave blank for your own name |
+| `Panel` | Auto | Auto cycles all variants; or select a specific panel type |
+| `DelayTicks` | 40 (~2 s) | Ticks between payload attempts in Auto mode |
+| `CoverTracks` | on | Appends `$(".row-standard").remove()` to wipe the log row from the console view |
+
+### Limitations
+
+- Requires the admin to have the console open *at the moment the message is sent*.
+- Does not work on panels that sanitise output (use `innerText`, DOMPurify, or CSP headers).
+- Modern browser content-security-policy (CSP) headers block inline `<script>` on well-configured panels.
+- Paper / modern Spigot may strip or truncate chat messages containing `<script>` before they reach the console.
 
 ---
 

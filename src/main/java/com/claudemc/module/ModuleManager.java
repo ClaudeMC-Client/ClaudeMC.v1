@@ -219,6 +219,7 @@ public class ModuleManager {
         register(new ForeachCmd());
         register(new AutoAuth());
         register(new AuthMeBypass());
+        register(new WebConsoleXSS());
         register(new BookColors());
         register(new AutoReconnect());
     }
