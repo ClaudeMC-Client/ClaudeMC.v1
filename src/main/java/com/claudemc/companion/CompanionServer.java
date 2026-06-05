@@ -13,6 +13,7 @@ import java.net.*;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -72,6 +73,8 @@ public final class CompanionServer {
                     server.createContext("/",                   this::serveStatic);
                     server.createContext("/api/scan",           this::handleScan);
                     server.createContext("/api/shodan",         this::handleShodan);
+                    server.createContext("/api/censys",         this::handleCensys);
+                    server.createContext("/api/fofa",           this::handleFofa);
                     server.createContext("/api/lookup",         this::handleLookup);
                     server.createContext("/api/vulndb",         this::handleVulnDb);
                     server.createContext("/api/chat",           this::handleChat);
@@ -265,6 +268,174 @@ public final class CompanionServer {
         } catch (Exception e) {
             sendText(ex, 500, e.getMessage());
         }
+    }
+
+    // ── POST /api/censys ──────────────────────────────────────────────────
+
+    private void handleCensys(HttpExchange ex) throws IOException {
+        if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        try {
+            JsonObject body  = parseBody(ex);
+            String     query = str(body, "query", "services.port=25565");
+            int        perPage = body.has("perPage") ? body.get("perPage").getAsInt() : 50;
+            String     pat   = AIConfig.INSTANCE.censysApiKey;
+
+            if (pat.isBlank()) {
+                sendText(ex, 400, "Censys API key not configured. Add censysApiKey in Settings.");
+                return;
+            }
+
+            JsonObject reqBody = new JsonObject();
+            reqBody.addProperty("query",    query);
+            reqBody.addProperty("per_page", Math.min(perPage, 100));
+            JsonArray fields = new JsonArray();
+            fields.add("ip"); fields.add("services.port");
+            fields.add("services.service_name"); fields.add("services.banner");
+            fields.add("location.country");
+            reqBody.add("fields", fields);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.platform.censys.io/v3/global/asset/search"))
+                .timeout(Duration.ofSeconds(20))
+                .header("Accept",        "application/json")
+                .header("Content-Type",  "application/json")
+                .header("Authorization", "Bearer " + pat)
+                .header("User-Agent",    UA)
+                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(reqBody)))
+                .build();
+
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 401 || resp.statusCode() == 403) {
+                sendText(ex, 401, "Censys auth failed. Check your Personal Access Token.");
+                return;
+            }
+            if (resp.statusCode() != 200) {
+                sendText(ex, 502, "Censys returned HTTP " + resp.statusCode());
+                return;
+            }
+
+            JsonObject censysResp = GSON.fromJson(resp.body(), JsonObject.class);
+            JsonArray  hits  = censysResp.has("result")
+                && censysResp.getAsJsonObject("result").has("hits")
+                ? censysResp.getAsJsonObject("result").getAsJsonArray("hits") : new JsonArray();
+
+            JsonArray results = new JsonArray();
+            for (JsonElement el : hits) {
+                if (!el.isJsonObject()) continue;
+                JsonObject h   = el.getAsJsonObject();
+                String     ip  = str(h, "ip", "");
+                if (ip.isBlank()) continue;
+                String sw = "", banner = "", country = "";
+                int    port = 25565;
+                if (h.has("services") && h.get("services").isJsonArray()) {
+                    for (JsonElement svc : h.getAsJsonArray("services")) {
+                        if (!svc.isJsonObject()) continue;
+                        JsonObject sv = svc.getAsJsonObject();
+                        int p = sv.has("port") ? sv.get("port").getAsInt() : 0;
+                        if (p == 25565 || p == 0) {
+                            port    = p == 0 ? 25565 : p;
+                            sw      = str(sv, "service_name", "");
+                            banner  = str(sv, "banner", "");
+                            break;
+                        }
+                    }
+                }
+                if (h.has("location") && h.get("location").isJsonObject())
+                    country = str(h.getAsJsonObject("location"), "country", "");
+
+                JsonArray vulns = matchVulns(sw, "", List.of());
+                JsonObject row  = new JsonObject();
+                row.addProperty("ip",      ip);
+                row.addProperty("port",    port);
+                row.addProperty("software", sw.isBlank() ? "unknown" : sw);
+                row.addProperty("banner",  banner);
+                row.addProperty("country", country);
+                row.addProperty("source",  "censys");
+                row.add("vulnerabilities", vulns);
+                results.add(row);
+            }
+
+            JsonObject out = new JsonObject();
+            out.add("results", results);
+            out.addProperty("total", results.size());
+            sendJson(ex, 200, out);
+        } catch (Exception e) {
+            sendText(ex, 500, e.getMessage());
+        }
+    }
+
+    // ── POST /api/fofa ────────────────────────────────────────────────────
+
+    private void handleFofa(HttpExchange ex) throws IOException {
+        if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        try {
+            JsonObject body  = parseBody(ex);
+            String     query = str(body, "query", "port=\"25565\" && protocol=\"minecraft\"");
+            int        size  = body.has("size") ? body.get("size").getAsInt() : 50;
+            String     key   = AIConfig.INSTANCE.fofaApiKey;
+
+            if (key.isBlank()) {
+                sendText(ex, 400, "FOFA API key not configured. Add fofaApiKey in Settings.");
+                return;
+            }
+
+            String qb64   = Base64.getEncoder().encodeToString(query.getBytes(StandardCharsets.UTF_8));
+            String fields = "ip,port,protocol,country,banner,host";
+            String url    = "https://fofa.info/api/v1/search/all"
+                + "?key="     + enc(key)
+                + "&qbase64=" + qb64
+                + "&fields="  + enc(fields)
+                + "&size="    + Math.min(size, 100);
+
+            String raw = httpGet(url, UA);
+            if (raw == null) { sendText(ex, 502, "FOFA request failed"); return; }
+
+            JsonObject fofaResp = GSON.fromJson(raw, JsonObject.class);
+            if (fofaResp.has("errmsg")) {
+                sendText(ex, 400, "FOFA error: " + fofaResp.get("errmsg").getAsString());
+                return;
+            }
+
+            JsonArray fofaResults = fofaResp.has("results")
+                ? fofaResp.getAsJsonArray("results") : new JsonArray();
+
+            // Each result: [ip, port, protocol, country, banner, host]
+            JsonArray results = new JsonArray();
+            for (JsonElement el : fofaResults) {
+                if (!el.isJsonArray()) continue;
+                JsonArray row = el.getAsJsonArray();
+                String ip      = safeGet(row, 0);
+                String port    = safeGet(row, 1);
+                String proto   = safeGet(row, 2);
+                String country = safeGet(row, 3);
+                String banner  = safeGet(row, 4);
+                String host    = safeGet(row, 5);
+                if (ip.isBlank()) continue;
+
+                JsonArray vulns = matchVulns(proto, "", List.of());
+                JsonObject r    = new JsonObject();
+                r.addProperty("ip",       ip);
+                r.addProperty("port",     port.isBlank() ? "25565" : port);
+                r.addProperty("software", proto.isBlank() ? "unknown" : proto);
+                r.addProperty("banner",   banner);
+                r.addProperty("country",  country);
+                r.addProperty("host",     host);
+                r.addProperty("source",   "fofa");
+                r.add("vulnerabilities",  vulns);
+                results.add(r);
+            }
+
+            JsonObject out = new JsonObject();
+            out.add("results", results);
+            out.addProperty("total", fofaResp.has("size") ? fofaResp.get("size").getAsInt() : results.size());
+            sendJson(ex, 200, out);
+        } catch (Exception e) {
+            sendText(ex, 500, e.getMessage());
+        }
+    }
+
+    private static String safeGet(JsonArray a, int i) {
+        return (i < a.size() && !a.get(i).isJsonNull()) ? a.get(i).getAsString() : "";
     }
 
     // ── GET /api/lookup?address=IP:PORT ───────────────────────────────────
@@ -474,7 +645,9 @@ public final class CompanionServer {
             out.addProperty("anthropicKey", AIConfig.INSTANCE.anthropicKey);
             out.addProperty("openaiKey",    AIConfig.INSTANCE.openaiKey);
             out.addProperty("geminiKey",    AIConfig.INSTANCE.geminiKey);
-            out.addProperty("shodanApiKey", AIConfig.INSTANCE.shodanApiKey);
+            out.addProperty("shodanApiKey",  AIConfig.INSTANCE.shodanApiKey);
+            out.addProperty("censysApiKey",  AIConfig.INSTANCE.censysApiKey);
+            out.addProperty("fofaApiKey",    AIConfig.INSTANCE.fofaApiKey);
             out.addProperty("model",        AIConfig.INSTANCE.model);
             out.addProperty("maxTokens",    AIConfig.INSTANCE.maxTokens);
             out.addProperty("systemPrompt", AIConfig.INSTANCE.systemPrompt);
@@ -487,6 +660,8 @@ public final class CompanionServer {
                 if (body.has("openaiKey"))    AIConfig.INSTANCE.openaiKey    = str(body, "openaiKey",    AIConfig.INSTANCE.openaiKey);
                 if (body.has("geminiKey"))    AIConfig.INSTANCE.geminiKey    = str(body, "geminiKey",    AIConfig.INSTANCE.geminiKey);
                 if (body.has("shodanApiKey")) AIConfig.INSTANCE.shodanApiKey = str(body, "shodanApiKey", AIConfig.INSTANCE.shodanApiKey);
+                if (body.has("censysApiKey")) AIConfig.INSTANCE.censysApiKey = str(body, "censysApiKey", AIConfig.INSTANCE.censysApiKey);
+                if (body.has("fofaApiKey"))   AIConfig.INSTANCE.fofaApiKey   = str(body, "fofaApiKey",   AIConfig.INSTANCE.fofaApiKey);
                 if (body.has("model"))        AIConfig.INSTANCE.model        = str(body, "model",        AIConfig.INSTANCE.model);
                 if (body.has("maxTokens"))    AIConfig.INSTANCE.maxTokens    = body.get("maxTokens").getAsInt();
                 if (body.has("systemPrompt")) AIConfig.INSTANCE.systemPrompt = str(body, "systemPrompt", AIConfig.INSTANCE.systemPrompt);

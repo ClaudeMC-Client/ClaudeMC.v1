@@ -40,6 +40,12 @@ public class AIConfig {
     /** Shodan API key for server discovery (optional). Get one at account.shodan.io */
     public String  shodanApiKey = "";
 
+    /** Censys Personal Access Token for host search (optional). Get one at app.censys.io/account/api */
+    public String  censysApiKey = "";
+
+    /** FOFA API key for server discovery (optional). Get one at fofa.info/user/info */
+    public String  fofaApiKey   = "";
+
     private AIConfig() {}
 
     // ── Persistence ──────────────────────────────────────────────────────
@@ -57,6 +63,8 @@ public class AIConfig {
             INSTANCE.maxTokens    = loaded.maxTokens > 0 ? loaded.maxTokens : 300;
             INSTANCE.systemPrompt = orDefault(loaded.systemPrompt, INSTANCE.systemPrompt);
             INSTANCE.shodanApiKey = orDefault(loaded.shodanApiKey, "");
+            INSTANCE.censysApiKey = orDefault(loaded.censysApiKey, "");
+            INSTANCE.fofaApiKey   = orDefault(loaded.fofaApiKey,   "");
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[AIConfig] Load failed: {}", e.getMessage());
         }

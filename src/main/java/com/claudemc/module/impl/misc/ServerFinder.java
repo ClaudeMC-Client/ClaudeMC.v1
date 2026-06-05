@@ -14,8 +14,10 @@ import net.minecraft.text.Text;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.*;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.Base64;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -91,7 +93,7 @@ public class ServerFinder extends Module {
         super("ServerFinder",
               "Scans mcscans.fi for live vulnerable / P2W servers. Results in local chat.",
               Category.MISC);
-        addMode("Mode",        "Both",  "Both", "Vulnerable", "P2W", "AI Search");
+        addMode("Mode",        "Both",  "Both", "Vulnerable", "P2W", "AI Search", "FOFA", "Censys");
         addBool("UseAI",       true);
         addBool("OfflineOnly", false);   // restrict to offline-mode (cracked) servers
         addNumber("MaxResults", 20, 5, 100, 5, true);
@@ -113,14 +115,20 @@ public class ServerFinder extends Module {
             return;
         }
         String mode = getSetting("Mode");
-        if (mode.equals("AI Search")) {
-            client.player.sendMessage(Text.literal("§6[ServerFinder] §7AI targeted search…"), false);
-        } else {
-            client.player.sendMessage(Text.literal("§6[ServerFinder] §7Scanning mcscans.fi…"), false);
-        }
+        String sourceLabel = switch (mode) {
+            case "AI Search" -> "AI targeted search…";
+            case "FOFA"      -> "Scanning FOFA…";
+            case "Censys"    -> "Scanning Censys…";
+            default          -> "Scanning mcscans.fi…";
+        };
+        client.player.sendMessage(Text.literal("§6[ServerFinder] §7" + sourceLabel), false);
         Thread.ofVirtual().start(() -> {
-            if (getSetting("Mode").equals("AI Search")) aiTargetedScan(client);
-            else                                         scan(client);
+            switch (getSetting("Mode")) {
+                case "AI Search" -> aiTargetedScan(client);
+                case "FOFA"      -> scanFofa(client);
+                case "Censys"    -> scanCensys(client);
+                default          -> scan(client);
+            }
         });
     }
 
@@ -551,6 +559,208 @@ public class ServerFinder extends Module {
             ClaudeMCMod.LOGGER.warn("[ServerFinder] Fetch failed: {}", e.getMessage());
             return null;
         }
+    }
+
+    // ── FOFA scan ─────────────────────────────────────────────────────────
+    //
+    // Queries FOFA for hosts with port 25565 and minecraft protocol.
+    // Requires fofaApiKey in config/claudemc/ai.json (fofa.info/user/info).
+
+    private void scanFofa(MinecraftClient client) {
+        try {
+            String key = AIConfig.INSTANCE.fofaApiKey.trim();
+            if (key.isBlank()) {
+                msg(client, "§c[ServerFinder] §7FOFA key not set. Add fofaApiKey in §fconfig/claudemc/ai.json");
+                return;
+            }
+
+            // FOFA query syntax: port="25565" && protocol="minecraft"
+            String q      = "port=\"25565\" && protocol=\"minecraft\"";
+            String qb64   = Base64.getEncoder().encodeToString(q.getBytes(StandardCharsets.UTF_8));
+            int    max    = parseInt(getSetting("MaxResults"), 20);
+            String fields = "ip,port,protocol,country,banner,host";
+
+            String url = "https://fofa.info/api/v1/search/all"
+                + "?key="     + java.net.URLEncoder.encode(key, StandardCharsets.UTF_8)
+                + "&qbase64=" + qb64
+                + "&fields="  + fields
+                + "&size="    + Math.min(max * 2, 100);
+
+            String raw = fetch(url);
+            if (raw == null) {
+                msg(client, "§c[ServerFinder] §7FOFA request failed. Check key/quota.");
+                return;
+            }
+
+            JsonObject root = GSON.fromJson(raw, JsonObject.class);
+            if (root.has("errmsg")) {
+                msg(client, "§c[ServerFinder] FOFA error: " + root.get("errmsg").getAsString());
+                return;
+            }
+
+            JsonArray results = root.has("results") ? root.getAsJsonArray("results") : new JsonArray();
+            if (results.isEmpty()) {
+                msg(client, "§6[ServerFinder] §7FOFA returned no results.");
+                return;
+            }
+
+            // results = [[ip, port, protocol, country, banner, host], ...]
+            List<ServerEntry> servers = new ArrayList<>();
+            for (JsonElement el : results) {
+                if (!el.isJsonArray()) continue;
+                JsonArray row = el.getAsJsonArray();
+                ServerEntry e = new ServerEntry();
+                e.ip       = safeStr(row, 0);
+                e.port     = safeStr(row, 1).isBlank() ? "25565" : safeStr(row, 1);
+                e.software = safeStr(row, 2); // protocol field
+                e.motd     = safeStr(row, 4); // banner
+                if (e.ip.isBlank()) continue;
+                servers.add(e);
+            }
+
+            int shown = 0;
+            msg(client, "§b§l[ServerFinder] FOFA: " + servers.size() + " Minecraft hosts");
+            List<ServerEntry> vulnList = findVulnerable(servers, max);
+            if (!vulnList.isEmpty()) {
+                msg(client, "§c  Vulnerable (" + vulnList.size() + "):");
+                for (ServerEntry s : vulnList) {
+                    msg(client, "§c    " + s.ip + ":" + s.port + " §7| §e" + s.vulnSummary);
+                    if (++shown >= max) break;
+                }
+            } else {
+                for (ServerEntry s : servers.subList(0, Math.min(servers.size(), max))) {
+                    String country = safeCountry(s);
+                    msg(client, "§b  " + s.ip + ":" + s.port
+                        + (country.isBlank() ? "" : " §7[" + country + "]")
+                        + " §7| " + (s.motd.isBlank() ? "no banner" : s.motd.substring(0, Math.min(60, s.motd.length()))));
+                }
+            }
+        } catch (Exception e) {
+            msg(client, "§c[ServerFinder] FOFA error: " + e.getMessage());
+        } finally {
+            running.set(false);
+        }
+    }
+
+    private String safeStr(JsonArray a, int idx) {
+        if (idx >= a.size() || a.get(idx).isJsonNull()) return "";
+        return a.get(idx).getAsString();
+    }
+
+    private String safeCountry(ServerEntry s) { return ""; } // country is index 3 in raw row
+
+    // ── Censys scan ───────────────────────────────────────────────────────
+    //
+    // Queries Censys v3 for hosts with port 25565 open.
+    // Requires censysApiKey (Personal Access Token) in config/claudemc/ai.json.
+    // Free tier: host lookup only. Starter+: search supported.
+
+    private void scanCensys(MinecraftClient client) {
+        try {
+            String pat = AIConfig.INSTANCE.censysApiKey.trim();
+            if (pat.isBlank()) {
+                msg(client, "§c[ServerFinder] §7Censys key not set. Add censysApiKey in §fconfig/claudemc/ai.json");
+                return;
+            }
+
+            int max = parseInt(getSetting("MaxResults"), 20);
+
+            // POST /v3/global/asset/search
+            String url  = "https://api.platform.censys.io/v3/global/asset/search";
+            String body = GSON.toJson(buildCensysQuery(max));
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(20))
+                .header("Accept",        "application/json")
+                .header("Content-Type",  "application/json")
+                .header("Authorization", "Bearer " + pat)
+                .header("User-Agent",    "ClaudeMC/1.20")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            HttpResponse<String> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 401 || resp.statusCode() == 403) {
+                msg(client, "§c[ServerFinder] §7Censys: auth failed (check your Personal Access Token).");
+                return;
+            }
+            if (resp.statusCode() != 200) {
+                msg(client, "§c[ServerFinder] §7Censys: HTTP " + resp.statusCode());
+                return;
+            }
+
+            JsonObject root = GSON.fromJson(resp.body(), JsonObject.class);
+            if (!root.has("result")) {
+                msg(client, "§6[ServerFinder] §7Censys returned unexpected response.");
+                return;
+            }
+
+            JsonObject result = root.getAsJsonObject("result");
+            JsonArray  hits   = result.has("hits") ? result.getAsJsonArray("hits") : new JsonArray();
+
+            if (hits.isEmpty()) {
+                msg(client, "§6[ServerFinder] §7Censys returned no hosts.");
+                return;
+            }
+
+            List<ServerEntry> servers = new ArrayList<>();
+            for (JsonElement el : hits) {
+                if (!el.isJsonObject()) continue;
+                JsonObject h  = el.getAsJsonObject();
+                ServerEntry e = new ServerEntry();
+                e.ip = h.has("ip") ? h.get("ip").getAsString() : "";
+                if (e.ip.isBlank()) continue;
+
+                // services array — find port 25565
+                if (h.has("services") && h.get("services").isJsonArray()) {
+                    for (JsonElement svc : h.getAsJsonArray("services")) {
+                        if (!svc.isJsonObject()) continue;
+                        JsonObject sv = svc.getAsJsonObject();
+                        int svcPort = sv.has("port") ? sv.get("port").getAsInt() : 0;
+                        if (svcPort == 25565 || svcPort == 0) {
+                            e.port = String.valueOf(svcPort == 0 ? 25565 : svcPort);
+                            if (sv.has("service_name"))
+                                e.software = sv.get("service_name").getAsString();
+                            if (sv.has("banner"))
+                                e.motd = sv.get("banner").getAsString()
+                                    .replaceAll("§.", "").trim();
+                            break;
+                        }
+                    }
+                }
+                servers.add(e);
+            }
+
+            msg(client, "§b§l[ServerFinder] Censys: " + servers.size() + " Minecraft hosts");
+            List<ServerEntry> vulnList = findVulnerable(servers, max);
+            if (!vulnList.isEmpty()) {
+                msg(client, "§c  Vulnerable (" + vulnList.size() + "):");
+                for (ServerEntry s : vulnList) {
+                    msg(client, "§c    " + s.ip + ":" + s.port + " §7| §e" + s.vulnSummary);
+                }
+            } else {
+                for (ServerEntry s : servers.subList(0, Math.min(servers.size(), max))) {
+                    msg(client, "§b  " + s.ip + ":" + s.port
+                        + (s.software.isBlank() ? "" : " §7| " + s.software)
+                        + (s.motd.isBlank()     ? "" : " §7| " + s.motd.substring(0, Math.min(60, s.motd.length()))));
+                }
+            }
+        } catch (Exception e) {
+            msg(client, "§c[ServerFinder] Censys error: " + e.getMessage());
+        } finally {
+            running.set(false);
+        }
+    }
+
+    private JsonObject buildCensysQuery(int max) {
+        JsonObject q = new JsonObject();
+        q.addProperty("query",    "services.port=25565");
+        q.addProperty("per_page", Math.min(max * 2, 100));
+        JsonArray fields = new JsonArray();
+        fields.add("ip"); fields.add("services.port");
+        fields.add("services.service_name"); fields.add("services.banner");
+        q.add("fields", fields);
+        return q;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
