@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.4
+# ClaudeMC v1.20.5
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -48,45 +48,58 @@ Other AI modules: **SmartReply** generates human-sounding AFK replies so staff c
 
 Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectile trajectories, survival flight, KillAura, AutoCrystal, OreESP, dupe exploits, staff-detection AFK bypass, and 60+ other modules. See the [Module Reference](#module-reference) below.
 
-> **What's new in v1.20.4:** Massive Wurst Client module port — **80+ new modules** across all categories, bringing ClaudeMC to feature-parity with Wurst 7. New XSS exploit module: **WebConsoleXSS** sends jQuery/script payloads that ForceOP via vulnerable web-based server console panels (documented CVE by LiveOverflow, 2022). Mixin fixes: broken `onDisconnect` injection replaced with proper `ClientPlayConnectionEvents.DISCONNECT` event; binary-encoded source file fixed. All new modules compile and remap cleanly on MC 1.21.11. **v1.20.3:** All v1.19.6/v1.19.7 fixes ported to MC 1.21.11. **v1.20.0:** Minecraft **1.21.11** support. The mod has been migrated from 1.21.1 across every breaking API change in the 1.21.2 → 1.21.11 line: the new `Click`/`KeyInput`/`CharInput` input records (all ClickGUI/screen input handlers rewritten), the immutable `PlayerInput` movement record (InventoryMove/AutoMine input mixin), the 1.21.5 render-pipeline changes (`RenderLayers.LINES`, manual box edges in `RenderUtils`), the 1.21.9 decoupled render-state camera (`ctx.worldState().cameraRenderState.pos`), `WorldRenderEvents` moving to the `.world` subpackage, `PlayerInventory.getSelectedSlot()/setSelectedSlot()`, `getEntityPos()`, `isGliding()`, the `EquippableComponent`/attribute-based armor system (AutoArmor), the record-based `GameProfile` (`name()`/`id()`), and the new `Session` constructor. Build toolchain bumped to Gradle 8.14, fabric-loom 1.13.4, Fabric Loader 0.19.3, Fabric API 0.141.4+1.21.11. All mixins verified to apply cleanly at runtime. **v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception (`!lower.contains("server")`) to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick` — both `START_FALL_FLYING` packet sends now guard `getNetworkHandler()`. **v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt (affected SmartReply, ExploitAdvisor, ServerFinder, AutoMine, Companion Chat/Analyze). `AIClient.ask()` now accepts an explicit system-prompt parameter so modules never mutate global config. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays. Fixes unreachable dead-code branch in `ClickGui` header click. Fixes `DupeDbClient.storeTokens` NPE on missing token fields. **v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`, launched from a new `[ClaudeMC]` button on the Minecraft main menu. Tabs: **Scanner** (MCScans + mcsrvstat.us + mcstatus.io + Shodan, all in one), **Chat** (AI conversation with markdown rendering and 6-turn history), **Settings** (all API keys including Shodan editable in the browser before entering a game), **Alts** (full alt account management), **VulnDb** (searchable/filterable vulnerability database). **v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries. **v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode. v1.17 added cross-reference tags. v1.16 added AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect. v1.13 added the AI layer.
-
 ---
 
 ## Table of Contents
 
 1. [Requirements](#requirements)
 2. [Installation](#installation)
-3. [Building from Source](#building-from-source)
+3. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
 4. [In-Game Controls](#in-game-controls)
-5. [HUD Overlay](#hud-overlay)
-6. [ClickGUI Guide](#clickgui-guide)
-7. [Module Reference](#module-reference)
-   - [Combat](#combat-modules)
-   - [Movement](#movement-modules)
-   - [Player](#player-modules)
-   - [Render / ESP](#render--esp-modules)
-   - [World](#world-modules)
-   - [Misc / Exploits](#misc--exploit-modules)
-8. [AI Integration](#ai-integration)
-   - [AI Settings](#ai-settings)
-   - [SmartReply](#smartreply)
-   - [ExploitAdvisor](#exploitadvisor)
-   - [AIAssist](#aiassist)
-9. [ClaudeMC Companion (localhost web app)](#claudemc-companion-localhost-web-app)
-   - [Scanner](#scanner)
-   - [Chat](#chat)
-   - [Settings](#companion-settings)
-   - [Alts](#companion-alts)
-   - [VulnDb](#companion-vulndb)
-10. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
-11. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
-12. [Cracked Minecraft (TLauncher etc.)](#cracked-minecraft-tlauncher-etc)
-13. [Editing Module Settings](#editing-module-settings)
-14. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-15. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-16. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-17. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-18. [Troubleshooting](#troubleshooting)
+5. [Custom Keybinds](#custom-keybinds)
+6. [HUD Overlay](#hud-overlay)
+7. [ClickGUI Guide](#clickgui-guide)
+8. [Editing Module Settings](#editing-module-settings)
+9. [Alt Manager](#alt-manager)
+10. [Macros](#macros)
+11. [Chat Overlay (UIUtils)](#chat-overlay-uiutils)
+12. [Module Reference](#module-reference)
+    - [Combat](#combat-modules)
+    - [Movement](#movement-modules)
+    - [Player](#player-modules)
+    - [Render / ESP](#render--esp-modules)
+    - [World](#world-modules)
+    - [Misc / Exploits](#misc--exploit-modules)
+13. [AI Integration](#ai-integration)
+    - [AI Settings](#ai-settings)
+    - [SmartReply](#smartreply)
+    - [ExploitAdvisor](#exploitadvisor)
+    - [AIAssist](#aiassist)
+14. [ClaudeMC Companion (localhost web app)](#claudemc-companion-localhost-web-app)
+    - [Scanner](#scanner)
+    - [Chat](#chat)
+    - [Settings](#companion-settings)
+    - [Alts](#companion-alts)
+    - [VulnDb](#companion-vulndb)
+15. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
+16. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
+17. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+18. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+19. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+20. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+21. [ForceOP](#forceop)
+22. [ForceCreative](#forcecreative)
+23. [AuthMeBypass — Proxy Auth Escape](#authmebypass--proxy-auth-escape)
+24. [VanishDetect — Packet Leak Tracking](#vanishdetect--packet-leak-tracking)
+25. [MiniMessage Exploit](#minimessage-exploit)
+26. [WebConsoleXSS — ForceOP via Browser XSS](#webconsolexss--forceop-via-browser-xss)
+27. [Server Crash](#server-crash)
+28. [DupeDB Integration](#dupedb-integration)
+29. [Mod Compatibility](#mod-compatibility)
+30. [Troubleshooting](#troubleshooting)
+31. [Building from Source](#building-from-source)
+32. [Credits](#credits)
+33. [What's New](#whats-new)
 
 ---
 
@@ -127,93 +140,44 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
 
 ---
 
-## Building from Source
+## Cracked Minecraft (TLauncher etc.)
 
-> **You don't need to do this to use the mod.** Just download the `.jar` from the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases) and drop it in `mods/`. The steps below are only needed if you want to modify the code and compile it yourself.
+**Short answer: yes.** ClaudeMC is a standard Fabric client mod — it works on any Minecraft installation regardless of how the game was launched, including TLauncher, MultiMC in offline mode, PolyMC, ATLauncher, and any other launcher.
 
 ### What you need
 
-| Tool | Where to get it | Notes |
+| What | Notes |
+|---|---|
+| Minecraft Java Edition 1.21.11 | Any launcher that can run this version |
+| Fabric Loader ≥ 0.19.3 | Install via the launcher's built-in profile creator or the Fabric Installer |
+| Fabric API 0.141.4+1.21.11 | Downloadable from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) |
+
+### TLauncher — step by step
+
+1. **Download and install TLauncher** from [tlauncher.org](https://tlauncher.org) if you don't have it.
+2. In the version selector, type `1.21.11` and look for **Fabric 1.21.11** in the list (TLauncher bundles Fabric profiles). Select it and click **Install** / **Play** once to let it download.
+   - If Fabric 1.21.11 doesn't appear: download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/) and run it pointing at your TLauncher game directory.
+3. **Find the mods folder.** Default locations:
+   - Windows: `%AppData%\.minecraft\mods\`
+   - macOS: `~/Library/Application Support/minecraft/mods/`
+   - Linux: `~/.minecraft/mods/`
+   - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
+4. **Drop in the JARs:**
+   - `fabric-api-0.141.4+1.21.11.jar` (or equivalent version)
+   - `claudemc-1.19.1.jar` (from the Releases page)
+5. Launch the **Fabric 1.21.11** profile in TLauncher.
+6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
+
+### Online-mode vs offline-mode servers
+
+| Server type | Works? | Notes |
 |---|---|---|
-| **JDK 21** (full kit, not JRE) | [adoptium.net](https://adoptium.net/) | Must be 21 — Java 17 or 22 won't work |
-| **Git** | [git-scm.com](https://git-scm.com/) | To clone the repo |
-| Internet connection | — | Downloads ~250 MB of Fabric + Minecraft on first build |
+| **Offline-mode / cracked servers** | ✅ | Any username works. No Microsoft account needed. |
+| **Online-mode servers** | ✅ with valid account | Requires a genuine Microsoft session. TLauncher Premium (paid) or a real account entered via TLauncher works. Without a valid session the server will reject the connection with "Not authenticated with Minecraft.net" — that is a server restriction, not a mod restriction. |
 
-You do **not** need to install Gradle separately. The repo includes `gradlew` / `gradlew.bat` which auto-downloads the right Gradle version.
+### Alt Manager
 
-### Step-by-step
-
-**1. Install JDK 21**
-
-Download the Temurin 21 installer from [adoptium.net](https://adoptium.net/). Run it and make sure `JAVA_HOME` is set (the Temurin installer does this automatically on Windows).
-
-Verify:
-```
-java -version
-```
-You should see `openjdk 21`.
-
-**2. Clone the repo and switch branch**
-
-```bash
-git clone https://github.com/l0azathkamil/ClaudeMC.v1.git
-cd ClaudeMC.v1
-git checkout claude/serene-volta-eY5Oe
-```
-
-**3. Build**
-
-The first build downloads all Minecraft and Fabric dependencies (~250 MB). This takes 5–10 minutes on a normal connection. Subsequent builds are fast.
-
-```bash
-# Windows (Command Prompt or PowerShell):
-gradlew.bat build
-
-# macOS / Linux:
-./gradlew build
-```
-
-If Gradle complains about permissions on macOS/Linux:
-```bash
-chmod +x gradlew
-./gradlew build
-```
-
-**4. Find the compiled JAR**
-
-After a successful build, your file is at:
-```
-build/libs/claudemc-1.19.1.jar
-```
-(There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
-
-**5. Install it**
-
-Copy the JAR to your mods folder:
-
-```bash
-# Windows
-copy build\libs\claudemc-1.19.1.jar %APPDATA%\.minecraft\mods\
-
-# macOS
-cp build/libs/claudemc-1.19.1.jar ~/Library/Application\ Support/minecraft/mods/
-
-# Linux
-cp build/libs/claudemc-1.19.1.jar ~/.minecraft/mods/
-```
-
-Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.11 in your mods folder.
-
-### Common build errors
-
-| Error message | Cause | Fix |
-|---|---|---|
-| `'java' is not recognized` / `java: not found` | JDK not installed or not on PATH | Install JDK 21 from adoptium.net; restart your terminal |
-| `JAVA_HOME is set to an invalid directory` | Wrong JDK path | Update `JAVA_HOME` to point to JDK 21 (e.g. `C:\Program Files\Eclipse Adoptium\jdk-21...`) |
-| `Plugin not found: fabric-loom` | Blocked internet or Maven outage | Check you can reach `maven.fabricmc.net`; try again |
-| `Could not resolve net.fabricmc:yarn` | Same — Maven unreachable | Retry; check network/firewall |
-| `error: release version 21 not supported` | You ran build with Java 17 or older | Set `JAVA_HOME` to JDK 21 |
-| `BUILD SUCCESSFUL` but no JAR found | Very unlikely — check `build/libs/` | Run `gradlew build --info` for detail |
+ClaudeMC includes a built-in **Alt Manager** (press `.` → `[Alts]` in the footer). You can add **Offline alts** (just a username — works on cracked servers) or **Session alts** (username + UUID + access token — for online-mode servers).
 
 ---
 
@@ -306,6 +270,67 @@ Press **`.`** to open the GUI. Six draggable panels appear — one per category.
 > - **Text fields** (yellow `§e`) — left-click to enter edit mode, type freely, **Enter** or click away to save, **Esc** to cancel, right-click to clear
 >
 > All values are saved to `config/claudemc/modules.json` and restored on the next launch. See [Editing Module Settings](#editing-module-settings) for details.
+
+---
+
+## Editing Module Settings
+
+As of **v1.18** every module setting — including free-text fields — is editable live in the ClickGUI. No file editing, no rebuilding required.
+
+1. Press **`.`** to open the ClickGUI.
+2. **Right-click** a module to expand its settings.
+3. Interact with the setting row:
+
+| Setting type | Left-click | Right-click |
+|---|---|---|
+| **Number** (e.g. Range, Speed) | Increase by one step | Decrease by one step |
+| **Toggle** (e.g. Rotate, ShowFull) | Flip on/off | Flip on/off |
+| **Option** (e.g. Mode, Filter) | Next option | Previous option |
+| **Text** (e.g. Query, Password) | Enter edit mode — cursor appears, type freely, **Enter** or click away to save, **Esc** to cancel | Clear the field |
+
+Settings are written to `config/claudemc/modules.json` the moment you change them and restored on the next launch.
+
+> Module **enabled/disabled** state is intentionally *not* restored on startup — only setting values are — so nothing activates before you join a world.
+
+---
+
+## Alt Manager
+
+Open **`.`** → click **`[Alts]`** in the footer.
+
+**Offline / Cracked alts** — works on offline-mode and cracked servers:
+1. Click `[+ Offline]`
+2. Enter a username → Enter
+
+**Session alts** (online-mode servers) — requires a pre-obtained access token:
+1. Click `[+ Session]`
+2. Enter username, UUID, and the Microsoft access token → Enter
+3. Tokens can be obtained from external auth tools (not included)
+
+Click any row to switch to that account. Click **`[Restore]`** to switch back to your original account. Changes take effect on the next server connection — you must reconnect after switching.
+
+> **Warning:** switching alts while already connected to a server will not work mid-session. Always switch before joining.
+
+---
+
+## Macros
+
+Open **`.`** → click **`[Macros]`** in the footer.
+
+- **Add:** click `[+ New Macro]`, type a name and command (e.g. `/tp spawn`), press Tab to cycle fields, Enter to save
+- **Keybind:** tab to the Key field; it enters listening mode automatically — press any key to bind
+- **Delete:** right-click any macro row
+- **Fire:** press the bound key in-game (while no screen is open), or run via the Chat Overlay
+
+---
+
+## Chat Overlay (UIUtils)
+
+Press **`T`** while any GUI is open (auction house, chest, crafting table, etc.) to open the floating chat input box without closing the current screen. Press **Enter** to send, **Esc** to dismiss.
+
+- Supports full text editing (backspace, delete, left/right arrow, home/end)
+- Prepend `/` to send a command instead of a chat message
+- Works in any screen — you never have to close the GUI to type
 
 ---
 
@@ -711,86 +736,6 @@ Browse and search the full vulnerability database.
 
 ---
 
-## DupeDB Integration
-
-ClaudeMC connects to **[dupedb.net](https://dupedb.net)** — a community-maintained database of verified Minecraft duplication exploits and vulnerabilities — to keep VulnDb and ExploitAdvisor current without requiring a mod update.
-
-### How it works
-
-**On every launch** (once per 23 hours), two sources are queried in the background:
-
-1. **Public feed (no auth required)** — `GET /api/public/exploits` returns the 10 most recently verified exploits. Any entry with a known plugin name is added to VulnDb immediately.
-
-2. **AI + web search** — DuckDuckGo queries scoped to Minecraft 1.21.x feed into the AI, which structures confirmed exploits into VulnDb entries. Requires an AI API key.
-
-**When ServerFinder or ExploitAdvisor runs**, the authenticated DupeDB search API (`/api/exploits/search?version=1.21.11&status=verified`) is queried for results specific to the server's detected software stack, giving you community-reported dupes and exploits relevant to that exact server.
-
-### Connecting your DupeDB account (optional — enables full search)
-
-The public feed requires no setup. For authenticated search (broader results, version/plugin filters):
-
-1. Create an account at [dupedb.net](https://dupedb.net).
-2. Go to **Account Settings → OAuth Apps** → **Create App**.
-3. Set the App ID to `claudemc`, Name to anything, Redirect URI to `http://127.0.0.1/callback`, and tick **Read-Only**.
-4. The next time a module triggers an authenticated DupeDB call, your browser will open automatically for a one-time consent. Click **Allow** and close the tab — you're done.
-
-Tokens are stored at `.minecraft/config/claudemc/dupedb.json` and auto-refreshed (30-day rotating tokens). You only authorize once unless you revoke the app.
-
-> To use a different App ID, edit `config/claudemc/dupedb.json` and change `"appId"` before authorizing.
-
----
-
-## AutoMine — Human-like Strip Mining
-
-**Module:** Misc → `AutoMine`
-
-Automatically runs a strip mine that looks like a real player dug it: it mines forward, branches off to the sides, collects ores it "notices", but deliberately misses a configurable percentage of them. It also freezes completely if **AntiAFK** detects staff nearby so there is no suspicious activity during a check.
-
-### Pattern
-
-```
-Main tunnel →→→→→→→→→→→→→→→→→→→→→→→→→→→
-                   ↑ branch left (8 blocks)
-                              ↑ branch right (8 blocks)
-                                         ↑ branch left …
-```
-
-1. Face the direction you want to mine before enabling — the module snaps your yaw to the nearest cardinal.
-2. Mines a 1-wide × 2-tall forward corridor.
-3. Every **BranchEvery** blocks it turns 90° and mines a **BranchLen**-block side branch.
-4. Returns to the main tunnel, alternates to the other side, and continues.
-
-### Staff detection
-
-When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-check DM), AutoMine takes a **random 1–60 second break** — no movement, no mining, no camera movement. Yaw and pitch are locked for the entire break, so from the server's perspective the player has just gone still (as if checking their phone or reading chat). After the break, mining resumes with an elevated miss chance (≥ 55%) for 10 minutes.
-
-**AutoMine never looks around during a staff break** — looking around underground looks exactly like an xray client scanning for ores. The only time AutoMine moves the camera is the brief surprise look-around after mining an unusually large vein (≥ 3 consecutive ores), which mimics a real player reacting to unexpectedly rich ground.
-
-> You need **AntiAFK enabled** for this integration to work. If AntiAFK is off, AutoMine never pauses.
-
-### Settings
-
-| Setting | Default | Effect |
-|---|---|---|
-| `Ores` | Diamond+Iron | Which ores to target — Diamond+Iron / Diamond / Iron / All Valuable / Everything |
-| `BranchEvery` | 16 | Blocks forward between branches |
-| `BranchLen` | 8 | Blocks per side branch |
-| `OreRadius` | 3 | Radius (blocks) around current position to scan for ores |
-| `MissChance` | 15% | Probability the module skips a detected ore (looks human) |
-| `PauseChance` | 20% | Probability of a random pause between block breaks |
-| `MaxPause` | 30 ticks | Upper bound on random pause length (~1.5 s at default) |
-| `UseAI` | off | Sends a one-sentence mining tip to the AI every ~32 forward blocks (requires API key) |
-
-### Tips
-
-- Stand at **Y=−54 to −58** for diamond strip mining (below the diamond peak at Y=−58).
-- For ancient debris, try **Y=15** in the Nether.
-- The module mines whatever block is in its path — if you start inside a cave, it will clear the cave first before resuming the tunnel pattern.
-- Combine with **OreESP** to visually confirm what the bot is collecting.
-- The `MissChance` is rolled **once per ore** (when first seen), not every tick — so the same ore is either always collected or always skipped, not flickering.
-
----
-
 ## ServerFinder — Scan for Vulnerable / P2W Servers
 
 **Module:** Misc → `ServerFinder`
@@ -853,65 +798,54 @@ The module is trigger-only — enable it once to fire a scan, then it disables i
 
 ---
 
-## Cracked Minecraft (TLauncher etc.)
+## AutoMine — Human-like Strip Mining
 
-**Short answer: yes.** ClaudeMC is a standard Fabric client mod — it works on any Minecraft installation regardless of how the game was launched, including TLauncher, MultiMC in offline mode, PolyMC, ATLauncher, and any other launcher.
+**Module:** Misc → `AutoMine`
 
-### What you need
+Automatically runs a strip mine that looks like a real player dug it: it mines forward, branches off to the sides, collects ores it "notices", but deliberately misses a configurable percentage of them. It also freezes completely if **AntiAFK** detects staff nearby so there is no suspicious activity during a check.
 
-| What | Notes |
-|---|---|
-| Minecraft Java Edition 1.21.11 | Any launcher that can run this version |
-| Fabric Loader ≥ 0.19.3 | Install via the launcher's built-in profile creator or the Fabric Installer |
-| Fabric API 0.141.4+1.21.11 | Downloadable from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) |
+### Pattern
 
-### TLauncher — step by step
+```
+Main tunnel →→→→→→→→→→→→→→→→→→→→→→→→→→→
+                   ↑ branch left (8 blocks)
+                              ↑ branch right (8 blocks)
+                                         ↑ branch left …
+```
 
-1. **Download and install TLauncher** from [tlauncher.org](https://tlauncher.org) if you don't have it.
-2. In the version selector, type `1.21.11` and look for **Fabric 1.21.11** in the list (TLauncher bundles Fabric profiles). Select it and click **Install** / **Play** once to let it download.
-   - If Fabric 1.21.11 doesn't appear: download the Fabric Installer from [fabricmc.net/use](https://fabricmc.net/use/) and run it pointing at your TLauncher game directory.
-3. **Find the mods folder.** Default locations:
-   - Windows: `%AppData%\.minecraft\mods\`
-   - macOS: `~/Library/Application Support/minecraft/mods/`
-   - Linux: `~/.minecraft/mods/`
-   - TLauncher uses the same `.minecraft` folder as the vanilla launcher by default. If you set a custom game directory in TLauncher, use that path instead.
-4. **Drop in the JARs:**
-   - `fabric-api-0.141.4+1.21.11.jar` (or equivalent version)
-   - `claudemc-1.19.1.jar` (from the Releases page)
-5. Launch the **Fabric 1.21.11** profile in TLauncher.
-6. You should see `ClaudeMC v2 initialised` in the log, and the `.` key opens the ClickGUI in-game.
+1. Face the direction you want to mine before enabling — the module snaps your yaw to the nearest cardinal.
+2. Mines a 1-wide × 2-tall forward corridor.
+3. Every **BranchEvery** blocks it turns 90° and mines a **BranchLen**-block side branch.
+4. Returns to the main tunnel, alternates to the other side, and continues.
 
-### Online-mode vs offline-mode servers
+### Staff detection
 
-| Server type | Works? | Notes |
+When **AntiAFK** triggers (vanished player detected, sudden TP nearby, or AFK-check DM), AutoMine takes a **random 1–60 second break** — no movement, no mining, no camera movement. Yaw and pitch are locked for the entire break, so from the server's perspective the player has just gone still (as if checking their phone or reading chat). After the break, mining resumes with an elevated miss chance (≥ 55%) for 10 minutes.
+
+**AutoMine never looks around during a staff break** — looking around underground looks exactly like an xray client scanning for ores. The only time AutoMine moves the camera is the brief surprise look-around after mining an unusually large vein (≥ 3 consecutive ores), which mimics a real player reacting to unexpectedly rich ground.
+
+> You need **AntiAFK enabled** for this integration to work. If AntiAFK is off, AutoMine never pauses.
+
+### Settings
+
+| Setting | Default | Effect |
 |---|---|---|
-| **Offline-mode / cracked servers** | ✅ | Any username works. No Microsoft account needed. |
-| **Online-mode servers** | ✅ with valid account | Requires a genuine Microsoft session. TLauncher Premium (paid) or a real account entered via TLauncher works. Without a valid session the server will reject the connection with "Not authenticated with Minecraft.net" — that is a server restriction, not a mod restriction. |
+| `Ores` | Diamond+Iron | Which ores to target — Diamond+Iron / Diamond / Iron / All Valuable / Everything |
+| `BranchEvery` | 16 | Blocks forward between branches |
+| `BranchLen` | 8 | Blocks per side branch |
+| `OreRadius` | 3 | Radius (blocks) around current position to scan for ores |
+| `MissChance` | 15% | Probability the module skips a detected ore (looks human) |
+| `PauseChance` | 20% | Probability of a random pause between block breaks |
+| `MaxPause` | 30 ticks | Upper bound on random pause length (~1.5 s at default) |
+| `UseAI` | off | Sends a one-sentence mining tip to the AI every ~32 forward blocks (requires API key) |
 
-### Alt Manager
+### Tips
 
-ClaudeMC includes a built-in **Alt Manager** (press `.` → `[Alts]` in the footer). You can add **Offline alts** (just a username — works on cracked servers) or **Session alts** (username + UUID + access token — for online-mode servers).
-
----
-
-## Editing Module Settings
-
-As of **v1.18** every module setting — including free-text fields — is editable live in the ClickGUI. No file editing, no rebuilding required.
-
-1. Press **`.`** to open the ClickGUI.
-2. **Right-click** a module to expand its settings.
-3. Interact with the setting row:
-
-| Setting type | Left-click | Right-click |
-|---|---|---|
-| **Number** (e.g. Range, Speed) | Increase by one step | Decrease by one step |
-| **Toggle** (e.g. Rotate, ShowFull) | Flip on/off | Flip on/off |
-| **Option** (e.g. Mode, Filter) | Next option | Previous option |
-| **Text** (e.g. Query, Password) | Enter edit mode — cursor appears, type freely, **Enter** or click away to save, **Esc** to cancel | Clear the field |
-
-Settings are written to `config/claudemc/modules.json` the moment you change them and restored on the next launch.
-
-> Module **enabled/disabled** state is intentionally *not* restored on startup — only setting values are — so nothing activates before you join a world.
+- Stand at **Y=−54 to −58** for diamond strip mining (below the diamond peak at Y=−58).
+- For ancient debris, try **Y=15** in the Nether.
+- The module mines whatever block is in its path — if you start inside a cave, it will clear the cave first before resuming the tunnel pattern.
+- Combine with **OreESP** to visually confirm what the bot is collecting.
+- The `MissChance` is rolled **once per ore** (when first seen), not every tick — so the same ore is either always collected or always skipped, not flickering.
 
 ---
 
@@ -1039,23 +973,6 @@ Not automated due to world-edit requirements. See [dupedb.net/tnt](https://duped
 
 ---
 
-## Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| "Module list is empty" | Ensure Fabric API jar is in `mods/` |
-| ESP boxes flicker | Disable other shader mods (OptiFabric, Iris) |
-| Flight resets in survival | Some servers with AntiCheat reset abilities each tick — use Packet mode |
-| RecordProof has no effect | Windows only; check you are on 1803+ |
-| BookDupe gives no extra books | Server is patched (Paper/Purpur) |
-| TPS shows 0.0 | Not connected to a server |
-| Build fails with "Plugin not found" | You need internet access to `maven.fabricmc.net` |
-| `java.lang.foreign` errors | You must run Java 21 (not Java 17) |
-
----
-
----
-
 ## ForceOP
 
 **Works on:** Servers with misconfigured permissions, old Spigot builds without validation, outdated BungeeCord proxies.  
@@ -1150,78 +1067,6 @@ Most vanish plugins (e.g. vanilla `vanish`, EssX old builds, simple home-brew pl
 `VanishTrackingMixin` intercepts all four packet types. When we receive a position/move packet for an entity ID that was previously removed (via `RemoveEntitiesS2CPacket`) but whose UUID is still in the tab list, we update the ghost position map. The ESP box **follows the vanished player in real-time** as they walk around.
 
 Premium vanish plugins (PremiumVanish, advanced EssX) suppress these movement packets correctly, so only Layer 1 applies there.
-
----
-
-## Mod Compatibility
-
-### Compatible (safe to use alongside ClaudeMC)
-
-| Mod | Notes |
-|---|---|
-| **Sodium** | Fully compatible — rendering performance improvement, no conflicts |
-| **Lithium** | Fully compatible — server-side logic optimisation for singleplayer |
-| **FerriteCore** | Fully compatible — memory usage reduction |
-| **ModMenu** | Fully compatible — shows ClaudeMC in the mod list |
-| **Replay Mod** | Compatible, but RecordProof will also hide the window from ReplayMod capture |
-| **MiniHUD** | Compatible — HUD elements may overlap; reposition ClaudeMC panels if needed |
-| **Tweakeroo** | Mostly compatible; some movement tweaks may conflict with Flight/Speed modules |
-
-### Incompatible / Conflicts
-
-| Mod | Why |
-|---|---|
-| **OptiFabric / OptiFine** | Breaks Mixin injection — do not use; use Sodium instead |
-| **Iris Shaders** | ESP boxes may flicker or disappear — the shader pipeline overrides the render layer |
-| **Indium** | Required if using Sodium + Iris; no additional conflicts with ClaudeMC itself |
-| **Meteor Client** | Cannot run alongside ClaudeMC — both register the same Mixin targets and keybinds |
-| **Wurst Client** | Same conflict as Meteor — only one hack client at a time |
-| **LabyMod** | Replaces core GUI rendering; ClickGUI panels may not render correctly |
-| **Essential Mod** | Conflicts with session/alt management — do not use AltManager alongside Essential |
-
-### Shader note
-
-If you use Iris + Sodium and want shaders, ESP boxes will not render through walls. The rest of ClaudeMC functions normally. To use ESP with shaders, disable the shader pack while ESP is active.
-
----
-
-## Chat Overlay (UIUtils)
-
-Press **`T`** while any GUI is open (auction house, chest, crafting table, etc.) to open the floating chat input box without closing the current screen. Press **Enter** to send, **Esc** to dismiss.
-
-- Supports full text editing (backspace, delete, left/right arrow, home/end)
-- Prepend `/` to send a command instead of a chat message
-- Works in any screen — you never have to close the GUI to type
-
----
-
-## Macros
-
-Open **`.`** → click **`[Macros]`** in the footer.
-
-- **Add:** click `[+ New Macro]`, type a name and command (e.g. `/tp spawn`), press Tab to cycle fields, Enter to save
-- **Keybind:** tab to the Key field; it enters listening mode automatically — press any key to bind
-- **Delete:** right-click any macro row
-- **Fire:** press the bound key in-game (while no screen is open), or run via the Chat Overlay
-
----
-
-## Alt Manager
-
-Open **`.`** → click **`[Alts]`** in the footer.
-
-**Offline / Cracked alts** — works on offline-mode and cracked servers:
-1. Click `[+ Offline]`
-2. Enter a username → Enter
-
-**Session alts** (online-mode servers) — requires a pre-obtained access token:
-1. Click `[+ Session]`
-2. Enter username, UUID, and the Microsoft access token → Enter
-3. Tokens can be obtained from external auth tools (not included)
-
-Click any row to switch to that account. Click **`[Restore]`** to switch back to your original account. Changes take effect on the next server connection — you must reconnect after switching.
-
-> **Warning:** switching alts while already connected to a server will not work mid-session. Always switch before joining.
 
 ---
 
@@ -1348,9 +1193,203 @@ Enable once → fires immediately → auto-disables.
 
 ---
 
+## DupeDB Integration
+
+ClaudeMC connects to **[dupedb.net](https://dupedb.net)** — a community-maintained database of verified Minecraft duplication exploits and vulnerabilities — to keep VulnDb and ExploitAdvisor current without requiring a mod update.
+
+### How it works
+
+**On every launch** (once per 23 hours), two sources are queried in the background:
+
+1. **Public feed (no auth required)** — `GET /api/public/exploits` returns the 10 most recently verified exploits. Any entry with a known plugin name is added to VulnDb immediately.
+
+2. **AI + web search** — DuckDuckGo queries scoped to Minecraft 1.21.x feed into the AI, which structures confirmed exploits into VulnDb entries. Requires an AI API key.
+
+**When ServerFinder or ExploitAdvisor runs**, the authenticated DupeDB search API (`/api/exploits/search?version=1.21.11&status=verified`) is queried for results specific to the server's detected software stack, giving you community-reported dupes and exploits relevant to that exact server.
+
+### Connecting your DupeDB account (optional — enables full search)
+
+The public feed requires no setup. For authenticated search (broader results, version/plugin filters):
+
+1. Create an account at [dupedb.net](https://dupedb.net).
+2. Go to **Account Settings → OAuth Apps** → **Create App**.
+3. Set the App ID to `claudemc`, Name to anything, Redirect URI to `http://127.0.0.1/callback`, and tick **Read-Only**.
+4. The next time a module triggers an authenticated DupeDB call, your browser will open automatically for a one-time consent. Click **Allow** and close the tab — you're done.
+
+Tokens are stored at `.minecraft/config/claudemc/dupedb.json` and auto-refreshed (30-day rotating tokens). You only authorize once unless you revoke the app.
+
+> To use a different App ID, edit `config/claudemc/dupedb.json` and change `"appId"` before authorizing.
+
+---
+
+## Mod Compatibility
+
+### Compatible (safe to use alongside ClaudeMC)
+
+| Mod | Notes |
+|---|---|
+| **Sodium** | Fully compatible — rendering performance improvement, no conflicts |
+| **Lithium** | Fully compatible — server-side logic optimisation for singleplayer |
+| **FerriteCore** | Fully compatible — memory usage reduction |
+| **ModMenu** | Fully compatible — shows ClaudeMC in the mod list |
+| **Replay Mod** | Compatible, but RecordProof will also hide the window from ReplayMod capture |
+| **MiniHUD** | Compatible — HUD elements may overlap; reposition ClaudeMC panels if needed |
+| **Tweakeroo** | Mostly compatible; some movement tweaks may conflict with Flight/Speed modules |
+
+### Incompatible / Conflicts
+
+| Mod | Why |
+|---|---|
+| **OptiFabric / OptiFine** | Breaks Mixin injection — do not use; use Sodium instead |
+| **Iris Shaders** | ESP boxes may flicker or disappear — the shader pipeline overrides the render layer |
+| **Indium** | Required if using Sodium + Iris; no additional conflicts with ClaudeMC itself |
+| **Meteor Client** | Cannot run alongside ClaudeMC — both register the same Mixin targets and keybinds |
+| **Wurst Client** | Same conflict as Meteor — only one hack client at a time |
+| **LabyMod** | Replaces core GUI rendering; ClickGUI panels may not render correctly |
+| **Essential Mod** | Conflicts with session/alt management — do not use AltManager alongside Essential |
+
+### Shader note
+
+If you use Iris + Sodium and want shaders, ESP boxes will not render through walls. The rest of ClaudeMC functions normally. To use ESP with shaders, disable the shader pack while ESP is active.
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| "Module list is empty" | Ensure Fabric API jar is in `mods/` |
+| ESP boxes flicker | Disable other shader mods (OptiFabric, Iris) |
+| Flight resets in survival | Some servers with AntiCheat reset abilities each tick — use Packet mode |
+| RecordProof has no effect | Windows only; check you are on 1803+ |
+| BookDupe gives no extra books | Server is patched (Paper/Purpur) |
+| TPS shows 0.0 | Not connected to a server |
+| Build fails with "Plugin not found" | You need internet access to `maven.fabricmc.net` |
+| `java.lang.foreign` errors | You must run Java 21 (not Java 17) |
+
+---
+
+## Building from Source
+
+> **You don't need to do this to use the mod.** Just download the `.jar` from the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases) and drop it in `mods/`. The steps below are only needed if you want to modify the code and compile it yourself.
+
+### What you need
+
+| Tool | Where to get it | Notes |
+|---|---|---|
+| **JDK 21** (full kit, not JRE) | [adoptium.net](https://adoptium.net/) | Must be 21 — Java 17 or 22 won't work |
+| **Git** | [git-scm.com](https://git-scm.com/) | To clone the repo |
+| Internet connection | — | Downloads ~250 MB of Fabric + Minecraft on first build |
+
+You do **not** need to install Gradle separately. The repo includes `gradlew` / `gradlew.bat` which auto-downloads the right Gradle version.
+
+### Step-by-step
+
+**1. Install JDK 21**
+
+Download the Temurin 21 installer from [adoptium.net](https://adoptium.net/). Run it and make sure `JAVA_HOME` is set (the Temurin installer does this automatically on Windows).
+
+Verify:
+```
+java -version
+```
+You should see `openjdk 21`.
+
+**2. Clone the repo and switch branch**
+
+```bash
+git clone https://github.com/l0azathkamil/ClaudeMC.v1.git
+cd ClaudeMC.v1
+git checkout claude/serene-volta-eY5Oe
+```
+
+**3. Build**
+
+The first build downloads all Minecraft and Fabric dependencies (~250 MB). This takes 5–10 minutes on a normal connection. Subsequent builds are fast.
+
+```bash
+# Windows (Command Prompt or PowerShell):
+gradlew.bat build
+
+# macOS / Linux:
+./gradlew build
+```
+
+If Gradle complains about permissions on macOS/Linux:
+```bash
+chmod +x gradlew
+./gradlew build
+```
+
+**4. Find the compiled JAR**
+
+After a successful build, your file is at:
+```
+build/libs/claudemc-1.19.1.jar
+```
+(There will also be a `claudemc-1.10.0-sources.jar` — ignore that one.)
+
+**5. Install it**
+
+Copy the JAR to your mods folder:
+
+```bash
+# Windows
+copy build\libs\claudemc-1.19.1.jar %APPDATA%\.minecraft\mods\
+
+# macOS
+cp build/libs/claudemc-1.19.1.jar ~/Library/Application\ Support/minecraft/mods/
+
+# Linux
+cp build/libs/claudemc-1.19.1.jar ~/.minecraft/mods/
+```
+
+Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.11 in your mods folder.
+
+### Common build errors
+
+| Error message | Cause | Fix |
+|---|---|---|
+| `'java' is not recognized` / `java: not found` | JDK not installed or not on PATH | Install JDK 21 from adoptium.net; restart your terminal |
+| `JAVA_HOME is set to an invalid directory` | Wrong JDK path | Update `JAVA_HOME` to point to JDK 21 (e.g. `C:\Program Files\Eclipse Adoptium\jdk-21...`) |
+| `Plugin not found: fabric-loom` | Blocked internet or Maven outage | Check you can reach `maven.fabricmc.net`; try again |
+| `Could not resolve net.fabricmc:yarn` | Same — Maven unreachable | Retry; check network/firewall |
+| `error: release version 21 not supported` | You ran build with Java 17 or older | Set `JAVA_HOME` to JDK 21 |
+| `BUILD SUCCESSFUL` but no JAR found | Very unlikely — check `build/libs/` | Run `gradlew build --info` for detail |
+
+---
+
 ## Credits
 
 - Module system inspired by [Meteor Client](https://meteorclient.com/)
 - Dupe research from [dupedb.net](https://dupedb.net)
 - MiniMessage exploit research: [khaodoes.dev](https://khaodoes.dev/blog/minimessage-escape-exploit)
 - Built with [Fabric API](https://fabricmc.net) and [LWJGL 3](https://www.lwjgl.org/)
+
+---
+
+## What's New
+
+**v1.20.5:** Module cross-reference pass against Wurst7, Meteor, and LiquidBounce for MC 1.21.11 correctness. Criticals now implements **Packet mode** — spoofs two `PositionAndOnGround` packets (y+0.0625, y+0, both with `onGround=false`) so the server registers a critical hit with no visible jump (Meteor CritHack pattern). AutoTotem now uses `PlayerScreenHandler.OFFHAND_ID` (confirmed = 45 in 1.21.11 via javap). Step and Speed settings converted to `addNumber` for slider support in the ClickGUI. Verified via javap: `stepHeight` is a private float field in `Entity` (reflection works), `getEntityPos()` exists, `isSolidBlock(BlockView, BlockPos)` signature unchanged.
+
+**v1.20.4:** Massive Wurst Client module port — **80+ new modules** across all categories, bringing ClaudeMC to feature-parity with Wurst 7. New XSS exploit module: **WebConsoleXSS** sends jQuery/script payloads that ForceOP via vulnerable web-based server console panels (documented CVE by LiveOverflow, 2022). Mixin fixes: broken `onDisconnect` injection replaced with proper `ClientPlayConnectionEvents.DISCONNECT` event; binary-encoded source file fixed. All new modules compile and remap cleanly on MC 1.21.11.
+
+**v1.20.3:** All v1.19.6/v1.19.7 fixes ported to MC 1.21.11.
+
+**v1.20.0:** Minecraft **1.21.11** support. The mod has been migrated from 1.21.1 across every breaking API change in the 1.21.2 → 1.21.11 line: the new `Click`/`KeyInput`/`CharInput` input records (all ClickGUI/screen input handlers rewritten), the immutable `PlayerInput` movement record (InventoryMove/AutoMine input mixin), the 1.21.5 render-pipeline changes (`RenderLayers.LINES`, manual box edges in `RenderUtils`), the 1.21.9 decoupled render-state camera (`ctx.worldState().cameraRenderState.pos`), `WorldRenderEvents` moving to the `.world` subpackage, `PlayerInventory.getSelectedSlot()/setSelectedSlot()`, `getEntityPos()`, `isGliding()`, the `EquippableComponent`/attribute-based armor system (AutoArmor), the record-based `GameProfile` (`name()`/`id()`), and the new `Session` constructor. Build toolchain bumped to Gradle 8.14, fabric-loom 1.13.4, Fabric Loader 0.19.3, Fabric API 0.141.4+1.21.11.
+
+**v1.19.2:** Bugfix release. Fixes operator-precedence bug in `AntiSpam` ad-filter where `&&` bound tighter than `||`, causing the `discord.gg` exception to never apply. Fixes NPE in `AutoRespawn.onTick` — `getNetworkHandler()` can return null between disconnect and screen transition. Fixes two NPEs in `ElytraFlight.onTick`.
+
+**v1.19.1:** Bugfix release. Fixes a race condition where concurrent AI calls could corrupt each other's system prompt. `AIClient.ask()` now accepts an explicit system-prompt parameter. Fixes NPE on `handleAltSwitch` missing index, thread-safety of companion chat history, volatile correctness of `CompanionServer.started`/`boundPort`, and the companion browser always opening port 8080 even when a different port was bound. Fixes `AIClient` crashing on empty Anthropic/OpenAI/Gemini response arrays.
+
+**v1.19.0:** ClaudeMC Companion — a browser-based companion app at `localhost:8080`. Tabs: **Scanner**, **Chat**, **Settings**, **Alts**, **VulnDb**.
+
+**v1.18.1:** MiniMessageExploit expanded with four new techniques and three VulnDb entries.
+
+**v1.18:** Full in-game settings editing — every setting is editable directly in the ClickGUI; no file editing ever needed. ServerFinder AI Search mode.
+
+**v1.17:** Cross-reference tags added to ServerFinder results.
+
+**v1.16:** AutoMine evasion overhaul and ForeachCmd/AutoAuth/BookColors/AutoReconnect added.
+
+**v1.13:** AI layer added (ExploitAdvisor, SmartReply, AIAssist).
