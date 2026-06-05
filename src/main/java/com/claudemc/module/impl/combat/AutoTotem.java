@@ -4,6 +4,7 @@ import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Items;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 
 public class AutoTotem extends Module {
@@ -35,9 +36,9 @@ public class AutoTotem extends Module {
         int screenSlot = totemSlot < 9 ? totemSlot + 36 : totemSlot;
         int syncId = client.player.playerScreenHandler.syncId;
 
-        // Swap to offhand (slot 45 in default player screen handler = offhand)
+        // Swap to offhand (PlayerScreenHandler.OFFHAND_ID = 45 in 1.21.x)
         client.interactionManager.clickSlot(syncId, screenSlot, 0, SlotActionType.PICKUP, client.player);
-        client.interactionManager.clickSlot(syncId, 45, 0, SlotActionType.PICKUP, client.player);
+        client.interactionManager.clickSlot(syncId, PlayerScreenHandler.OFFHAND_ID, 0, SlotActionType.PICKUP, client.player);
         client.interactionManager.clickSlot(syncId, screenSlot, 0, SlotActionType.PICKUP, client.player);
         cooldown = 5;
     }

@@ -4,7 +4,6 @@ import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
-
 import java.lang.reflect.Field;
 
 public class Step extends Module {
@@ -13,7 +12,7 @@ public class Step extends Module {
 
     public Step() {
         super("Step", "Step up full blocks instantly", Category.MOVEMENT);
-        addSetting("Height", "1.0");
+        addNumber("Height", 1.0, 0.6, 3.0, 0.1, false);
     }
 
     @Override
@@ -21,7 +20,7 @@ public class Step extends Module {
         var c = MinecraftClient.getInstance();
         if (c.player != null) {
             oldStepHeight = getStepHeight(c.player);
-            setStepHeight(c.player, parseFloat(getSetting("Height"), 1.0f));
+            setStepHeight(c.player, (float) Double.parseDouble(getSetting("Height")));
         }
     }
 
@@ -34,7 +33,7 @@ public class Step extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        float h = parseFloat(getSetting("Height"), 1.0f);
+        float h = (float) Double.parseDouble(getSetting("Height"));
         if (getStepHeight(client.player) != h) setStepHeight(client.player, h);
     }
 
@@ -62,7 +61,4 @@ public class Step extends Module {
         throw new NoSuchFieldException(name);
     }
 
-    private float parseFloat(String s, float d) {
-        try { return Float.parseFloat(s); } catch (Exception e) { return d; }
-    }
 }

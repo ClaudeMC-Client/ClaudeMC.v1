@@ -8,7 +8,7 @@ public class Speed extends Module {
 
     public Speed() {
         super("Speed", "Move faster horizontally", Category.MOVEMENT);
-        addSetting("Speed", "0.30");
+        addNumber("Speed", 0.30, 0.1, 5.0, 0.05, false);
     }
 
     @Override
@@ -19,7 +19,7 @@ public class Speed extends Module {
                       || opts.leftKey.isPressed()    || opts.rightKey.isPressed();
         if (!moving || client.player.isTouchingWater() || client.player.isInLava()) return;
 
-        double spd = parseDouble(getSetting("Speed"), 0.30);
+        double spd = Double.parseDouble(getSetting("Speed"));
         float yawRad = (float) Math.toRadians(client.player.getYaw());
         double mx = 0, mz = 0;
 
@@ -44,7 +44,4 @@ public class Speed extends Module {
         }
     }
 
-    private double parseDouble(String s, double d) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return d; }
-    }
 }
