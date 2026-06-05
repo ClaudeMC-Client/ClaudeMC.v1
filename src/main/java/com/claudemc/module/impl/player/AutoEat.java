@@ -11,7 +11,7 @@ public class AutoEat extends Module {
 
     public AutoEat() {
         super("AutoEat", "Automatically eats food when hungry", Category.PLAYER);
-        addSetting("Threshold", "16");
+        addNumber("Threshold", 16, 1, 20, 1, true);
     }
 
     @Override

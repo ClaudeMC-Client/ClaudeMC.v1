@@ -42,7 +42,7 @@ public class AntiAFK extends Module {
     public AntiAFK() {
         super("AntiAFK",
               "Detects staff (vanish/TP/DM) and responds with human-like behaviour to avoid detection",
-              Category.MISC);
+              Category.UTILITY);
         addNumber("AlertRange",    20.0,  5.0, 64.0, 1.0, false);
         addNumber("PauseTicks",    120,   20, 600,  20,  true);
         addBool("NotifyOnDetect",  true);

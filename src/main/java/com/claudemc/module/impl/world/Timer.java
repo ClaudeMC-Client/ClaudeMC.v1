@@ -14,7 +14,7 @@ public class Timer extends Module {
     public static Timer INSTANCE;
 
     public Timer() {
-        super("Timer", "Speed up or slow down game time", Category.WORLD);
+        super("Timer", "Speed up or slow down game time", Category.UTILITY);
         // Bounded so the GUI can't drive it to 0 (which would freeze game ticking).
         addNumber("Speed", 2.0, 0.1, 10.0, 0.1, false); // multiplier
         INSTANCE = this;

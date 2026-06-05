@@ -29,7 +29,7 @@ public class ForeachCmd extends Module {
     public ForeachCmd() {
         super("ForeachCmd",
               "Runs a command for each player (%player%) or N times (%i%). Toggle to send queue.",
-              Category.MISC);
+              Category.UTILITY);
         addSetting("Command",    "/say hello %player%");
         addNumber("Iterations",  10, 1, 200, 1, true);
         addNumber("MinDelay",    20, 1, 200, 1, true);   // ticks

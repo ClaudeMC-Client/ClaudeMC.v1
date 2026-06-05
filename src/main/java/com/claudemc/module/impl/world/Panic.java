@@ -11,7 +11,7 @@ public class Panic extends Module {
     public static Panic INSTANCE;
 
     public Panic() {
-        super("Panic", "Disables all modules and disconnects from the server", Category.WORLD);
+        super("Panic", "Disables all modules and disconnects from the server", Category.UTILITY);
         INSTANCE = this;
     }
 

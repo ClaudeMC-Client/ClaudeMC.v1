@@ -8,7 +8,7 @@ public class Sprint extends Module {
 
     public Sprint() {
         super("Sprint", "Always sprint (even sideways)", Category.MOVEMENT);
-        addSetting("Mode", "Omni"); // Omni | Forward
+        addMode("Mode", "Omni", "Omni", "Forward");
     }
 
     @Override

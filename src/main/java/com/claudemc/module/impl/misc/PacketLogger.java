@@ -22,7 +22,7 @@ public class PacketLogger extends Module {
     private static final int MAX_LOG = 50;
 
     public PacketLogger() {
-        super("PacketLogger", "Logs incoming message packets to chat and mod logger", Category.MISC);
+        super("PacketLogger", "Logs incoming message packets to chat and mod logger", Category.UTILITY);
         addBool("ChatLog",  false);
         addBool("FileLog",  true);
         addMode("Filter",   "All", "All", "Chat", "System");

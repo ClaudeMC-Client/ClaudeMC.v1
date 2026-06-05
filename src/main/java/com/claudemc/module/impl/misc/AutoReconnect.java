@@ -31,7 +31,7 @@ public class AutoReconnect extends Module {
     private final Random rng = new Random();
 
     public AutoReconnect() {
-        super("AutoReconnect", "Auto-reconnects after disconnect, optionally switching alt", Category.MISC);
+        super("AutoReconnect", "Auto-reconnects after disconnect, optionally switching alt", Category.UTILITY);
         addNumber("DelayTicks",  100,  20, 1200,  20, true);   // default 5 s
         addNumber("RandomExtra",  60,   0,  600,  20, true);   // extra random ticks
         addBool("SwitchAlt",    false);                         // rotate offline alts

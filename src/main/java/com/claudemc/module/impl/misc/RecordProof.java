@@ -17,7 +17,7 @@ public class RecordProof extends Module {
     private boolean active = false;
 
     public RecordProof() {
-        super("RecordProof", "Hides window from Discord/OBS screen capture (Windows only)", Category.MISC);
+        super("RecordProof", "Hides window from Discord/OBS screen capture (Windows only)", Category.UTILITY);
     }
 
     @Override

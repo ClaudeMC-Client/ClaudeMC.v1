@@ -17,8 +17,8 @@ public class AntiHunger extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        // Prevent sprint-exhaustion by toggling sprint off when not strictly needed
-        if (client.player.isSprinting() && client.player.getHungerManager().getFoodLevel() <= 6) {
+        // Always prevent sprint-exhaustion — same approach as Meteor's AntiHunger
+        if (client.player.isSprinting()) {
             client.player.setSprinting(false);
         }
     }

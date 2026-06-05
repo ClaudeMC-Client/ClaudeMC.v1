@@ -14,7 +14,7 @@ public class NameSpoof extends Module {
     public static NameSpoof INSTANCE;
 
     public NameSpoof() {
-        super("NameSpoof", "Shows a spoofed name above your character (client-side only)", Category.MISC);
+        super("NameSpoof", "Shows a spoofed name above your character (client-side only)", Category.UTILITY);
         addSetting("Name", "Steve");
         INSTANCE = this;
     }
