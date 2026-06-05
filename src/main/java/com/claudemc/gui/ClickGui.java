@@ -1,6 +1,7 @@
 package com.claudemc.gui;
 
 import com.claudemc.ClaudeMCClient;
+import com.claudemc.config.GuiConfig;
 import com.claudemc.keybind.KeybindManager;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
@@ -40,21 +41,11 @@ public class ClickGui extends Screen {
     private static final int C_SUB      = 0xFF9CA3AF;
 
     // ── Panel state ───────────────────────────────────────────────────────
-    private static final Map<Category, int[]> panelPos = new LinkedHashMap<>();
-
-    // Row 1 categories (y=32): COMBAT, MOVEMENT, PLAYER, RENDER, WORLD
-    // Row 2 categories (y=260): EXPLOIT, CHAT, UTILITY, MISC
-    static {
-        Category[] row1 = {Category.COMBAT, Category.MOVEMENT, Category.PLAYER, Category.RENDER, Category.WORLD};
-        Category[] row2 = {Category.EXPLOIT, Category.CHAT, Category.UTILITY, Category.MISC};
-        int x = 10;
-        for (Category cat : row1) { panelPos.put(cat, new int[]{x, 32}); x += 130; }
-        x = 10;
-        for (Category cat : row2) { panelPos.put(cat, new int[]{x, 260}); x += 130; }
-    }
-
+    // Persisted across GUI opens via GuiConfig. Populated in init().
+    private static final Map<Category, int[]>   panelPos  = new LinkedHashMap<>();
     private static final Map<Category, Boolean> collapsed = new EnumMap<>(Category.class);
-    private static final Set<Module>  expanded  = new HashSet<>();   // settings expanded
+    private static final Set<Module>            expanded  = new HashSet<>();   // settings expanded
+    private static boolean layoutLoaded = false;
 
     private Category     dragging      = null;
     private int          dragOffX      = 0;
@@ -88,6 +79,41 @@ public class ClickGui extends Screen {
     }
 
     @Override public boolean shouldPause() { return false; }
+
+    @Override
+    public void init() {
+        super.init();
+        if (!layoutLoaded) {
+            layoutLoaded = true;
+            // Try loading saved positions; if none, compute default 3-column layout
+            boolean loaded = GuiConfig.load(panelPos, collapsed);
+            if (!loaded) {
+                applyDefaultLayout();
+            }
+        }
+    }
+
+    /**
+     * Default layout: 3 columns of 3 panels, all collapsed so nothing overlaps.
+     * Column gap = 130px, row gap = 18px (14px header + 4px).
+     */
+    private void applyDefaultLayout() {
+        panelPos.clear();
+        collapsed.clear();
+        Category[][] cols = {
+            {Category.COMBAT,  Category.MOVEMENT, Category.PLAYER},
+            {Category.RENDER,  Category.WORLD,    Category.EXPLOIT},
+            {Category.CHAT,    Category.UTILITY,  Category.MISC}
+        };
+        int startX = 8, startY = 22, colW = 130, rowH = 18;
+        for (int c = 0; c < cols.length; c++) {
+            for (int r = 0; r < cols[c].length; r++) {
+                Category cat = cols[c][r];
+                panelPos.put(cat, new int[]{startX + c * colW, startY + r * rowH});
+                collapsed.put(cat, true);   // start collapsed — no overlap guaranteed
+            }
+        }
+    }
 
     // ── Render ────────────────────────────────────────────────────────────
 
@@ -293,6 +319,7 @@ public class ClickGui extends Screen {
     @Override
     public void removed() {
         commitEdit();
+        GuiConfig.save(panelPos, collapsed);
     }
 
     @Override

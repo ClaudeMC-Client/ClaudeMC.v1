@@ -101,7 +101,7 @@ public class AIConfig {
         if (!model.isBlank()) return model;
         return switch (provider.toLowerCase()) {
             case "openai"  -> "gpt-4o-mini";
-            case "gemini"  -> "gemini-1.5-flash";
+            case "gemini"  -> "gemini-2.0-flash";
             default        -> "claude-haiku-4-5-20251001";
         };
     }

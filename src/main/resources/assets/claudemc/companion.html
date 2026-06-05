@@ -9,34 +9,47 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0a0a12;
-      --surface:   #12121e;
-      --surface2:  #1a1a2e;
-      --border:    #2a2a40;
+      --bg:        #070710;
+      --surface:   #0e0e1c;
+      --surface2:  #14142a;
+      --surface3:  #1c1c36;
+      --border:    #252540;
+      --border2:   #303058;
       --accent:    #4ADE80;
-      --secondary: #6366f1;
-      --text:      #eeeeee;
-      --text-dim:  #888899;
+      --accent-dim:#2a7a48;
+      --secondary: #818cf8;
+      --text:      #e8e8f0;
+      --text-dim:  #7878a0;
+      --text-muted:#4a4a70;
       --red:       #f87171;
       --orange:    #fb923c;
-      --yellow:    #facc15;
+      --yellow:    #fbbf24;
       --grey:      #6b7280;
-      --blue:      #3b82f6;
-      --radius:    6px;
-      --font:      'Courier New', Courier, monospace;
+      --blue:      #60a5fa;
+      --purple:    #a78bfa;
+      --radius:    8px;
+      --radius-sm: 5px;
+      --font-ui:   system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --font-mono: 'Courier New', Courier, monospace;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+      --shadow:    0 4px 16px rgba(0,0,0,0.5);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+      --glow:      0 0 12px rgba(74,222,128,0.25);
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font);
+      font-family: var(--font-ui);
       font-size: 14px;
       line-height: 1.5;
     }
 
-    a { color: var(--accent); }
-    button { cursor: pointer; font-family: var(--font); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { cursor: pointer; font-family: var(--font-ui); }
+    code, .mono { font-family: var(--font-mono); font-size: 12px; }
 
     /* ===== LAYOUT ===== */
     #app {
@@ -51,27 +64,49 @@
     #header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      background: var(--surface);
+      gap: 12px;
+      padding: 0 20px;
+      height: 52px;
+      background: linear-gradient(180deg, var(--surface2) 0%, var(--surface) 100%);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
     }
     #header h1 {
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 700;
       color: var(--accent);
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
-    /* Status dot */
+    #header-version {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-family: var(--font-mono);
+    }
+    #header-spacer { flex: 1; }
+    #header-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* Status dot with pulse */
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,0.4)} 50%{box-shadow:0 0 0 5px rgba(74,222,128,0)} }
     #status-dot {
-      width: 10px;
-      height: 10px;
+      width: 9px; height: 9px;
       border-radius: 50%;
       background: var(--grey);
       transition: background 0.4s;
       flex-shrink: 0;
     }
-    #status-dot.online  { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    #status-dot.online  { background: var(--accent); animation: pulse 2s infinite; }
     #status-dot.offline { background: var(--red); }
 
     /* ===== TAB STRIP ===== */
@@ -80,21 +115,27 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      padding: 0 8px;
+      gap: 2px;
     }
     .tab-btn {
-      padding: 10px 20px;
+      padding: 12px 18px 10px;
       background: none;
       border: none;
-      border-bottom: 3px solid transparent;
+      border-bottom: 2px solid transparent;
       color: var(--text-dim);
       font-size: 13px;
-      letter-spacing: 0.5px;
-      transition: color 0.2s, border-color 0.2s;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      position: relative;
     }
-    .tab-btn:hover { color: var(--text); }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .tab-btn.active {
       color: var(--accent);
       border-bottom-color: var(--accent);
+      text-shadow: 0 0 8px rgba(74,222,128,0.4);
     }
 
     /* ===== TAB CONTENT ===== */
@@ -109,52 +150,95 @@
       flex: 1;
       flex-direction: column;
       overflow: auto;
-      padding: 16px;
+      padding: 18px 20px;
+      gap: 12px;
     }
     .tab-panel.active { display: flex; }
 
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
     /* ===== SHARED COMPONENTS ===== */
     .section-title {
-      font-size: 13px;
-      color: var(--accent);
-      letter-spacing: 1px;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
       text-transform: uppercase;
+      font-weight: 600;
       margin-bottom: 10px;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
     }
 
     /* Inputs / selects / textareas */
     input, select, textarea {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       color: var(--text);
-      font-family: var(--font);
+      font-family: var(--font-ui);
       font-size: 13px;
-      padding: 6px 10px;
+      padding: 7px 11px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.12);
+    }
     input[type="checkbox"] { width: auto; accent-color: var(--accent); cursor: pointer; }
-    textarea { resize: vertical; }
+    textarea { resize: vertical; font-family: var(--font-mono); font-size: 12px; }
     select option { background: var(--surface2); }
+    input[type="number"] { font-family: var(--font-mono); }
 
     /* Buttons */
     .btn {
-      padding: 6px 14px;
-      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 15px;
+      border-radius: var(--radius-sm);
       border: none;
       font-size: 13px;
-      font-weight: bold;
-      transition: opacity 0.2s, transform 0.1s;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s, filter 0.15s;
+      white-space: nowrap;
     }
+    .btn:hover { filter: brightness(1.1); }
     .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-primary  { background: var(--accent);    color: #000; }
-    .btn-secondary{ background: var(--secondary); color: #fff; }
-    .btn-ghost    { background: var(--border);    color: var(--text); }
-    .btn-danger   { background: var(--red);       color: #fff; }
-    .btn-sm { padding: 3px 9px; font-size: 12px; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; filter: none; }
+    .btn-primary  {
+      background: linear-gradient(135deg, #4ADE80, #22c55e);
+      color: #051a0d;
+      box-shadow: 0 2px 8px rgba(74,222,128,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 4px 12px rgba(74,222,128,0.45); }
+    .btn-secondary{
+      background: linear-gradient(135deg, #818cf8, #6366f1);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    }
+    .btn-ghost {
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      color: var(--text-dim);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+    .btn-danger { background: linear-gradient(135deg,#f87171,#ef4444); color: #fff; box-shadow: 0 2px 8px rgba(248,113,113,0.3); }
+    .btn-active { background: linear-gradient(135deg,#f87171,#ef4444) !important; color: #fff !important; box-shadow: 0 2px 8px rgba(248,113,113,0.4) !important; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
 
     /* Filter row */
     .filter-row {
@@ -162,104 +246,133 @@
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      margin-bottom: 10px;
     }
-    .filter-row label { color: var(--text-dim); font-size: 12px; }
+    .filter-row label { color: var(--text-dim); font-size: 12px; display:flex; align-items:center; gap:5px; }
 
     /* Status bar */
     .status-bar {
       font-size: 12px;
       color: var(--text-dim);
-      margin-bottom: 8px;
       min-height: 18px;
     }
-    .status-bar .hl { color: var(--accent); font-weight: bold; }
-    .status-bar .vuln-hl { color: var(--red); font-weight: bold; }
+    .status-bar .hl { color: var(--accent); font-weight: 700; }
+    .status-bar .vuln-hl { color: var(--red); font-weight: 700; }
 
     /* Tables */
     .results-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+      font-family: var(--font-ui);
     }
     .results-table th {
       background: var(--surface2);
       color: var(--text-dim);
       text-align: left;
-      padding: 7px 10px;
-      border-bottom: 1px solid var(--border);
-      letter-spacing: 0.5px;
+      padding: 9px 12px;
+      border-bottom: 2px solid var(--border2);
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-weight: 600;
       position: sticky;
       top: 0;
       z-index: 1;
     }
     .results-table td {
-      padding: 6px 10px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(37,37,64,0.6);
+      vertical-align: middle;
     }
-    .results-table tr:hover > td { background: rgba(255,255,255,0.03); }
+    .results-table tbody tr:nth-child(even) > td { background: rgba(255,255,255,0.015); }
+    .results-table tbody tr:hover > td { background: rgba(74,222,128,0.04) !important; }
+    .results-table .mono { color: var(--blue); font-weight: 600; }
 
     /* Expanded row */
     .expanded-row td {
       background: var(--surface2) !important;
-      padding: 12px 16px;
+      padding: 14px 18px;
+      border-left: 3px solid var(--accent);
     }
     .expanded-content {
       font-size: 12px;
-      line-height: 1.6;
+      line-height: 1.7;
     }
-    .expanded-content h4 { color: var(--accent); margin-bottom: 6px; }
+    .expanded-content h4 { color: var(--accent); margin-bottom: 8px; font-size: 12px; letter-spacing: 0.5px; }
     .expanded-content pre {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 8px;
+      border-radius: var(--radius-sm);
+      padding: 10px;
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-word;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.6;
     }
 
     /* Vulnerability badges */
     .badge {
       display: inline-block;
-      padding: 2px 7px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       margin: 1px 2px 1px 0;
     }
-    .badge-CRITICAL { background: rgba(248,113,113,0.15); color: var(--red);    border: 1px solid var(--red); }
-    .badge-HIGH     { background: rgba(251,146,60,0.15);  color: var(--orange); border: 1px solid var(--orange); }
-    .badge-MEDIUM   { background: rgba(250,204,21,0.15);  color: var(--yellow); border: 1px solid var(--yellow); }
-    .badge-PATCHED  { background: rgba(107,114,128,0.15); color: var(--grey);   border: 1px solid var(--grey); }
+    .badge-CRITICAL { background: rgba(248,113,113,0.18); color: #fca5a5; border: 1px solid rgba(248,113,113,0.5); }
+    .badge-HIGH     { background: rgba(251,146,60,0.18);  color: #fdba74; border: 1px solid rgba(251,146,60,0.5); }
+    .badge-MEDIUM   { background: rgba(251,191,36,0.18);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.5); }
+    .badge-PATCHED  { background: rgba(107,114,128,0.18); color: #9ca3af; border: 1px solid rgba(107,114,128,0.5); }
+    .badge-UNKNOWN  { background: rgba(99,102,241,0.18);  color: #a5b4fc; border: 1px solid rgba(99,102,241,0.5); }
 
     /* Severity cell (VulnDB) */
-    .sev-CRITICAL { color: var(--red); font-weight: bold; }
-    .sev-HIGH     { color: var(--orange); font-weight: bold; }
-    .sev-MEDIUM   { color: var(--yellow); font-weight: bold; }
+    .sev-CRITICAL { color: #fca5a5; font-weight: 700; }
+    .sev-HIGH     { color: #fdba74; font-weight: 700; }
+    .sev-MEDIUM   { color: #fcd34d; font-weight: 600; }
     .sev-PATCHED  { color: var(--grey); }
 
-    /* Loading / error */
-    .loading-msg { color: var(--text-dim); font-size: 12px; padding: 12px 0; }
-    .error-msg   { color: var(--red);      font-size: 12px; padding: 8px 12px;
-                   background: rgba(248,113,113,0.08); border: 1px solid var(--red);
-                   border-radius: var(--radius); margin: 8px 0; }
-    .success-msg { color: var(--accent);   font-size: 12px; padding: 8px 12px;
-                   background: rgba(74,222,128,0.08); border: 1px solid var(--accent);
-                   border-radius: var(--radius); margin: 8px 0; }
+    /* Loading / error / success */
+    .loading-msg {
+      color: var(--text-dim);
+      font-size: 13px;
+      padding: 14px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-msg {
+      color: #fca5a5;
+      font-size: 13px;
+      padding: 10px 14px;
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--red);
+    }
+    .success-msg {
+      color: #86efac;
+      font-size: 13px;
+      padding: 10px 14px;
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.3);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--accent);
+    }
 
     /* Spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
       display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid var(--border);
+      width: 15px; height: 15px;
+      border: 2px solid var(--border2);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
+      flex-shrink: 0;
     }
 
     /* Scrollable table wrapper */
@@ -268,112 +381,215 @@
       overflow: auto;
       border: 1px solid var(--border);
       border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      background: var(--surface);
     }
 
     /* ===== SCANNER ===== */
-    #scan-shodan-row { margin-bottom: 8px; }
-
-    /* ===== CHAT ===== */
-    #chat-panel {
-      gap: 0;
-    }
-    #chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    #panel-scanner { gap: 10px; }
+    .scan-controls {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      margin-bottom: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .scan-controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .scan-controls-row label { color: var(--text-dim); font-size: 12px; display:flex; align-items:center; gap:6px; }
+    .scan-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--border);
+    }
+    #scan-shodan-row { gap: 10px; }
+
+    /* ===== CHAT ===== */
+    #chat-panel { gap: 0; padding: 0; }
+    #chat-panel > * { padding: 0 20px; }
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px !important;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg);
     }
     .msg-bubble {
-      max-width: 72%;
-      padding: 8px 12px;
-      border-radius: 10px;
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 12px;
       font-size: 13px;
-      line-height: 1.55;
+      line-height: 1.6;
       word-break: break-word;
+      box-shadow: var(--shadow-sm);
     }
     .msg-user {
       align-self: flex-end;
-      background: var(--blue);
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       color: #fff;
-      border-bottom-right-radius: 2px;
+      border-bottom-right-radius: 3px;
     }
     .msg-ai {
       align-self: flex-start;
-      background: var(--surface2);
+      background: var(--surface);
       color: var(--text);
       border: 1px solid var(--border);
-      border-bottom-left-radius: 2px;
+      border-bottom-left-radius: 3px;
     }
     .msg-ai code {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 3px;
-      padding: 0 4px;
-      font-size: 12px;
+      padding: 1px 5px;
+      font-family: var(--font-mono);
+      font-size: 11px;
     }
-    .msg-thinking { color: var(--text-dim); font-style: italic; }
-    #chat-input-row { display: flex; gap: 8px; flex-shrink: 0; }
+    .msg-thinking { color: var(--text-muted); font-style: italic; font-size: 12px; }
+    .msg-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      opacity: 0.6;
+    }
+    #chat-input-row {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      padding: 14px 20px !important;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
     #chat-input { flex: 1; }
 
     /* ===== SETTINGS ===== */
-    #settings-panel { gap: 12px; }
+    #settings-panel { gap: 14px; }
     .settings-form {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      max-width: 600px;
+      gap: 14px;
+      max-width: 620px;
+      box-shadow: var(--shadow-sm);
+    }
+    .settings-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-top: 4px;
     }
     .form-row {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
-    .form-row label { font-size: 12px; color: var(--text-dim); }
+    .form-row label {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
     .form-row input, .form-row select, .form-row textarea { width: 100%; }
-    .radio-group { display: flex; gap: 16px; }
-    .radio-group label { display: flex; align-items: center; gap: 5px; color: var(--text); cursor: pointer; }
+    .form-hint { font-size: 11px; color: var(--text-muted); }
+    .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      cursor: pointer;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 13px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .radio-group label:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(74,222,128,0.08);
+      color: var(--accent);
+    }
 
     /* ===== ALTS ===== */
     #alts-panel { gap: 12px; }
     #current-account-banner {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--surface2), var(--surface3));
+      border: 1px solid var(--border2);
       border-radius: var(--radius);
-      padding: 10px 14px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       font-size: 13px;
       flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
     }
-    #current-account-banner .account-name { color: var(--accent); font-weight: bold; }
+    .account-avatar {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent-dim), var(--secondary));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    #current-account-banner .account-name { color: var(--accent); font-weight: 700; font-size: 14px; }
     .add-alt-section {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 14px 16px;
       flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
     }
-    .add-alt-section .form-row { margin-bottom: 8px; }
+    .add-alt-section .section-title { margin-bottom: 10px; }
     .add-alt-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
     .add-alt-row .form-row { flex: 1; min-width: 140px; }
 
     /* ===== VULNDB ===== */
     #vulndb-panel { gap: 10px; }
-    #vulndb-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+    #vulndb-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+    }
     #vulndb-controls input { flex: 1; min-width: 200px; }
     #vulndb-entry-count { font-size: 12px; color: var(--text-dim); flex-shrink: 0; }
-    .vulndb-desc { max-width: 320px; white-space: pre-wrap; }
+    .vulndb-desc { max-width: 320px; white-space: pre-wrap; font-size: 11px; color: var(--text-dim); }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -382,16 +598,21 @@
   <!-- ===== HEADER ===== -->
   <header id="header">
     <div id="status-dot" title="Server status"></div>
-    <h1>ClaudeMC Companion</h1>
+    <h1>ClaudeMC</h1>
+    <span id="header-version">v1.20.7</span>
+    <div id="header-spacer"></div>
+    <div id="header-status">
+      <span id="header-status-text">Companion</span>
+    </div>
   </header>
 
   <!-- ===== TAB STRIP ===== -->
   <nav id="tab-strip" role="tablist">
-    <button class="tab-btn active" data-tab="scanner" role="tab">Scanner</button>
-    <button class="tab-btn"        data-tab="chat"    role="tab">Chat</button>
-    <button class="tab-btn"        data-tab="settings"role="tab">Settings</button>
-    <button class="tab-btn"        data-tab="alts"    role="tab">Alts</button>
-    <button class="tab-btn"        data-tab="vulndb"  role="tab">VulnDb</button>
+    <button class="tab-btn active" data-tab="scanner" role="tab">🔍 Scanner</button>
+    <button class="tab-btn"        data-tab="chat"    role="tab">🤖 AI Chat</button>
+    <button class="tab-btn"        data-tab="settings"role="tab">⚙ Settings</button>
+    <button class="tab-btn"        data-tab="alts"    role="tab">👤 Alts</button>
+    <button class="tab-btn"        data-tab="vulndb"  role="tab">🛡 VulnDB</button>
   </nav>
 
   <!-- ===== TAB CONTENT ===== -->
@@ -402,47 +623,49 @@
          ==================================================== -->
     <section class="tab-panel active" id="panel-scanner">
 
-      <!-- MCScans filter row -->
-      <div class="filter-row">
-        <label>Software:
-          <select id="scan-software">
-            <option value="">All</option>
-            <option value="paper">paper</option>
-            <option value="spigot">spigot</option>
-            <option value="bungeecord">bungeecord</option>
-            <option value="velocity">velocity</option>
-            <option value="craftbukkit">craftbukkit</option>
-            <option value="mohist">mohist</option>
-            <option value="magma">magma</option>
-          </select>
-        </label>
-        <label>Auth Mode:
-          <select id="scan-auth">
-            <option value="">Any</option>
-            <option value="offline">Offline</option>
-            <option value="online">Online</option>
-          </select>
-        </label>
-        <label>Max Results:
-          <input type="number" id="scan-max" value="50" min="1" max="500" style="width:70px" />
-        </label>
-        <label style="display:flex;align-items:center;gap:5px">
-          <input type="checkbox" id="scan-shodan" />
-          Include Shodan
-        </label>
-        <button class="btn btn-primary" id="btn-scan">&#128269; Scan MCScans</button>
+      <!-- Scan controls card -->
+      <div class="scan-controls">
+        <div class="scan-section-label">MCScans</div>
+        <div class="scan-controls-row">
+          <label>Software
+            <select id="scan-software">
+              <option value="">All</option>
+              <option value="paper">Paper</option>
+              <option value="spigot">Spigot</option>
+              <option value="bungeecord">BungeeCord</option>
+              <option value="velocity">Velocity</option>
+              <option value="craftbukkit">CraftBukkit</option>
+              <option value="mohist">Mohist</option>
+              <option value="magma">Magma</option>
+            </select>
+          </label>
+          <label>Auth
+            <select id="scan-auth">
+              <option value="">Any</option>
+              <option value="offline">Offline</option>
+              <option value="online">Online</option>
+            </select>
+          </label>
+          <label>Max
+            <input type="number" id="scan-max" value="50" min="1" max="500" style="width:72px" />
+          </label>
+          <label><input type="checkbox" id="scan-shodan" /> Include Shodan</label>
+          <button class="btn btn-primary" id="btn-scan">🔍 Scan MCScans</button>
+        </div>
+        <div class="scan-section-label">External Sources</div>
+        <div class="scan-controls-row" id="scan-shodan-row">
+          <input type="text" id="shodan-query" placeholder='Shodan query — e.g. port:25565 minecraft 1.21' style="flex:1;min-width:200px" />
+          <button class="btn btn-ghost" id="btn-shodan">🔎 Shodan</button>
+          <button class="btn btn-ghost" id="btn-fofa">🌐 FOFA</button>
+          <button class="btn btn-ghost" id="btn-censys">🔍 Censys</button>
+        </div>
       </div>
 
-      <!-- Shodan / FOFA / Censys row -->
-      <div class="filter-row" id="scan-shodan-row">
-        <input type="text" id="shodan-query" placeholder='Shodan query, e.g. "port:25565 minecraft 1.21"' style="flex:1;min-width:200px" />
-        <button class="btn btn-secondary" id="btn-shodan">&#128270; Shodan</button>
-        <button class="btn btn-secondary" id="btn-fofa">&#127760; FOFA</button>
-        <button class="btn btn-secondary" id="btn-censys">&#128269; Censys</button>
+      <!-- Status bar + result filter -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <div class="status-bar" id="scan-status" style="margin-bottom:0;flex:1"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-vuln-only" title="Show only servers with known vulnerabilities">⚠ Vulnerable Only</button>
       </div>
-
-      <!-- Status bar -->
-      <div class="status-bar" id="scan-status"></div>
 
       <!-- Loading / error -->
       <div id="scan-loading" class="loading-msg" style="display:none"><span class="spinner"></span>Scanning…</div>
@@ -489,52 +712,68 @@
       <div id="settings-loading" class="loading-msg" style="display:none"><span class="spinner"></span>Loading settings…</div>
       <div id="settings-feedback"></div>
       <form class="settings-form" id="settings-form" onsubmit="return false">
+
+        <div class="settings-section-title">AI Provider</div>
         <div class="form-row">
-          <label>AI Provider</label>
+          <label>Select which AI to use for chat and exploit analysis</label>
           <div class="radio-group">
-            <label><input type="radio" name="provider" value="anthropic" checked /> Anthropic</label>
-            <label><input type="radio" name="provider" value="openai"    /> OpenAI</label>
-            <label><input type="radio" name="provider" value="gemini"    /> Gemini</label>
+            <label><input type="radio" name="provider" value="anthropic" checked /> Claude (Anthropic)</label>
+            <label><input type="radio" name="provider" value="openai"    /> GPT (OpenAI)</label>
+            <label><input type="radio" name="provider" value="gemini"    /> Gemini (Google)</label>
           </div>
         </div>
+
+        <div class="settings-section-title">AI API Keys</div>
         <div class="form-row">
           <label for="key-anthropic">Anthropic API Key</label>
           <input type="password" id="key-anthropic" placeholder="sk-ant-…" />
+          <span class="form-hint">Get at console.anthropic.com → API Keys ($5 free credit on signup)</span>
         </div>
         <div class="form-row">
           <label for="key-openai">OpenAI API Key</label>
           <input type="password" id="key-openai" placeholder="sk-…" />
+          <span class="form-hint">Get at platform.openai.com → API keys (requires billing)</span>
         </div>
         <div class="form-row">
           <label for="key-gemini">Gemini API Key</label>
           <input type="password" id="key-gemini" placeholder="AIza…" />
+          <span class="form-hint">Get at aistudio.google.com → Get API key (free, no card needed)</span>
         </div>
+
+        <div class="settings-section-title">Scanner API Keys</div>
         <div class="form-row">
-          <label for="key-shodan">Shodan API Key <span style="color:var(--text-dim)">(shodan.io → Account)</span></label>
+          <label for="key-shodan">Shodan API Key</label>
           <input type="password" id="key-shodan" placeholder="Your Shodan key" />
+          <span class="form-hint">Get at shodan.io → Account (100 results/query free)</span>
         </div>
         <div class="form-row">
-          <label for="key-censys">Censys Personal Access Token <span style="color:var(--text-dim)">(app.censys.io/account/api — Starter+ plan for search)</span></label>
+          <label for="key-censys">Censys Personal Access Token</label>
           <input type="password" id="key-censys" placeholder="Bearer token from app.censys.io" />
+          <span class="form-hint">Get at app.censys.io/account/api — Starter+ plan required for search</span>
         </div>
         <div class="form-row">
-          <label for="key-fofa">FOFA API Key <span style="color:var(--text-dim)">(fofa.info/user/info → API Key tab)</span></label>
+          <label for="key-fofa">FOFA API Key</label>
           <input type="password" id="key-fofa" placeholder="Your FOFA API key" />
+          <span class="form-hint">Get at fofa.info/user/info → API Key tab (100 queries/day free)</span>
+        </div>
+
+        <div class="settings-section-title">Model Settings</div>
+        <div class="form-row">
+          <label for="setting-model">Model Override</label>
+          <input type="text" id="setting-model" placeholder="Leave blank for default (e.g. gemini-2.0-flash)" />
+          <span class="form-hint">Leave blank to use the default model for your chosen provider</span>
         </div>
         <div class="form-row">
-          <label for="setting-model">Model <span style="color:var(--text-dim)">(leave blank for default)</span></label>
-          <input type="text" id="setting-model" placeholder="e.g. claude-3-5-sonnet-20241022" />
-        </div>
-        <div class="form-row">
-          <label for="setting-maxtokens">Max Tokens</label>
-          <input type="number" id="setting-maxtokens" placeholder="4096" min="1" style="width:120px" />
+          <label for="setting-maxtokens">Max Response Tokens</label>
+          <input type="number" id="setting-maxtokens" placeholder="300" min="1" style="width:130px" />
         </div>
         <div class="form-row">
           <label for="setting-sysprompt">System Prompt</label>
-          <textarea id="setting-sysprompt" rows="5" placeholder="You are…"></textarea>
+          <textarea id="setting-sysprompt" rows="4" placeholder="You are an assistant integrated into a Minecraft client mod…"></textarea>
         </div>
+
         <div>
-          <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+          <button class="btn btn-primary" id="btn-save-settings">💾 Save Settings</button>
         </div>
       </form>
     </section>
@@ -545,8 +784,13 @@
     <section class="tab-panel" id="panel-alts" style="display:none">
       <!-- Current account -->
       <div id="current-account-banner">
-        Playing as: <span class="account-name" id="current-username">…</span>
-        <button class="btn btn-ghost btn-sm" id="btn-restore-alt" style="display:none">Restore</button>
+        <div class="account-avatar">🎮</div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;font-weight:600">Currently playing as</div>
+          <div class="account-name" id="current-username">…</div>
+        </div>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-restore-alt" style="display:none">↩ Restore</button>
       </div>
 
       <div id="alts-loading" class="loading-msg" style="display:none"><span class="spinner"></span>Loading alts…</div>
@@ -749,6 +993,8 @@ const scanTbody    = document.getElementById('scan-tbody');
 const scanStatus   = document.getElementById('scan-status');
 let   scanRowCount = 0; // total rows
 let   scanVulnCount = 0; // rows with ≥1 vuln
+let   allScanServers = []; // full unfiltered results
+let   vulnOnlyFilter = false;
 
 /**
  * Build vulnerability badge HTML from an array of vuln objects or severity strings.
@@ -810,17 +1056,19 @@ function buildScanRow(server) {
   const vulns = Array.isArray(server.vulnerabilities) ? server.vulnerabilities : [];
 
   const verRaw = server.version || '';
+  const authMode = esc(server.auth || server.authMode || '');
+  const authColor = authMode === 'offline' ? 'var(--accent)' : authMode === 'online' ? 'var(--red)' : 'var(--text-dim)';
   tr.innerHTML = `
-    <td><code>${addr}</code></td>
-    <td>${esc(server.software || '—')}</td>
-    <td title="${esc(verRaw)}">${esc(trunc(verRaw, 32) || '—')}</td>
-    <td>${fmtPlayers(server.players)}</td>
-    <td>${esc(server.auth || server.authMode || '—')}</td>
+    <td><span class="mono" style="color:var(--blue)">${addr}</span></td>
+    <td style="color:var(--text-dim)">${esc(server.software || '—')}</td>
+    <td title="${esc(verRaw)}" style="color:var(--text-dim);font-family:var(--font-mono);font-size:11px">${esc(trunc(verRaw, 32) || '—')}</td>
+    <td style="font-family:var(--font-mono)">${fmtPlayers(server.players)}</td>
+    <td style="color:${authColor};font-weight:600;font-size:11px;text-transform:uppercase">${authMode || '—'}</td>
     <td>${buildBadges(vulns)}</td>
-    <td>
-      <button class="btn btn-ghost btn-sm" data-action="copy">&#128203; Copy IP</button>
-      <button class="btn btn-ghost btn-sm" data-action="enrich">&#128269; Enrich</button>
-      <button class="btn btn-secondary btn-sm" data-action="analyze">&#129302; Analyze</button>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" data-action="copy">📋 Copy</button>
+      <button class="btn btn-ghost btn-sm" data-action="enrich">🔎 Enrich</button>
+      <button class="btn btn-secondary btn-sm" data-action="analyze">🤖 Analyze</button>
     </td>`;
 
   // Copy IP button
@@ -872,16 +1120,40 @@ function buildScanRow(server) {
   return tr;
 }
 
+/** Re-render the results table applying the current vulnOnlyFilter. */
+function applyVulnFilter() {
+  const servers = vulnOnlyFilter
+    ? allScanServers.filter(s => s.vulnerabilities && s.vulnerabilities.length > 0)
+    : allScanServers;
+  scanTbody.innerHTML = '';
+  servers.forEach(s => scanTbody.appendChild(buildScanRow(s)));
+  const showing = servers.length;
+  if (vulnOnlyFilter) {
+    scanStatus.innerHTML =
+      `Showing <span class="vuln-hl">${showing}</span> vulnerable servers` +
+      ` (of <span class="hl">${allScanServers.length}</span> total)`;
+  } else {
+    scanStatus.innerHTML =
+      `<span class="hl">${allScanServers.length}</span> servers found — ` +
+      `<span class="vuln-hl">${scanVulnCount}</span> vulnerable`;
+  }
+}
+
 /** Populate the scanner results table from an array of server objects. */
 function populateScanResults(servers) {
-  scanTbody.innerHTML = '';
+  allScanServers = servers;
   scanRowCount  = servers.length;
   scanVulnCount = servers.filter(s => s.vulnerabilities && s.vulnerabilities.length > 0).length;
-  servers.forEach(s => scanTbody.appendChild(buildScanRow(s)));
-  scanStatus.innerHTML =
-    `<span class="hl">${scanRowCount}</span> servers found — ` +
-    `<span class="vuln-hl">${scanVulnCount}</span> vulnerable`;
+  applyVulnFilter();
 }
+
+document.getElementById('btn-vuln-only').addEventListener('click', () => {
+  vulnOnlyFilter = !vulnOnlyFilter;
+  const btn = document.getElementById('btn-vuln-only');
+  btn.classList.toggle('btn-active', vulnOnlyFilter);
+  btn.textContent = vulnOnlyFilter ? '✓ Vulnerable Only' : '⚠ Vulnerable Only';
+  applyVulnFilter();
+});
 
 // MCScans scan button
 document.getElementById('btn-scan').addEventListener('click', async () => {
