@@ -81,6 +81,7 @@ public class ClientPlayNetworkHandlerMixin {
         } catch (Exception ignored) {}
     }
 
+    /** Velocity — entity knockback (e.g. melee/projectile hits). */
     @Inject(method = "onEntityVelocityUpdate", at = @At("HEAD"), cancellable = true, require = 0)
     private void claudemc$velocity(net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket packet, CallbackInfo ci) {
         com.claudemc.module.impl.combat.Velocity vel = com.claudemc.module.impl.combat.Velocity.INSTANCE;
@@ -89,10 +90,36 @@ public class ClientPlayNetworkHandlerMixin {
         if (client.player == null || packet.getEntityId() != client.player.getId()) return;
         double h = vel.getHorizontalMultiplier(), v = vel.getVerticalMultiplier();
         net.minecraft.util.math.Vec3d pv = packet.getVelocity();
-        double vx = pv.x * h;
-        double vy = pv.y * v;
-        double vz = pv.z * h;
-        client.player.setVelocity(vx, vy, vz);
+        client.player.setVelocity(pv.x * h, pv.y * v, pv.z * h);
         ci.cancel();
+    }
+
+    /**
+     * Velocity — explosion knockback (crystals, TNT, beds, anchors).
+     * The packet carries an Optional<Vec3d> playerKnockback. The vanilla handler adds
+     * that vector to the player's velocity at RETURN. We undo that addition and re-apply
+     * it scaled by the H/V multipliers.
+     *
+     * Technique: inject at RETURN, compute the correction = kb * (mult - 1), and add it
+     * to the current velocity (which already includes the full kb from vanilla handling).
+     */
+    @Inject(method = "onExplosion", at = @At("RETURN"), require = 0)
+    private void claudemc$explosionVelocity(net.minecraft.network.packet.s2c.play.ExplosionS2CPacket packet, CallbackInfo ci) {
+        com.claudemc.module.impl.combat.Velocity vel = com.claudemc.module.impl.combat.Velocity.INSTANCE;
+        if (vel == null || !vel.isEnabled()) return;
+        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+        if (client.player == null) return;
+        java.util.Optional<net.minecraft.util.math.Vec3d> kbOpt = packet.playerKnockback();
+        if (kbOpt.isEmpty()) return;
+
+        double h = vel.getHorizontalMultiplier();
+        double v = vel.getVerticalMultiplier();
+        net.minecraft.util.math.Vec3d kb = kbOpt.get();
+        net.minecraft.util.math.Vec3d cur = client.player.getVelocity();
+        // cur = pre_vel + kb  →  desired = pre_vel + kb*mult  →  correction = kb*(mult-1)
+        client.player.setVelocity(
+            cur.x + kb.x * (h - 1.0),
+            cur.y + kb.y * (v - 1.0),
+            cur.z + kb.z * (h - 1.0));
     }
 }

@@ -5,18 +5,18 @@ import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
 
 /**
- * Reduces the velocity (knockback) received when hit.
- * Works by zeroing horizontal velocity each tick while active.
- * The mixin in ClientPlayerEntityMixin handles packet-level reduction.
+ * Reduces knockback from hits AND explosion blasts (crystals, TNT, beds, anchors).
+ * Packet-level interception in ClientPlayNetworkHandlerMixin handles both
+ * EntityVelocityUpdateS2CPacket (melee/projectile) and ExplosionS2CPacket.
  */
 public class Velocity extends Module {
 
     public static Velocity INSTANCE;
 
     public Velocity() {
-        super("Velocity", "Reduces knockback taken from hits", Category.COMBAT);
-        addSetting("H-Mult", "0.0"); // 0.0 = no horizontal knockback
-        addSetting("V-Mult", "1.0"); // 1.0 = normal vertical
+        super("Velocity", "Reduces knockback from hits and explosions", Category.COMBAT);
+        addNumber("H-Mult", 0.0, 0.0, 1.0, 0.1, false); // 0.0 = no horizontal knockback
+        addNumber("V-Mult", 1.0, 0.0, 1.0, 0.1, false); // 1.0 = normal vertical
         INSTANCE = this;
     }
 
