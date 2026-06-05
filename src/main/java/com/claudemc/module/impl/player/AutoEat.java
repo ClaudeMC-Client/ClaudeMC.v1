@@ -44,6 +44,6 @@ public class AutoEat extends Module {
     }
 
     private int parseInt(String s, int d) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return d; }
+        try { return (int) Double.parseDouble(s); } catch (Exception e) { return d; }
     }
 }

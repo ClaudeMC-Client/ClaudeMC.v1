@@ -14,8 +14,8 @@ public class StorageESP extends BlockScanModule {
     public StorageESP() {
         super("StorageESP", "Shows container contents indicator through walls", Category.RENDER);
         addSetting("Radius", "32");
-        addSetting("ShowFull",  "true");
-        addSetting("ShowEmpty", "false");
+        addBool("ShowFull", true);
+        addBool("ShowEmpty", false);
         this.boxExpand = -0.05;   // slight inset so it nests inside the block
         INSTANCE = this;
     }

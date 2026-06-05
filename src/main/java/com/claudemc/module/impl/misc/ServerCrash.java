@@ -107,6 +107,6 @@ public class ServerCrash extends Module {
     }
 
     private int parseInt(String s, int fallback) {
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return fallback; }
+        try { return (int) Double.parseDouble(s); } catch (NumberFormatException e) { return fallback; }
     }
 }

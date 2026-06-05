@@ -160,7 +160,7 @@ public class AuctionDupe extends Module {
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private int parseIntSetting(String key, int fallback) {
-        try { return Integer.parseInt(getSetting(key)); }
+        try { return (int) Double.parseDouble(getSetting(key)); }
         catch (NumberFormatException e) { return fallback; }
     }
 }

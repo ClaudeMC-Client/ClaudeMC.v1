@@ -572,6 +572,6 @@ public class AutoMine extends Module {
             pauseTicksLeft=rng.nextInt(parseInt(getSetting("MaxPause"),30))+1;
     }
 
-    private int   parseInt(String s,int def)   {try{return Integer.parseInt(s.trim());}catch(Exception e){return def;}}
+    private int   parseInt(String s,int def)   {try{return (int) Double.parseDouble(s.trim());}catch(Exception e){return def;}}
     private float parseFloat(String s,float d) {try{return Float.parseFloat(s.trim());}catch(Exception e){return d;}}
 }

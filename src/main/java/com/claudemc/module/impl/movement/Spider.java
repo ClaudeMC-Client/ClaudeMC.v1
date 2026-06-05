@@ -15,7 +15,7 @@ public class Spider extends Module {
 
     public Spider() {
         super("Spider", "Climb walls like a spider", Category.MOVEMENT);
-        addSetting("Speed", "0.20");
+        addNumber("Speed", 0.20, 0.05, 1.0, 0.05, false);
         INSTANCE = this;
     }
 
@@ -24,7 +24,7 @@ public class Spider extends Module {
         if (client.player == null || client.world == null) return;
         if (client.player.isOnGround()) return;
 
-        double speed = parseDouble(getSetting("Speed"), 0.20);
+        double speed = Double.parseDouble(getSetting("Speed"));
 
         // Check if there's a block adjacent to the player (touching a wall)
         var bPos = client.player.getBlockPos();
@@ -55,7 +55,4 @@ public class Spider extends Module {
                !client.world.isAir(bPos.south());
     }
 
-    private double parseDouble(String s, double d) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return d; }
-    }
 }

@@ -114,6 +114,6 @@ public class AutoReply extends Module {
     public Map<String, String> getRules() { return rules; }
 
     private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
+        try { return (int) Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

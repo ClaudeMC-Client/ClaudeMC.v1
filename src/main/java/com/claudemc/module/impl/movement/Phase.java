@@ -15,7 +15,7 @@ public class Phase extends Module {
 
     public Phase() {
         super("Phase", "Walk through blocks by toggling noClip", Category.MOVEMENT);
-        addSetting("Speed", "0.20");
+        addNumber("Speed", 0.20, 0.05, 2.0, 0.05, false);
         INSTANCE = this;
     }
 
@@ -36,7 +36,7 @@ public class Phase extends Module {
         if (client.player == null) return;
         client.player.noClip = true;
 
-        double speed = parseDouble(getSetting("Speed"), 0.20);
+        double speed = Double.parseDouble(getSetting("Speed"));
         var opts = client.options;
 
         float yawRad   = (float) Math.toRadians(client.player.getYaw());
@@ -58,7 +58,4 @@ public class Phase extends Module {
         }
     }
 
-    private double parseDouble(String s, double d) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return d; }
-    }
 }

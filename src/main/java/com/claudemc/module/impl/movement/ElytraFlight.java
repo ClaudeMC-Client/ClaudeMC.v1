@@ -21,7 +21,7 @@ public class ElytraFlight extends Module {
         if (!isWearingElytra(client)) return;
 
         String mode  = getSetting("Mode");
-        double speed = parseDouble(getSetting("Speed"), 1.8);
+        double speed = Double.parseDouble(getSetting("Speed"));
 
         if (!client.player.isGliding()) {
             if (client.player.getVelocity().y < -0.1) {
@@ -66,7 +66,4 @@ public class ElytraFlight extends Module {
         return chest.getItem() == Items.ELYTRA;
     }
 
-    private double parseDouble(String s, double def) {
-        try { return Double.parseDouble(s); } catch (Exception e) { return def; }
-    }
 }

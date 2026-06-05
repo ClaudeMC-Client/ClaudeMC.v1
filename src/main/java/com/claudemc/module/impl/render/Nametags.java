@@ -14,9 +14,9 @@ public class Nametags extends Module {
 
     public Nametags() {
         super("Nametags", "Show player health, ping and distance above their heads", Category.RENDER);
-        addSetting("Health", "true");
-        addSetting("Ping",   "true");
-        addSetting("Dist",   "true");
+        addBool("Health", true);
+        addBool("Ping", true);
+        addBool("Dist", true);
         INSTANCE = this;
     }
 

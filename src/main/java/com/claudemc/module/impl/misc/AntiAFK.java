@@ -167,7 +167,7 @@ public class AntiAFK extends Module {
     public boolean isEvading() { return evading; }
 
     private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
+        try { return (int) Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 
     private double parseDouble(String s, double def) {

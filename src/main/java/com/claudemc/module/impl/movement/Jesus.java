@@ -9,13 +9,13 @@ public class Jesus extends Module {
 
     public Jesus() {
         super("Jesus", "Walk on water and lava", Category.MOVEMENT);
-        addSetting("Lava", "false");
+        addBool("Lava", false);
     }
 
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        boolean doLava = Boolean.parseBoolean(getSetting("Lava"));
+        boolean doLava = "true".equals(getSetting("Lava"));
 
         boolean inFluid = client.player.isTouchingWater()
                         || (doLava && client.player.isInLava());

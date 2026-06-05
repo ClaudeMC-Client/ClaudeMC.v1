@@ -18,7 +18,7 @@ public class ESP extends Module {
     public ESP() {
         super("ESP", "Draw coloured boxes around entities through walls", Category.RENDER);
         addMode("Filter", "All", "All", "Players", "Hostile");
-        addSetting("ShowInvis", "true");
+        addBool("ShowInvis", true);
         INSTANCE = this;
 
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
