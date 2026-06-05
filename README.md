@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.5
+# ClaudeMC v1.20.7
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -75,31 +75,36 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
     - [SmartReply](#smartreply)
     - [ExploitAdvisor](#exploitadvisor)
     - [AIAssist](#aiassist)
-14. [ClaudeMC Companion (localhost web app)](#claudemc-companion-localhost-web-app)
+14. [API Keys — Where to Get Them](#api-keys--where-to-get-them)
+    - [AI Providers](#ai-providers)
+    - [Shodan](#shodan)
+    - [Censys](#censys)
+    - [FOFA](#fofa)
+15. [ClaudeMC Companion (localhost web app)](#claudemc-companion-localhost-web-app)
     - [Scanner](#scanner)
     - [Chat](#chat)
     - [Settings](#companion-settings)
     - [Alts](#companion-alts)
     - [VulnDb](#companion-vulndb)
-15. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
-16. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
-17. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
-18. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
-19. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
-20. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
-21. [ForceOP](#forceop)
-22. [ForceCreative](#forcecreative)
-23. [AuthMeBypass — Proxy Auth Escape](#authmebypass--proxy-auth-escape)
-24. [VanishDetect — Packet Leak Tracking](#vanishdetect--packet-leak-tracking)
-25. [MiniMessage Exploit](#minimessage-exploit)
-26. [WebConsoleXSS — ForceOP via Browser XSS](#webconsolexss--forceop-via-browser-xss)
-27. [Server Crash](#server-crash)
-28. [DupeDB Integration](#dupedb-integration)
-29. [Mod Compatibility](#mod-compatibility)
-30. [Troubleshooting](#troubleshooting)
-31. [Building from Source](#building-from-source)
-32. [Credits](#credits)
-33. [What's New](#whats-new)
+16. [ServerFinder — Scan for Vulnerable / P2W Servers](#serverfinder--scan-for-vulnerable--p2w-servers)
+17. [AutoMine — Human-like Strip Mining](#automine--human-like-strip-mining)
+18. [Trajectories — Projectile Prediction](#trajectories--projectile-prediction)
+19. [BlockESP — Custom Blocks](#blockesp--custom-blocks)
+20. [RecordProof — Screen Capture Hiding](#recordproof--screen-capture-hiding)
+21. [Dupe Shortcuts (dupedb.net)](#dupe-shortcuts-dupedbnets)
+22. [ForceOP](#forceop)
+23. [ForceCreative](#forcecreative)
+24. [AuthMeBypass — Proxy Auth Escape](#authmebypass--proxy-auth-escape)
+25. [VanishDetect — Packet Leak Tracking](#vanishdetect--packet-leak-tracking)
+26. [MiniMessage Exploit](#minimessage-exploit)
+27. [WebConsoleXSS — ForceOP via Browser XSS](#webconsolexss--forceop-via-browser-xss)
+28. [Server Crash](#server-crash)
+29. [DupeDB Integration](#dupedb-integration)
+30. [Mod Compatibility](#mod-compatibility)
+31. [Troubleshooting](#troubleshooting)
+32. [Building from Source](#building-from-source)
+33. [Credits](#credits)
+34. [What's New](#whats-new)
 
 ---
 
@@ -647,6 +652,124 @@ Two features in one:
 
 ---
 
+## API Keys — Where to Get Them
+
+All keys are stored locally in `.minecraft/config/claudemc/ai.json`. They are **never uploaded or shared** — they go only to the specific API you configure them for. You can set every key from inside the game (`.` → `[AI]`) or from the Companion web UI at `http://localhost:8080` → Settings.
+
+---
+
+### AI Providers
+
+You only need **one** AI key to use AI features. All three providers are free to start — pick whichever you prefer.
+
+#### Anthropic Claude (default, recommended)
+
+> Website: **https://console.anthropic.com**
+
+1. Go to [console.anthropic.com](https://console.anthropic.com) and sign up for a free account (email or Google).
+2. In the left sidebar click **API Keys** → **Create Key**.
+3. Copy the key (starts with `sk-ant-`). You only see it once — paste it somewhere safe.
+4. **Free tier:** Anthropic gives new accounts $5 of free credits (enough for thousands of calls at Haiku rates).
+5. Paste the key into ClaudeMC: `.` → `[AI]` → **Anthropic key** field.
+
+Default model used: `claude-haiku-4-5-20251001` (fast, cheap, very capable).
+
+#### OpenAI / ChatGPT
+
+> Website: **https://platform.openai.com**
+
+1. Go to [platform.openai.com](https://platform.openai.com) and sign up.
+2. Click your avatar (top-right) → **API keys** → **Create new secret key**.
+3. Copy the key (starts with `sk-`).
+4. **Free tier:** OpenAI no longer gives automatic free credits to new accounts. You need to add a payment method and buy at least $5 of credits. `gpt-4o-mini` is cheap (~$0.15/1M tokens in).
+5. Paste into ClaudeMC: `.` → `[AI]` → **OpenAI key** field → set **Provider** to `OpenAI`.
+
+Default model used: `gpt-4o-mini`.
+
+#### Google Gemini
+
+> Website: **https://aistudio.google.com**
+
+1. Go to [aistudio.google.com](https://aistudio.google.com) and sign in with a Google account.
+2. Click **Get API key** → **Create API key in new project** (or select an existing project).
+3. Copy the key (starts with `AIza`).
+4. **Free tier:** Google AI Studio has a generous free tier — `gemini-1.5-flash` is free up to 15 requests/minute and 1 million tokens/day. No credit card required.
+5. Paste into ClaudeMC: `.` → `[AI]` → **Gemini key** field → set **Provider** to `Gemini`.
+
+Default model used: `gemini-1.5-flash`.
+
+---
+
+### Shodan
+
+> Website: **https://www.shodan.io**
+
+Shodan is a search engine for internet-connected devices. ClaudeMC uses it to search for Minecraft servers (port 25565) with richer data than MCScans — including server banners, organization, and country info.
+
+1. Go to [shodan.io](https://www.shodan.io) and create a free account.
+2. Go to **Account** → your API key is shown on the account page. Copy it.
+3. **Free tier:** 1 result page per query (up to 100 results). Enough to find servers. Shodan Membership ($49/year one-time) unlocks unlimited results and filters.
+4. Paste into ClaudeMC: `.` → `[AI]` → **Shodan key** field.
+   Or via the Companion: `http://localhost:8080` → Settings → **Shodan API key**.
+
+Used by: **Companion Scanner** (Shodan Search button), **ServerFinder** (AI-assisted queries).
+
+> Shodan free accounts cannot use the `facets` or `stream` API — ClaudeMC only uses the `host/search` endpoint which works on free accounts.
+
+---
+
+### Censys
+
+> Website: **https://app.censys.io**
+
+Censys scans the entire internet continuously and indexes every open port. The v3 API lets you search for hosts running port 25565 (Minecraft) with service fingerprints, banners, and certificates.
+
+1. Go to [app.censys.io](https://app.censys.io) and sign up (email required, no credit card for free tier).
+2. Once logged in, go to **Account → API** (or [app.censys.io/account/api](https://app.censys.io/account/api)).
+3. Click **Generate Personal Access Token**. Copy the token — you only see it once.
+4. **Free tier:** Host lookup (by IP) only. To use the **search** endpoint (scan for servers by port), you need a **Starter plan** (~$99/month) or higher. If you only have a free account, the Censys mode in ServerFinder will return an auth error for searches — use it for single-IP lookups via the Companion instead.
+5. Paste your token into ClaudeMC via the Companion: `http://localhost:8080` → Settings → **Censys API key**.
+   Or edit `config/claudemc/ai.json` directly: add `"censysApiKey": "your-token-here"`.
+
+Used by: **ServerFinder** Mode → `Censys`, **Companion Scanner** (`/api/censys` endpoint).
+
+> The Censys Personal Access Token is different from the older API ID + Secret pair used by Censys v2. ClaudeMC uses **v3** which only accepts PATs. Make sure you generate a PAT, not a v2 API Secret.
+
+---
+
+### FOFA
+
+> Website: **https://fofa.info**
+
+FOFA is a Chinese internet-wide scan engine similar to Shodan, with strong coverage of Chinese and Asian IP ranges and a query syntax optimised for protocol banners. ClaudeMC queries it with `port="25565" && protocol="minecraft"` to find Minecraft servers globally.
+
+1. Go to [fofa.info](https://fofa.info) and register (email or phone number — note: the interface is primarily in Chinese, use your browser's auto-translate).
+2. After logging in, click your avatar (top-right) → **个人中心** (Personal Center) → **API Key** tab.
+   Or go directly to [fofa.info/user/info](https://fofa.info/user/info).
+3. Your API key is shown on that page. Copy it.
+4. **Free tier:** 100 queries/day, up to 100 results per query. Sufficient for ServerFinder scans. Paid plans (from ~$9/month) unlock more results and filters.
+5. Paste your key into ClaudeMC via the Companion: `http://localhost:8080` → Settings → **FOFA API key**.
+   Or edit `config/claudemc/ai.json` directly: add `"fofaApiKey": "your-key-here"`.
+
+Used by: **ServerFinder** Mode → `FOFA`, **Companion Scanner** (`/api/fofa` endpoint).
+
+> FOFA query syntax: `port="25565" && protocol="minecraft"` — the default query ClaudeMC uses. You can customise the query via the Companion's FOFA search endpoint. `fofa.info` may be slow or geo-blocked from some regions; a VPN helps.
+
+---
+
+### Summary table
+
+| Key | Where to get it | Free tier | Set via |
+|---|---|---|---|
+| **Anthropic key** | [console.anthropic.com](https://console.anthropic.com) → API Keys | $5 credits on signup | `.` → `[AI]` or Companion Settings |
+| **OpenAI key** | [platform.openai.com](https://platform.openai.com) → API keys | Requires billing top-up (~$5 min) | `.` → `[AI]` or Companion Settings |
+| **Gemini key** | [aistudio.google.com](https://aistudio.google.com) → Get API key | Free (15 req/min, no card) | `.` → `[AI]` or Companion Settings |
+| **Shodan key** | [shodan.io](https://www.shodan.io) → Account page | 100 results/query | `.` → `[AI]` or Companion Settings |
+| **Censys key** | [app.censys.io/account/api](https://app.censys.io/account/api) → PAT | Lookup only (search = Starter plan) | Companion Settings or `ai.json` |
+| **FOFA key** | [fofa.info/user/info](https://fofa.info/user/info) → API Key tab | 100 queries/day, 100 results each | Companion Settings or `ai.json` |
+
+---
+
 ## ClaudeMC Companion (localhost web app)
 
 ClaudeMC v1.19 ships an embedded web server that starts automatically when Minecraft launches and serves a companion app at **`http://localhost:8080`**.
@@ -701,10 +824,12 @@ All API keys and AI settings are editable here without touching any file or bein
 | Field | Notes |
 |---|---|
 | **Provider** | Radio: Anthropic / OpenAI / Gemini |
-| **Anthropic key** | Stored in `config/claudemc/ai.json` |
-| **OpenAI key** | Stored in `config/claudemc/ai.json` |
-| **Gemini key** | Stored in `config/claudemc/ai.json` |
-| **Shodan API key** | Used by the Scanner's Shodan search; stored in `config/claudemc/ai.json` |
+| **Anthropic key** | Stored in `config/claudemc/ai.json` — get at [console.anthropic.com](https://console.anthropic.com) |
+| **OpenAI key** | Stored in `config/claudemc/ai.json` — get at [platform.openai.com](https://platform.openai.com) |
+| **Gemini key** | Stored in `config/claudemc/ai.json` — get at [aistudio.google.com](https://aistudio.google.com) |
+| **Shodan API key** | Used by the Scanner's Shodan search — get at [shodan.io](https://www.shodan.io) → Account |
+| **Censys API key** | Personal Access Token for Censys host search — get at [app.censys.io/account/api](https://app.censys.io/account/api) |
+| **FOFA API key** | FOFA search key — get at [fofa.info/user/info](https://fofa.info/user/info) → API Key tab |
 | **Model** | Leave blank for provider default |
 | **Max tokens** | Response length cap |
 | **System prompt** | Default prompt prepended to all AI requests |
@@ -744,12 +869,14 @@ Queries the public [mcscans.fi](https://mcscans.fi) server list and filters resu
 
 ### Modes
 
-| Mode | What it scans |
-|---|---|
-| **Both** (default) | Runs both Vulnerable and P2W scans |
-| **Vulnerable** | Only flags servers with exploitable software |
-| **P2W** | Only flags servers with pay-to-win / gambling mechanics |
-| **AI Search** | Free-text targeted hunt — describe the exploit you want and the AI finds matching servers |
+| Mode | What it scans | Key required |
+|---|---|---|
+| **Both** (default) | Runs both Vulnerable and P2W scans on mcscans.fi | None |
+| **Vulnerable** | Only flags servers with exploitable software | None |
+| **P2W** | Only flags servers with pay-to-win / gambling mechanics | None (AI key optional) |
+| **AI Search** | Free-text targeted hunt — describe the exploit you want and the AI finds matching servers | AI key optional |
+| **FOFA** | Queries FOFA for all hosts with port 25565 + minecraft protocol banner | FOFA API key |
+| **Censys** | Queries Censys v3 global asset search for port 25565 | Censys PAT (Starter+ plan for search) |
 
 ### Vulnerable scan
 
@@ -784,17 +911,33 @@ When both lists are collected, servers that appear in both are tagged:
 
 Cross-tags appear regardless of which `Mode` you are viewing, because both lists are always collected internally.
 
+### FOFA mode
+
+Set `Mode` to **FOFA** (right-click ServerFinder → Mode → FOFA). Requires your FOFA key set in the Companion Settings or `ai.json`.
+
+The module sends: `GET https://fofa.info/api/v1/search/all?qbase64=<base64("port="25565" && protocol="minecraft"")>&fields=ip,port,protocol,country,banner,host&size=<MaxResults×2>`
+
+Results are cross-referenced against VulnDb — any server running software matching a known vulnerability is flagged. Non-matching servers are shown with their banner (if any).
+
+### Censys mode
+
+Set `Mode` to **Censys** (right-click ServerFinder → Mode → Censys). Requires a Censys Personal Access Token with **Starter or higher** plan (free accounts only support single-IP lookups, not search).
+
+The module POSTs to `https://api.platform.censys.io/v3/global/asset/search` with query `services.port=25565`, requesting fields: `ip`, `services.port`, `services.service_name`, `services.banner`. Results are VulnDb cross-referenced identically to other modes.
+
+> If you only have a free Censys account, use the Companion's `/api/censys` endpoint for single-IP lookups instead.
+
 ### Settings
 
 | Setting | Default | Effect |
 |---|---|---|
-| `Mode` | Both | Both / Vulnerable / P2W / AI Search |
+| `Mode` | Both | Both / Vulnerable / P2W / AI Search / FOFA / Censys |
 | `UseAI` | on | Use AI + web search for P2W context and AI Search mode |
-| `OfflineOnly` | off | Restrict results to offline-mode (cracked) servers only |
+| `OfflineOnly` | off | Restrict results to offline-mode (cracked) servers only (MCScans modes only) |
 | `MaxResults` | 20 | Max servers shown per category (5–100) |
 | `Query` | *(empty)* | Free-text exploit query used in AI Search mode — left-click to edit in-game |
 
-The module is trigger-only — enable it once to fire a scan, then it disables itself. Results appear in local chat only; no data is sent anywhere except mcscans.fi.
+The module is trigger-only — enable it once to fire a scan, then it disables itself. Results appear in local chat only.
 
 ---
 
@@ -1370,7 +1513,9 @@ Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.
 
 ## What's New
 
-**v1.20.5:** Module cross-reference pass against Wurst7, Meteor, and LiquidBounce for MC 1.21.11 correctness. Criticals now implements **Packet mode** — spoofs two `PositionAndOnGround` packets (y+0.0625, y+0, both with `onGround=false`) so the server registers a critical hit with no visible jump (Meteor CritHack pattern). AutoTotem now uses `PlayerScreenHandler.OFFHAND_ID` (confirmed = 45 in 1.21.11 via javap). Step and Speed settings converted to `addNumber` for slider support in the ClickGUI. Verified via javap: `stepHeight` is a private float field in `Entity` (reflection works), `getEntityPos()` exists, `isSolidBlock(BlockView, BlockPos)` signature unchanged.
+**v1.20.7:** Censys and FOFA server discovery added to ServerFinder (two new modes: `FOFA` and `Censys`) and to the Companion web app (`/api/censys`, `/api/fofa` routes). Both keys (`censysApiKey`, `fofaApiKey`) are configurable via the Companion Settings UI or `config/claudemc/ai.json`. README now has a dedicated **API Keys** section documenting all six keys (Anthropic, OpenAI, Gemini, Shodan, Censys, FOFA) with direct sign-up links, free-tier details, and step-by-step instructions.
+
+**v1.20.5/v1.20.6:** Module cross-reference pass against Wurst7, Meteor, and LiquidBounce for MC 1.21.11 correctness. Criticals now implements **Packet mode** — spoofs two `PositionAndOnGround` packets (y+0.0625, y+0, both with `onGround=false`) so the server registers a critical hit with no visible jump (Meteor CritHack pattern). AutoTotem now uses `PlayerScreenHandler.OFFHAND_ID` (confirmed = 45 in 1.21.11 via javap). Step and Speed settings converted to `addNumber` for slider support in the ClickGUI. Verified via javap: `stepHeight` is a private float field in `Entity` (reflection works), `getEntityPos()` exists, `isSolidBlock(BlockView, BlockPos)` signature unchanged.
 
 **v1.20.4:** Massive Wurst Client module port — **80+ new modules** across all categories, bringing ClaudeMC to feature-parity with Wurst 7. New XSS exploit module: **WebConsoleXSS** sends jQuery/script payloads that ForceOP via vulnerable web-based server console panels (documented CVE by LiveOverflow, 2022). Mixin fixes: broken `onDisconnect` injection replaced with proper `ClientPlayConnectionEvents.DISCONNECT` event; binary-encoded source file fixed. All new modules compile and remap cleanly on MC 1.21.11.
 
