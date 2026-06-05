@@ -99,7 +99,9 @@ public final class RenderUtils {
         float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
         if (len == 0) { nx = 0; ny = 1; nz = 0; } else { nx /= len; ny /= len; nz /= len; }
 
-        lines.vertex(entry, x1, y1, z1).color(r, g, b, a).normal(entry, nx, ny, nz);
-        lines.vertex(entry, x2, y2, z2).color(r, g, b, a).normal(entry, nx, ny, nz);
+        // MC 1.21.4+ updated VertexFormats.LINES to include a LINE_WIDTH element.
+        // Calling lineWidth() is required or the BufferBuilder throws on flush.
+        lines.vertex(entry, x1, y1, z1).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(2.0f);
+        lines.vertex(entry, x2, y2, z2).color(r, g, b, a).normal(entry, nx, ny, nz).lineWidth(2.0f);
     }
 }

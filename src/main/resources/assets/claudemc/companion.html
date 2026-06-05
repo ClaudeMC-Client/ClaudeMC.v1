@@ -433,10 +433,12 @@
         <button class="btn btn-primary" id="btn-scan">&#128269; Scan MCScans</button>
       </div>
 
-      <!-- Shodan direct-search row -->
+      <!-- Shodan / FOFA / Censys row -->
       <div class="filter-row" id="scan-shodan-row">
-        <input type="text" id="shodan-query" placeholder='Shodan query, e.g. "port:25565 minecraft 1.21"' style="flex:1;min-width:260px" />
-        <button class="btn btn-secondary" id="btn-shodan">&#128270; Shodan Search</button>
+        <input type="text" id="shodan-query" placeholder='Shodan query, e.g. "port:25565 minecraft 1.21"' style="flex:1;min-width:200px" />
+        <button class="btn btn-secondary" id="btn-shodan">&#128270; Shodan</button>
+        <button class="btn btn-secondary" id="btn-fofa">&#127760; FOFA</button>
+        <button class="btn btn-secondary" id="btn-censys">&#128269; Censys</button>
       </div>
 
       <!-- Status bar -->
@@ -508,8 +510,16 @@
           <input type="password" id="key-gemini" placeholder="AIza…" />
         </div>
         <div class="form-row">
-          <label for="key-shodan">Shodan API Key</label>
+          <label for="key-shodan">Shodan API Key <span style="color:var(--text-dim)">(shodan.io → Account)</span></label>
           <input type="password" id="key-shodan" placeholder="Your Shodan key" />
+        </div>
+        <div class="form-row">
+          <label for="key-censys">Censys Personal Access Token <span style="color:var(--text-dim)">(app.censys.io/account/api — Starter+ plan for search)</span></label>
+          <input type="password" id="key-censys" placeholder="Bearer token from app.censys.io" />
+        </div>
+        <div class="form-row">
+          <label for="key-fofa">FOFA API Key <span style="color:var(--text-dim)">(fofa.info/user/info → API Key tab)</span></label>
+          <input type="password" id="key-fofa" placeholder="Your FOFA API key" />
         </div>
         <div class="form-row">
           <label for="setting-model">Model <span style="color:var(--text-dim)">(leave blank for default)</span></label>
@@ -740,10 +750,32 @@ const scanStatus   = document.getElementById('scan-status');
 let   scanRowCount = 0; // total rows
 let   scanVulnCount = 0; // rows with ≥1 vuln
 
-/** Build vulnerability badge HTML from an array of severity strings. */
+/**
+ * Build vulnerability badge HTML from an array of vuln objects or severity strings.
+ * The server returns objects: { plugin, severity, description, patchedIn }.
+ */
 function buildBadges(vulns) {
   if (!vulns || vulns.length === 0) return '<span style="color:var(--text-dim)">—</span>';
-  return vulns.map(v => `<span class="badge badge-${esc(v)}">${esc(v)}</span>`).join('');
+  return vulns.map(v => {
+    const sev    = typeof v === 'string' ? v : (v.severity || 'UNKNOWN');
+    const plugin = typeof v === 'string' ? '' : (v.plugin   || '');
+    const desc   = typeof v === 'string' ? '' : (v.description || '');
+    const tip    = plugin ? ` title="${esc(plugin)}${desc ? ': ' + esc(desc.substring(0, 80)) : ''}"` : '';
+    return `<span class="badge badge-${esc(sev)}"${tip}>${esc(sev)}</span>`;
+  }).join('');
+}
+
+/** Truncate a string to max chars, appending … if cut. */
+function trunc(str, max) {
+  if (!str || str.length <= max) return str || '';
+  return str.substring(0, max) + '…';
+}
+
+/** Return a sane player count string; hides obviously bogus values (e.g. dates). */
+function fmtPlayers(val) {
+  const n = parseInt(val, 10);
+  if (isNaN(n) || n < 0 || n > 200000) return '?';
+  return String(n);
 }
 
 /**
@@ -777,12 +809,13 @@ function buildScanRow(server) {
   const addr = esc(`${server.ip || ''}:${server.port || ''}`);
   const vulns = Array.isArray(server.vulnerabilities) ? server.vulnerabilities : [];
 
+  const verRaw = server.version || '';
   tr.innerHTML = `
     <td><code>${addr}</code></td>
     <td>${esc(server.software || '—')}</td>
-    <td>${esc(server.version  || '—')}</td>
-    <td>${esc(server.players  !== undefined ? server.players : '—')}</td>
-    <td>${esc(server.auth     || '—')}</td>
+    <td title="${esc(verRaw)}">${esc(trunc(verRaw, 32) || '—')}</td>
+    <td>${fmtPlayers(server.players)}</td>
+    <td>${esc(server.auth || server.authMode || '—')}</td>
     <td>${buildBadges(vulns)}</td>
     <td>
       <button class="btn btn-ghost btn-sm" data-action="copy">&#128203; Copy IP</button>
@@ -832,7 +865,7 @@ function buildScanRow(server) {
       toggleExpandedRow(tr, `<div class="expanded-content"><span style="color:var(--red)">${esc(error)}</span></div>`, true);
       return;
     }
-    const analysis = data.analysis || data.reply || JSON.stringify(data);
+    const analysis = data.aiAnalysis || data.analysis || data.reply || JSON.stringify(data);
     toggleExpandedRow(tr, `<div class="expanded-content"><h4>AI Exploit Analysis</h4><pre>${esc(analysis)}</pre></div>`, true);
   });
 
@@ -872,7 +905,7 @@ document.getElementById('btn-scan').addEventListener('click', async () => {
   btn.disabled = false;
 
   if (error) { showError('scan-error', error); return; }
-  populateScanResults(Array.isArray(data) ? data : data.servers || []);
+  populateScanResults(Array.isArray(data) ? data : data.results || data.servers || []);
 });
 
 // Shodan direct search button
@@ -894,7 +927,53 @@ document.getElementById('btn-shodan').addEventListener('click', async () => {
   btn.disabled = false;
 
   if (error) { showError('scan-error', error); return; }
-  populateScanResults(Array.isArray(data) ? data : data.servers || []);
+  populateScanResults(Array.isArray(data) ? data : data.results || data.servers || []);
+});
+
+// FOFA search button
+document.getElementById('btn-fofa').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-fofa');
+  btn.disabled = true;
+  setLoading('scan-loading', true);
+  showError('scan-error', '');
+  scanStatus.textContent = '';
+
+  const { data, error } = await apiFetch('/api/fofa', {
+    method: 'POST',
+    body: JSON.stringify({
+      query: 'port="25565" && protocol="minecraft"',
+      size:  parseInt(document.getElementById('scan-max').value) || 50,
+    }),
+  });
+
+  setLoading('scan-loading', false);
+  btn.disabled = false;
+
+  if (error) { showError('scan-error', error); return; }
+  populateScanResults(Array.isArray(data) ? data : data.results || []);
+});
+
+// Censys search button
+document.getElementById('btn-censys').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-censys');
+  btn.disabled = true;
+  setLoading('scan-loading', true);
+  showError('scan-error', '');
+  scanStatus.textContent = '';
+
+  const { data, error } = await apiFetch('/api/censys', {
+    method: 'POST',
+    body: JSON.stringify({
+      query:   'services.port=25565',
+      perPage: parseInt(document.getElementById('scan-max').value) || 50,
+    }),
+  });
+
+  setLoading('scan-loading', false);
+  btn.disabled = false;
+
+  if (error) { showError('scan-error', error); return; }
+  populateScanResults(Array.isArray(data) ? data : data.results || []);
 });
 
 // ============================================================
@@ -972,7 +1051,9 @@ async function loadSettings() {
   if (data.anthropicKey)  document.getElementById('key-anthropic').value  = data.anthropicKey;
   if (data.openaiKey)     document.getElementById('key-openai').value     = data.openaiKey;
   if (data.geminiKey)     document.getElementById('key-gemini').value     = data.geminiKey;
-  if (data.shodanKey)     document.getElementById('key-shodan').value     = data.shodanKey;
+  if (data.shodanApiKey)  document.getElementById('key-shodan').value     = data.shodanApiKey;
+  if (data.censysApiKey)  document.getElementById('key-censys').value     = data.censysApiKey;
+  if (data.fofaApiKey)    document.getElementById('key-fofa').value       = data.fofaApiKey;
   if (data.model)         document.getElementById('setting-model').value  = data.model;
   if (data.maxTokens)     document.getElementById('setting-maxtokens').value = data.maxTokens;
   if (data.systemPrompt)  document.getElementById('setting-sysprompt').value = data.systemPrompt;
@@ -991,7 +1072,9 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
     anthropicKey: document.getElementById('key-anthropic').value,
     openaiKey:    document.getElementById('key-openai').value,
     geminiKey:    document.getElementById('key-gemini').value,
-    shodanKey:    document.getElementById('key-shodan').value,
+    shodanApiKey: document.getElementById('key-shodan').value,
+    censysApiKey: document.getElementById('key-censys').value,
+    fofaApiKey:   document.getElementById('key-fofa').value,
     model:        document.getElementById('setting-model').value,
     maxTokens:    parseInt(document.getElementById('setting-maxtokens').value) || null,
     systemPrompt: document.getElementById('setting-sysprompt').value,
