@@ -27,6 +27,22 @@ public class VulnDb {
 
     private static final List<VulnEntry> DB = new ArrayList<>(List.of(
 
+        // ── Web console panel XSS (LiveOverflow 2022) ────────────────────
+
+        new VulnEntry("multicraft", Severity.HIGH,
+            "all versions with HTML console output",
+            "Multicraft web panel renders server chat as innerHTML. Sending a <script> payload in chat "
+            + "executes arbitrary JS in the admin's browser, enabling jQuery-based RCON ForceOP.",
+            "update panel to use innerText / enable CSP",
+            "webconsole-xss"),
+
+        new VulnEntry("amp", Severity.HIGH,
+            "AMP pre-2023 builds",
+            "AMP (Application Management Panel) jQuery-RCON console: #rconCommand/#sendRconCommand "
+            + "selectors allow XSS-based RCON command injection from chat.",
+            "2023+ builds with output sanitisation",
+            "webconsole-xss"),
+
         // ── Dupe exploits (dupedb.net) ────────────────────────────────────
 
         new VulnEntry("fadah", Severity.HIGH,

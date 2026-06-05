@@ -11,6 +11,7 @@ import com.google.gson.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.*;
 import java.time.Duration;
@@ -59,9 +60,32 @@ public class ServerFinder extends Module {
     );
 
     // Software names known to be unpatched / inherently vulnerable
+    // Paper/Purpur are included because older builds have known plugin-chain vulns
     private static final Set<String> VULN_SOFTWARE = Set.of(
-        "spigot", "craftbukkit", "bungeecord", "waterfall", "mohist", "magma"
+        "spigot", "craftbukkit", "bungeecord", "waterfall", "mohist", "magma",
+        "paper", "purpur", "fabric", "forge", "vanilla"
     );
+
+    // Hosting providers whose web console panels are known to be XSS-vulnerable
+    // Key: hostname substring, Value: panel type
+    private static final java.util.LinkedHashMap<String, String> HOSTING_PANELS;
+    static {
+        HOSTING_PANELS = new java.util.LinkedHashMap<>();
+        HOSTING_PANELS.put("shockbyte",            "Multicraft");
+        HOSTING_PANELS.put("apexminecrafthosting", "Multicraft");
+        HOSTING_PANELS.put("apexhosting",          "Multicraft");
+        HOSTING_PANELS.put("bisecthosting",        "Multicraft");
+        HOSTING_PANELS.put("mcprohosting",         "Multicraft");
+        HOSTING_PANELS.put("serverminer",          "Multicraft");
+        HOSTING_PANELS.put("ggservers",            "Multicraft");
+        HOSTING_PANELS.put("craftersland",         "Multicraft");
+        HOSTING_PANELS.put("minecrafthosting",     "Multicraft");
+        HOSTING_PANELS.put("hosthorde",            "Multicraft");
+        HOSTING_PANELS.put("nodecraft",            "NodeCraft panel (jQuery-CMD)");
+        HOSTING_PANELS.put("aternos",              "Aternos web panel");
+        HOSTING_PANELS.put("minehut",              "Minehut panel");
+        HOSTING_PANELS.put("server.pro",           "Server.pro panel");
+    }
 
     public ServerFinder() {
         super("ServerFinder",
@@ -357,9 +381,15 @@ public class ServerFinder extends Module {
 
     private List<ServerEntry> findVulnerable(List<ServerEntry> servers, int max) {
         List<ServerEntry> out = new ArrayList<>();
+        // Pre-collect HIGH/CRITICAL VulnDb entries for generic software matches
+        List<VulnDb.VulnEntry> highEntries = VulnDb.all().stream()
+            .filter(v -> v.severity() == VulnDb.Severity.HIGH || v.severity() == VulnDb.Severity.CRITICAL)
+            .collect(Collectors.toList());
+
         for (ServerEntry s : servers) {
             if (out.size() >= max) break;
 
+            // 1. Direct plugin-name match in software/version/motd string
             String combined = (s.software + " " + s.version + " " + s.motd).toLowerCase();
             for (VulnDb.VulnEntry v : VulnDb.all()) {
                 if (v.severity() == VulnDb.Severity.PATCHED) continue;
@@ -370,12 +400,44 @@ public class ServerFinder extends Module {
                     break;
                 }
             }
+
+            // 2. Software-name match — flag unpatched server builds and show sample vuln
             if (s.vulnSummary.isEmpty() && VULN_SOFTWARE.contains(s.software.toLowerCase())) {
-                s.vulnSummary = "Unpatched server software: " + s.software;
+                // Find a relevant VulnDb entry to show (prefer CRITICAL > HIGH)
+                String sample = highEntries.isEmpty() ? "" : highEntries.get(0).pluginName()
+                    + "/" + (highEntries.size() > 1 ? highEntries.get(1).pluginName() : "");
+                s.vulnSummary = "Unpatched " + s.software
+                    + (sample.isEmpty() ? "" : " — may run " + sample + " (HIGH vuln)");
                 out.add(s);
+            }
+
+            // 3. Hosting panel XSS detection via reverse DNS
+            if (s.vulnSummary.isEmpty()) {
+                String panel = detectHostingPanel(s.ip);
+                if (panel != null) {
+                    s.vulnSummary = "XSS-vulnerable web panel: " + panel + " (use WebConsoleXSS)";
+                    out.add(s);
+                }
+            } else {
+                // Append panel vuln if also on a known hosting provider
+                String panel = detectHostingPanel(s.ip);
+                if (panel != null) s.vulnSummary += " | §e[XSS: " + panel + "]";
             }
         }
         return out;
+    }
+
+    /** Reverse-DNS the server IP and match against known vulnerable hosting providers. */
+    private String detectHostingPanel(String ip) {
+        try {
+            String hostname = InetAddress.getByName(ip)
+                .getCanonicalHostName().toLowerCase();
+            for (Map.Entry<String, String> e : HOSTING_PANELS.entrySet()) {
+                if (hostname.contains(e.getKey()) || ip.toLowerCase().contains(e.getKey()))
+                    return e.getValue();
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     // ── P2W matching ──────────────────────────────────────────────────────

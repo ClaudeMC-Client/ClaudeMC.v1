@@ -75,6 +75,14 @@ public class ClickGui extends Screen {
     private com.claudemc.module.setting.NumberSetting draggingSlider = null;
     private int sliderPanelX, sliderWidth;
 
+    // ── Click-vs-drag detection for number settings ───────────────────────
+    private com.claudemc.module.setting.NumberSetting pendingSlider = null;
+    private int pendingSliderStartX, pendingSliderPanelX2, pendingSliderWidth2;
+
+    // ── Dropdown state (ModeSetting) ──────────────────────────────────────
+    private com.claudemc.module.setting.ModeSetting openDropdown = null;
+    private int dropdownX, dropdownY, dropdownW;
+
     public ClickGui() {
         super(Text.literal("ClaudeMC"));
     }
@@ -112,10 +120,32 @@ public class ClickGui extends Screen {
             ctx.drawText(textRenderer, Text.literal("§7" + tooltipText), tx + 2, ty + 2, 0xFFFFFF, false);
         }
 
+        // ── Dropdown overlay (ModeSetting) ────────────────────────────────
+        if (openDropdown != null) {
+            List<String> opts = openDropdown.options();
+            int dh = opts.size() * 12 + 4;
+            ctx.fill(dropdownX, dropdownY, dropdownX + dropdownW, dropdownY + dh, 0xFF18181F);
+            // Border
+            ctx.fill(dropdownX, dropdownY, dropdownX + 2, dropdownY + dh, 0xFF4E6EF2);
+            ctx.fill(dropdownX, dropdownY, dropdownX + dropdownW, dropdownY + 1, 0xFF4E6EF2);
+            ctx.fill(dropdownX + dropdownW - 1, dropdownY, dropdownX + dropdownW, dropdownY + dh, 0xFF333344);
+            int oy = dropdownY + 2;
+            for (String opt : opts) {
+                boolean sel = opt.equals(openDropdown.get());
+                boolean hov = inRect(mx, my, dropdownX + 2, oy, dropdownW - 2, 12);
+                ctx.fill(dropdownX + 2, oy, dropdownX + dropdownW - 1, oy + 12,
+                         hov ? 0xFF2A2A42 : (sel ? 0xFF1E1E36 : 0xFF111118));
+                ctx.drawText(textRenderer,
+                    Text.literal((sel ? "§a▸ " : "§8  ") + opt),
+                    dropdownX + 6, oy + 2, 0xFFEEEEEE, false);
+                oy += 12;
+            }
+        }
+
         // Footer bar
         ctx.fill(0, height - 16, width, height, 0xFF18181F);
         ctx.drawText(textRenderer, Text.literal(
-                "§7L=toggle §8| §7R=settings §8| §7Mid=info §8| §7Drag#=slider §8| §7Scroll=step"),
+                "§7L=toggle §8| §7R=settings §8| §7Mid=info §8| §7#:click=text/drag=slider §8| §7mode:click=list §8| §7Scroll=step"),
             4, height - 11, 0x888888, false);
         // Buttons right-to-left: [Keybinds] [Macros] [Alts] [Server Info]
         int bY = height - 13, bH = 11;
@@ -212,6 +242,18 @@ public class ClickGui extends Screen {
                                 Text.literal("§8 " + s.getName() + ": §a" + ns.asString()),
                                 px + 6, my_ + 1, C_SUB, false);
                         }
+                    } else if (s instanceof com.claudemc.module.setting.ModeSetting ms) {
+                        boolean dropOpen = (openDropdown == ms);
+                        if (dropOpen) {
+                            // Update dropdown position every render frame (panel may have moved)
+                            dropdownX = px + 4;
+                            dropdownY = my_ + 12;
+                            dropdownW = pw - 6;
+                        }
+                        String indicator = dropOpen ? "§8▴" : "§8▾";
+                        ctx.drawText(textRenderer,
+                            Text.literal("§8 " + ms.getName() + ": §a" + ms.get() + " " + indicator),
+                            px + 6, my_ + 2, C_SUB, false);
                     } else {
                         String val;
                         if (isEditing) {
@@ -259,6 +301,23 @@ public class ClickGui extends Screen {
         int x = (int) mx, y = (int) my;
         // Commit any active string edit when clicking elsewhere
         if (editingSetting != null) commitEdit();
+
+        // ── Dropdown overlay hit-test (must happen before panel loop) ─────
+        if (openDropdown != null) {
+            List<String> opts = openDropdown.options();
+            int dh = opts.size() * 12 + 4;
+            if (inRect(x, y, dropdownX, dropdownY, dropdownW, dh)) {
+                int optIdx = (y - dropdownY - 2) / 12;
+                if (optIdx >= 0 && optIdx < opts.size()) {
+                    openDropdown.fromString(opts.get(optIdx));
+                    com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                }
+                openDropdown = null;
+                return true;
+            } else {
+                openDropdown = null; // click outside → close, continue processing
+            }
+        }
 
         // Footer buttons — mirror render order (right-to-left) to determine hit areas
         if (button == 0 && y >= height - 13 && y < height - 2) {
@@ -335,20 +394,28 @@ public class ClickGui extends Screen {
                         if (inRect(x, y, px + 4, my_, pw - 6, 12)) {
                             if (s instanceof com.claudemc.module.setting.NumberSetting ns) {
                                 if (button == 0) {
-                                    // Start slider drag
-                                    draggingSlider = ns;
-                                    sliderPanelX = px + 5;
-                                    sliderWidth = pw - 8;
-                                    double frac = Math.max(0, Math.min(1.0, (double)(x - sliderPanelX) / sliderWidth));
-                                    ns.setFraction(frac);
-                                    com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                                    // Record pending — open text input on release, activate slider on drag
+                                    pendingSlider = ns;
+                                    pendingSliderStartX = x;
+                                    pendingSliderPanelX2 = px + 5;
+                                    pendingSliderWidth2 = pw - 8;
                                 } else if (button == 1) {
-                                    // Right-click: open text edit for number setting
+                                    // Right-click also opens text input directly
                                     editBuffer = ns.asString();
                                     editingSetting = new StringSetting(s.getName(), ns.asString()) {
                                         @Override public String get() { return ns.asString(); }
                                         @Override public void set(String v) { ns.fromString(v); com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES); }
                                     };
+                                }
+                            } else if (s instanceof com.claudemc.module.setting.ModeSetting ms) {
+                                // Toggle dropdown open/close
+                                if (openDropdown == ms) {
+                                    openDropdown = null;
+                                } else {
+                                    openDropdown = ms;
+                                    dropdownX = px + 4;
+                                    dropdownY = my_ + 12;
+                                    dropdownW = pw - 6;
                                 }
                             } else if (s instanceof StringSetting ss) {
                                 if (button == 0) {
@@ -433,6 +500,13 @@ public class ClickGui extends Screen {
     @Override
     public boolean mouseDragged(Click click, double dx, double dy) {
         double mx = click.x(); double my = click.y(); int button = click.button();
+        // Activate slider once mouse has moved 3+ pixels from click origin
+        if (pendingSlider != null && Math.abs(mx - pendingSliderStartX) > 3) {
+            draggingSlider = pendingSlider;
+            sliderPanelX   = pendingSliderPanelX2;
+            sliderWidth    = pendingSliderWidth2;
+            pendingSlider  = null;
+        }
         if (draggingSlider != null) {
             double frac = Math.max(0, Math.min(1.0, (mx - sliderPanelX) / sliderWidth));
             draggingSlider.setFraction(frac);
@@ -454,6 +528,17 @@ public class ClickGui extends Screen {
     public boolean mouseReleased(Click click) {
         double mx = click.x(); double my = click.y(); int button = click.button();
         if (draggingSlider != null) { draggingSlider = null; return true; }
+        if (pendingSlider != null) {
+            // Pure click (no drag): open text input for this number setting
+            final com.claudemc.module.setting.NumberSetting ns = pendingSlider;
+            pendingSlider = null;
+            editBuffer = ns.asString();
+            editingSetting = new StringSetting(ns.getName(), ns.asString()) {
+                @Override public String get() { return ns.asString(); }
+                @Override public void set(String v) { ns.fromString(v); com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES); }
+            };
+            return true;
+        }
         dragging = null;
         // Clear tooltip on any mouse release
         tooltipText = null;
@@ -478,10 +563,17 @@ public class ClickGui extends Screen {
                 my_ += 12;
                 if (expanded.contains(m)) {
                     for (com.claudemc.module.setting.Setting s : m.getSettings()) {
-                        if (inRect(x, y, px + 4, my_, pw - 6, 12) && s instanceof com.claudemc.module.setting.NumberSetting ns) {
-                            if (vScroll > 0) ns.onLeftClick(); else ns.onRightClick();
-                            com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
-                            return true;
+                        if (inRect(x, y, px + 4, my_, pw - 6, 12)) {
+                            if (s instanceof com.claudemc.module.setting.NumberSetting ns) {
+                                if (vScroll > 0) ns.onLeftClick(); else ns.onRightClick();
+                                com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                                return true;
+                            } else if (s instanceof com.claudemc.module.setting.ModeSetting ms) {
+                                openDropdown = null; // close dropdown on scroll
+                                if (vScroll > 0) ms.onLeftClick(); else ms.onRightClick();
+                                com.claudemc.config.ModuleConfig.save(ClaudeMCClient.MODULES);
+                                return true;
+                            }
                         }
                         my_ += 12;
                     }
