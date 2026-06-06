@@ -8,9 +8,11 @@ import net.minecraft.text.Text;
 
 /**
  * Hides the Minecraft window from screen-capture tools on Windows.
- * Uses SetWindowDisplayAffinity(HWND, WDA_EXCLUDEFROMCAPTURE = 0x11) via JNA/shell.
- * Supported: Discord screen share, OBS Window Capture.
- * Platform: Windows 10 v2004+ / Windows 11 only.
+ * Uses SetWindowDisplayAffinity(HWND, WDA_EXCLUDEFROMCAPTURE = 0x11) via PowerShell.
+ *
+ * Works with: Discord "Window" capture, OBS "Window Capture".
+ * Does NOT work with: Discord/OBS "Screen" (desktop) capture — that bypasses affinity.
+ * Platform: Windows 10 v2004 (20H1) / Windows 11 only.
  */
 public class RecordProof extends Module {
 
@@ -32,7 +34,15 @@ public class RecordProof extends Module {
         }
         if (setAffinity(0x00000011)) {
             active = true;
+            var p = MinecraftClient.getInstance().player;
+            if (p != null) p.sendMessage(
+                Text.literal("§a[RecordProof] §7Window hidden. §8Use Discord 'Window' capture, not 'Screen' capture."), false);
             ClaudeMCMod.LOGGER.info("[RecordProof] Window hidden from capture.");
+        } else {
+            var p = MinecraftClient.getInstance().player;
+            if (p != null) p.sendMessage(
+                Text.literal("§c[RecordProof] Failed — Windows 10 v2004 (20H1) or newer required."), false);
+            setEnabled(false);
         }
     }
 
@@ -48,22 +58,21 @@ public class RecordProof extends Module {
 
     private boolean setAffinity(int affinity) {
         try {
-            // Use PowerShell + the Add-Type C# bridge to call SetWindowDisplayAffinity.
-            // Avoids the need for the FFM API at compile time.
             long hwnd = getHwnd();
             if (hwnd == 0) return false;
-            String cs = String.format(
-                "[DllImport(\"user32.dll\")] public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);",
-                new Object[0]);
+            // Guard Add-Type with a type-exists check so toggling the module multiple times
+            // in the same session doesn't fail because ClaudeMC.WinAPI is already compiled.
             String ps = String.format(
-                "Add-Type -MemberDefinition '%s' -Name WinAPI -Namespace ClaudeMC;" +
+                "if (-not ([System.Management.Automation.PSTypeName]'ClaudeMC.WinAPI').Type)" +
+                "  { Add-Type -MemberDefinition '%s' -Name WinAPI -Namespace ClaudeMC };" +
                 "[ClaudeMC.WinAPI]::SetWindowDisplayAffinity([IntPtr]%d, %d)",
-                cs, hwnd, affinity);
-            new ProcessBuilder("powershell", "-NoProfile", "-Command", ps)
+                "[DllImport(\"user32.dll\")] public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);",
+                hwnd, affinity);
+            int exit = new ProcessBuilder("powershell", "-NoProfile", "-NonInteractive", "-Command", ps)
                 .redirectErrorStream(true)
                 .start()
                 .waitFor();
-            return true;
+            return exit == 0;
         } catch (Throwable t) {
             ClaudeMCMod.LOGGER.warn("[RecordProof] setAffinity failed: {}", t.getMessage());
             return false;

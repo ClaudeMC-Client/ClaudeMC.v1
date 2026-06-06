@@ -101,8 +101,12 @@ public class ClaudeMCClient implements ClientModInitializer {
         long window = client.getWindow().getHandle();
         int guiKey  = KeybindManager.INSTANCE.getGuiKey();
 
-        // Chat overlay toggle key (works inside any GUI)
-        if (isKeyJustPressed(window, DEFAULT_CHAT_OVERLAY_KEY) && client.currentScreen != null) {
+        // Chat overlay toggle key — works inside any GUI except the vanilla ChatScreen,
+        // which uses the same T key. Without this guard, T opens vanilla chat AND
+        // simultaneously activates the overlay, causing a double-enter to send.
+        if (isKeyJustPressed(window, DEFAULT_CHAT_OVERLAY_KEY)
+                && client.currentScreen != null
+                && !(client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen)) {
             ChatOverlay.INSTANCE.toggle();
         }
 

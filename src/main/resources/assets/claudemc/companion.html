@@ -1027,7 +1027,15 @@ let   webPanelFilter  = false;
  */
 function buildBadges(vulns) {
   if (!vulns || vulns.length === 0) return '<span style="color:var(--text-dim)">—</span>';
-  return vulns.map(v => {
+  // PATCHED entries are informational notes (e.g. "Paper has BookDupe patched") —
+  // they are not actionable vulnerabilities, so we exclude them from the scan-row
+  // badge column. They still appear in the full enrichment card.
+  const active = vulns.filter(v => {
+    const sev = typeof v === 'string' ? v : (v.severity || 'UNKNOWN');
+    return sev !== 'PATCHED';
+  });
+  if (active.length === 0) return '<span style="color:var(--text-dim)">—</span>';
+  return active.map(v => {
     const sev    = typeof v === 'string' ? v : (v.severity || 'UNKNOWN');
     const plugin = typeof v === 'string' ? '' : (v.plugin   || '');
     const desc   = typeof v === 'string' ? '' : (v.description || '');

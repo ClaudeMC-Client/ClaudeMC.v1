@@ -57,47 +57,49 @@ public class AIAssist extends Module {
     private void handleQuestion(String question) {
         if (!AIConfig.INSTANCE.isConfigured()) {
             var client = MinecraftClient.getInstance();
-            if (client.player != null) {
-                client.player.sendMessage(
-                    Text.literal("§c[AIAssist] No API key — open [AI] in the ClickGUI."), false);
-            }
+            client.execute(() -> {
+                if (client.player != null)
+                    client.player.sendMessage(
+                        Text.literal("§c[AIAssist] No API key — open [AI] in the ClickGUI."), false);
+            });
             return;
         }
 
         if (busy.get()) {
             var client = MinecraftClient.getInstance();
-            if (client.player != null) {
-                client.player.sendMessage(
-                    Text.literal("§c[AIAssist] Already waiting for a response…"), false);
-            }
+            client.execute(() -> {
+                if (client.player != null)
+                    client.player.sendMessage(
+                        Text.literal("§c[AIAssist] Already waiting for a response…"), false);
+            });
             return;
         }
 
         busy.set(true);
         var client = MinecraftClient.getInstance();
-        if (client.player != null) {
-            client.player.sendMessage(
-                Text.literal("§8[AIAssist] §7Asking " + AIConfig.INSTANCE.provider + "…"), false);
-        }
+        client.execute(() -> {
+            if (client.player != null)
+                client.player.sendMessage(
+                    Text.literal("§8[AIAssist] §7Asking " + AIConfig.INSTANCE.provider + "…"), false);
+        });
 
         AIClient.INSTANCE.ask(question,
             response -> {
                 busy.set(false);
                 var mc = MinecraftClient.getInstance();
-                if (mc.player == null) return;
-                // Split long responses at sentence boundaries
-                for (String line : splitResponse(response)) {
-                    mc.player.sendMessage(
-                        Text.literal("§b[AI] §f" + line), false);
-                }
+                mc.execute(() -> {
+                    if (mc.player == null) return;
+                    for (String line : splitResponse(response))
+                        mc.player.sendMessage(Text.literal("§b[AI] §f" + line), false);
+                });
             },
             err -> {
                 busy.set(false);
                 var mc = MinecraftClient.getInstance();
-                if (mc.player != null) {
-                    mc.player.sendMessage(
-                        Text.literal("§c[AIAssist] Error: " + err), false);
-                }
+                mc.execute(() -> {
+                    if (mc.player != null)
+                        mc.player.sendMessage(Text.literal("§c[AIAssist] Error: " + err), false);
+                });
             }
         );
     }
@@ -136,17 +138,19 @@ public class AIAssist extends Module {
             response -> {
                 busy.set(false);
                 var mc = MinecraftClient.getInstance();
-                if (mc.player == null) return;
-                for (String line : splitResponse(response)) {
-                    mc.player.sendMessage(Text.literal("§b[PacketAI] §f" + line), false);
-                }
+                mc.execute(() -> {
+                    if (mc.player == null) return;
+                    for (String line : splitResponse(response))
+                        mc.player.sendMessage(Text.literal("§b[PacketAI] §f" + line), false);
+                });
             },
             err -> {
                 busy.set(false);
                 var mc = MinecraftClient.getInstance();
-                if (mc.player != null) {
-                    mc.player.sendMessage(Text.literal("§c[PacketAI] Error: " + err), false);
-                }
+                mc.execute(() -> {
+                    if (mc.player != null)
+                        mc.player.sendMessage(Text.literal("§c[PacketAI] Error: " + err), false);
+                });
             }
         );
     }

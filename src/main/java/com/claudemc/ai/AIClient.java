@@ -228,12 +228,19 @@ public final class AIClient {
      * The body is truncated to keep it readable in the chat bubble.
      */
     private static String httpErr(String provider, HttpResponse<String> resp) {
+        int status = resp.statusCode();
+        if (status == 429)
+            return "\0ERR:" + provider + " rate limit reached. Wait a moment and try again, "
+                 + "or switch providers in the [AI] screen.";
+        if (status == 401 || status == 403)
+            return "\0ERR:" + provider + " authentication failed (HTTP " + status
+                 + "). Check your API key in the [AI] screen.";
         String body = resp.body();
         if (body != null) {
             body = body.replaceAll("\\s+", " ").trim();
-            if (body.length() > 300) body = body.substring(0, 300) + "…";
+            if (body.length() > 200) body = body.substring(0, 200) + "…";
         }
-        return "\0ERR:" + provider + " HTTP " + resp.statusCode()
+        return "\0ERR:" + provider + " HTTP " + status
              + (body == null || body.isEmpty() ? "" : " — " + body);
     }
 }
