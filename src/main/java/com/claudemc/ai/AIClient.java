@@ -105,7 +105,7 @@ public final class AIClient {
             .build();
 
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) return "\0ERR:Anthropic HTTP " + resp.statusCode();
+        if (resp.statusCode() != 200) return httpErr("Anthropic", resp);
 
         JsonObject json    = GSON.fromJson(resp.body(), JsonObject.class);
         JsonArray  content = json.has("content") ? json.getAsJsonArray("content") : null;
@@ -147,7 +147,7 @@ public final class AIClient {
             .build();
 
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) return "\0ERR:OpenAI HTTP " + resp.statusCode();
+        if (resp.statusCode() != 200) return httpErr("OpenAI", resp);
 
         JsonObject json    = GSON.fromJson(resp.body(), JsonObject.class);
         JsonArray  choices = json.has("choices") ? json.getAsJsonArray("choices") : null;
@@ -192,7 +192,7 @@ public final class AIClient {
             .build();
 
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) return "\0ERR:Gemini HTTP " + resp.statusCode();
+        if (resp.statusCode() != 200) return httpErr("Gemini", resp);
 
         JsonObject json       = GSON.fromJson(resp.body(), JsonObject.class);
         JsonArray  candidates = json.has("candidates") ? json.getAsJsonArray("candidates") : null;
@@ -205,5 +205,20 @@ public final class AIClient {
         JsonObject respPart = respParts.get(0).getAsJsonObject();
         return respPart.has("text") ? respPart.get("text").getAsString().trim()
                                     : "\0ERR:Gemini missing text";
+    }
+
+    /**
+     * Builds an error string that includes the HTTP body so the actual reason is visible
+     * (e.g. a 404 "model not found" or 400 "API key invalid"), rather than just the code.
+     * The body is truncated to keep it readable in the chat bubble.
+     */
+    private static String httpErr(String provider, HttpResponse<String> resp) {
+        String body = resp.body();
+        if (body != null) {
+            body = body.replaceAll("\\s+", " ").trim();
+            if (body.length() > 300) body = body.substring(0, 300) + "…";
+        }
+        return "\0ERR:" + provider + " HTTP " + resp.statusCode()
+             + (body == null || body.isEmpty() ? "" : " — " + body);
     }
 }

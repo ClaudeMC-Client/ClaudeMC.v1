@@ -33,7 +33,7 @@ public class KillAura extends Module {
 
     @Override
     public void onTick(MinecraftClient client) {
-        if (client.player == null || client.world == null) return;
+        if (client.player == null || client.world == null || client.interactionManager == null) return;
         if (client.currentScreen != null) return;
 
         // Meteor: only attack on full cooldown charge

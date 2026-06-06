@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class EntityMixin {
 
     /** AntiInvis: override isInvisible() so all entities always render */
-    @Inject(method = "isInvisible", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "isInvisible", at = @At("RETURN"), cancellable = true, require = 0)
     private void claudemc$antiInvis(CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValue() && AntiInvis.INSTANCE != null && AntiInvis.INSTANCE.isEnabled()) {
             cir.setReturnValue(false);

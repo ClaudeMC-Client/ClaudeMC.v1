@@ -103,7 +103,7 @@ public class ChatOverlay {
     private void send(MinecraftClient client) {
         String text = buffer.toString().trim();
         dismiss();
-        if (text.isEmpty() || client.player == null) return;
+        if (text.isEmpty() || client.player == null || client.getNetworkHandler() == null) return;
         if (text.startsWith("/")) {
             client.getNetworkHandler().sendChatCommand(text.substring(1));
         } else {

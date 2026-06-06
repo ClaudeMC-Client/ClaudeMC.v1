@@ -48,7 +48,13 @@ public class NewChunks extends Module {
             var consumers = context.consumers();
 
             int playerY = client.player.getBlockY();
-            for (ChunkPos cp : newChunks) {
+            // Snapshot under the set's monitor — newChunks is a synchronizedSet that
+            // onTick() mutates; iterating it directly here can throw ConcurrentModificationException.
+            ChunkPos[] snapshot;
+            synchronized (newChunks) {
+                snapshot = newChunks.toArray(new ChunkPos[0]);
+            }
+            for (ChunkPos cp : snapshot) {
                 double wx = cp.getStartX() - cam.x;
                 double wz = cp.getStartZ() - cam.z;
                 double wy = playerY - cam.y;

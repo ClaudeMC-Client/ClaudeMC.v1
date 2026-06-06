@@ -162,6 +162,7 @@ public class ClaudeMCClient implements ClientModInitializer {
 
     private void fireMacro(MinecraftClient client, String command) {
         if (command == null || command.isBlank()) return;
+        if (client.getNetworkHandler() == null) return;
         if (command.startsWith("/")) {
             client.getNetworkHandler().sendChatCommand(command.substring(1));
         } else {

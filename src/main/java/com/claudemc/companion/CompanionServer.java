@@ -563,7 +563,11 @@ public final class CompanionServer {
                 resp -> { reply[0] = resp; latch.countDown(); },
                 err  -> { reply[0] = "Error: " + err; latch.countDown(); });
 
-            latch.await(30, TimeUnit.SECONDS);
+            if (!latch.await(30, TimeUnit.SECONDS)) {
+                // Don't append an empty assistant turn to history on timeout
+                sendText(ex, 504, "AI request timed out after 30s. Check your API key/model and connection.");
+                return;
+            }
 
             chatHistory.add(Map.of("role", "User",      "content", message));
             chatHistory.add(Map.of("role", "Assistant", "content", reply[0]));
@@ -622,7 +626,9 @@ public final class CompanionServer {
                 resp -> { analysis[0] = resp; latch.countDown(); },
                 err  -> { analysis[0] = "AI error: " + err; latch.countDown(); });
 
-            latch.await(45, TimeUnit.SECONDS);
+            if (!latch.await(45, TimeUnit.SECONDS)) {
+                analysis[0] = "AI analysis timed out after 45s — showing VulnDb matches only.";
+            }
 
             JsonObject out = new JsonObject();
             out.addProperty("server",     ip);
@@ -802,7 +808,9 @@ public final class CompanionServer {
     private void sendJson(HttpExchange ex, int code, Object obj) throws IOException {
         byte[] bytes = GSON.toJson(obj).getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        // No wildcard CORS: the companion page is served same-origin from this server.
+        // A "*" header would let any website the user visits read /api/settings (API keys),
+        // drive /api/alts/switch, etc. cross-origin against localhost. Keep responses same-origin only.
         ex.sendResponseHeaders(code, bytes.length);
         ex.getResponseBody().write(bytes);
         ex.getResponseBody().close();

@@ -1375,8 +1375,8 @@ async function loadAlts() {
   if (error) { showError('alts-error', error); return; }
 
   // Current account
-  const currentName = data.current || 'Unknown';
-  const isAlt = !!data.usingAlt;
+  const currentName = data.activeUsername || 'Unknown';
+  const isAlt = !!data.isUsingAlt;
   document.getElementById('current-username').textContent = currentName;
   document.getElementById('btn-restore-alt').style.display = isAlt ? '' : 'none';
 

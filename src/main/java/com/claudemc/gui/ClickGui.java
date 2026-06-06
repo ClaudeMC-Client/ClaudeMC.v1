@@ -91,6 +91,24 @@ public class ClickGui extends Screen {
                 applyDefaultLayout();
             }
         }
+        // Always guarantee every Category has a position + collapsed entry —
+        // protects against a partial/stale gui.json (older build, hand-edit) or a
+        // newly added Category, either of which would otherwise leave a category
+        // with no panelPos entry (invisible panel + NPE risk in mouseDragged).
+        ensureAllCategoriesPresent();
+    }
+
+    /** Fills a default position/collapsed state for any Category not already laid out. */
+    private void ensureAllCategoriesPresent() {
+        int startX = 8, startY = 22, colW = 130, rowH = 18;
+        Category[] all = Category.values();
+        for (int i = 0; i < all.length; i++) {
+            Category cat = all[i];
+            int x = startX + (i / 3) * colW;
+            int y = startY + (i % 3) * rowH;
+            panelPos.computeIfAbsent(cat, k -> new int[]{x, y});
+            collapsed.putIfAbsent(cat, true);
+        }
     }
 
     /**
@@ -542,6 +560,7 @@ public class ClickGui extends Screen {
         }
         if (dragging != null) {
             int[] pos = panelPos.get(dragging);
+            if (pos == null) { dragging = null; return true; }
             pos[0] = (int) mx - dragOffX;
             pos[1] = (int) my - dragOffY;
             // Clamp to screen

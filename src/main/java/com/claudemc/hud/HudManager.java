@@ -81,7 +81,7 @@ public class HudManager {
 
     private void render(DrawContext ctx, RenderTickCounter tickCounter) {
         var client = MinecraftClient.getInstance();
-        if (client.player == null || client.inGameHud.getDebugHud().shouldShowDebugHud()) return;
+        if (client.player == null || client.world == null || client.inGameHud.getDebugHud().shouldShowDebugHud()) return;
 
         renderWatermark(ctx, client);
         renderModuleList(ctx, client);
