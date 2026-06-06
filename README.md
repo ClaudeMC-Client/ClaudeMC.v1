@@ -1,8 +1,10 @@
-# ClaudeMC v1.20.9
+# ClaudeMC v1.20.10
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
 </p>
+
+> A Minecraft Fabric hack client built entirely by AI. Features 200+ modules, AI-powered exploit analysis, server scanning (MCScans/Shodan/Censys/FOFA), web console XSS detection, real-time vanish tracking, AltManager, ForceOP, AutoDupe, RecordProof, and a Meteor-style ClickGUI with companion browser app.
 
 ⚠️ **EDUCATIONAL DISCLAIMER**
 
@@ -1512,6 +1514,8 @@ Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.
 ---
 
 ## What's New
+
+**v1.20.10:** Companion enrichment overhaul — web console port probe now runs concurrently alongside server lookups, checking 8 common panel ports (4200, 8080, 8443, 5000, 9090, 8090, 3000, 25580) and fingerprinting panel type (Pterodactyl, McMyAdmin, Crafty, AMP, Multicraft, PufferPanel, MineOS) from the HTTP response. Enrichment view redesigned as a structured card: status pill, stats grid, stripped MOTD, plugin chips (orange if vulnerable), severity-badged vuln list, and a dedicated Web Console section with XSS context. New `🖥 Web Panel` filter button in the scanner; badge appears inline on enriched rows; status bar shows live panel count.
 
 **v1.20.9:** Codebase-wide bug-fix pass: mixin robustness (`require=0`, pinned `INVOKE_ASSIGN` injection point for Timer), `EntityPositionS2CPacket` updated for MC 1.21.11 field layout, `MinecraftClientAccessor` + `KeyBindingAccessor` mixins added so alt-switching and InventoryMove/AutoWalk use loom-remapped accessors instead of brittle yarn-name reflection. CompanionServer hardened: wildcard CORS removed, JSON parsing made type-safe, `chatHistory` compound reads/writes synchronized, executor shutdown on client stop, `AIClient` secrets redacted from error messages. ClickGUI panels now start **open** and are arranged in a 7-column layout (CHAT+UTILITY stacked, EXPLOIT+WORLD stacked, COMBAT/MISC/MOVEMENT/RENDER/PLAYER each in their own column) so nothing overlaps. Companion version badge updated to v1.20.9.
 
