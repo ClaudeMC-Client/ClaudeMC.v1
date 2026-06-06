@@ -107,29 +107,44 @@ public class ClickGui extends Screen {
             int x = startX + (i / 3) * colW;
             int y = startY + (i % 3) * rowH;
             panelPos.computeIfAbsent(cat, k -> new int[]{x, y});
-            collapsed.putIfAbsent(cat, true);
+            collapsed.putIfAbsent(cat, false);
         }
     }
 
     /**
-     * Default layout: 3 columns of 3 panels, all collapsed so nothing overlaps.
-     * Column gap = 130px, row gap = 18px (14px header + 4px).
+     * Default layout: panels start open and are arranged in columns so they
+     * do not overlap. Smaller categories are stacked in shared columns;
+     * larger categories each get their own column.
+     *
+     * Approximate open heights (16 + moduleCount*12):
+     *   CHAT=64, UTILITY=124, EXPLOIT=112, WORLD=196,
+     *   COMBAT=268, MISC=292, MOVEMENT=436, RENDER=460, PLAYER=472
+     *
+     * Column map (colW=130, startX=8):
+     *   Col 0 (x=  8): CHAT   (y=22),  UTILITY (y=90)
+     *   Col 1 (x=138): EXPLOIT(y=22),  WORLD   (y=138)
+     *   Col 2 (x=268): COMBAT (y=22)
+     *   Col 3 (x=398): MISC   (y=22)
+     *   Col 4 (x=528): MOVEMENT(y=22)
+     *   Col 5 (x=658): RENDER  (y=22)
+     *   Col 6 (x=788): PLAYER  (y=22)
      */
     private void applyDefaultLayout() {
         panelPos.clear();
         collapsed.clear();
-        Category[][] cols = {
-            {Category.COMBAT,  Category.MOVEMENT, Category.PLAYER},
-            {Category.RENDER,  Category.WORLD,    Category.EXPLOIT},
-            {Category.CHAT,    Category.UTILITY,  Category.MISC}
-        };
-        int startX = 8, startY = 22, colW = 130, rowH = 18;
-        for (int c = 0; c < cols.length; c++) {
-            for (int r = 0; r < cols[c].length; r++) {
-                Category cat = cols[c][r];
-                panelPos.put(cat, new int[]{startX + c * colW, startY + r * rowH});
-                collapsed.put(cat, true);   // start collapsed — no overlap guaranteed
-            }
+
+        panelPos.put(Category.CHAT,     new int[]{  8, 22});
+        panelPos.put(Category.UTILITY,  new int[]{  8, 90});   // below CHAT (h≈64+4)
+        panelPos.put(Category.EXPLOIT,  new int[]{138, 22});
+        panelPos.put(Category.WORLD,    new int[]{138, 138});   // below EXPLOIT (h≈112+4)
+        panelPos.put(Category.COMBAT,   new int[]{268, 22});
+        panelPos.put(Category.MISC,     new int[]{398, 22});
+        panelPos.put(Category.MOVEMENT, new int[]{528, 22});
+        panelPos.put(Category.RENDER,   new int[]{658, 22});
+        panelPos.put(Category.PLAYER,   new int[]{788, 22});
+
+        for (Category cat : Category.values()) {
+            collapsed.put(cat, false);
         }
     }
 

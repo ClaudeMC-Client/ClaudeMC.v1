@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.8
+# ClaudeMC v1.20.9
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -1512,6 +1512,8 @@ Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.
 ---
 
 ## What's New
+
+**v1.20.9:** Codebase-wide bug-fix pass: mixin robustness (`require=0`, pinned `INVOKE_ASSIGN` injection point for Timer), `EntityPositionS2CPacket` updated for MC 1.21.11 field layout, `MinecraftClientAccessor` + `KeyBindingAccessor` mixins added so alt-switching and InventoryMove/AutoWalk use loom-remapped accessors instead of brittle yarn-name reflection. CompanionServer hardened: wildcard CORS removed, JSON parsing made type-safe, `chatHistory` compound reads/writes synchronized, executor shutdown on client stop, `AIClient` secrets redacted from error messages. ClickGUI panels now start **open** and are arranged in a 7-column layout (CHAT+UTILITY stacked, EXPLOIT+WORLD stacked, COMBAT/MISC/MOVEMENT/RENDER/PLAYER each in their own column) so nothing overlaps. Companion version badge updated to v1.20.9.
 
 **v1.20.8:** Meteor Client-style rewrites for KillAura (target/sort modes, full-cooldown attack), Flight (reflection flySpeed, correct anti-kick), Speed (Strafe mode), and Step (maxUpStep/stepHeight compat). Utility panel now populated with 9 modules. ClickGUI panel positions and collapsed state saved to `config/claudemc/gui.json` and restored on reopen; default layout is a 3-column collapsed grid with no overlaps. Gemini default model updated to `gemini-2.0-flash` (fixes HTTP 404). Companion: vulnerable-only filter toggle and full visual redesign with deeper dark theme, gradient buttons, and improved typography.
 
