@@ -1,4 +1,4 @@
-# ClaudeMC v1.20.7
+# ClaudeMC v1.20.8
 
 <p align="center">
   <img src="https://s6.imgcdn.dev/Y3BMUd.png" alt="ClaudeMC Logo" width="200"/>
@@ -1512,6 +1512,8 @@ Also make sure you have [Fabric API](https://modrinth.com/mod/fabric-api) for 1.
 ---
 
 ## What's New
+
+**v1.20.8:** Meteor Client-style rewrites for KillAura (target/sort modes, full-cooldown attack), Flight (reflection flySpeed, correct anti-kick), Speed (Strafe mode), and Step (maxUpStep/stepHeight compat). Utility panel now populated with 9 modules. ClickGUI panel positions and collapsed state saved to `config/claudemc/gui.json` and restored on reopen; default layout is a 3-column collapsed grid with no overlaps. Gemini default model updated to `gemini-2.0-flash` (fixes HTTP 404). Companion: vulnerable-only filter toggle and full visual redesign with deeper dark theme, gradient buttons, and improved typography.
 
 **v1.20.7:** Censys and FOFA server discovery added to ServerFinder (two new modes: `FOFA` and `Censys`) and to the Companion web app (`/api/censys`, `/api/fofa` routes). Both keys (`censysApiKey`, `fofaApiKey`) are configurable via the Companion Settings UI or `config/claudemc/ai.json`. README now has a dedicated **API Keys** section documenting all six keys (Anthropic, OpenAI, Gemini, Shodan, Censys, FOFA) with direct sign-up links, free-tier details, and step-by-step instructions.
 
