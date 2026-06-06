@@ -12,12 +12,20 @@ public class MinecraftClientMixin {
 
     /**
      * Timer: scale the number of ticks per frame by the Timer module speed.
-     * Intercepts the RenderTickCounter that drives game ticking.
+     *
+     * Pinned to the value assigned from {@code renderTickCounter.beginRenderTick(...)} via
+     * INVOKE_ASSIGN rather than a bare {@code STORE ordinal=0}, so a future change to local
+     * variable ordering in render() can't silently retarget us onto an unrelated int.
+     * require = 0 so a method-signature change degrades (Timer no-ops) instead of crashing load.
      */
     @ModifyVariable(
         method = "render",
-        at = @At(value = "STORE"),
-        ordinal = 0
+        at = @At(
+            value = "INVOKE_ASSIGN",
+            target = "Lnet/minecraft/client/render/RenderTickCounter$Dynamic;beginRenderTick(JZ)I"
+        ),
+        ordinal = 0,
+        require = 0
     )
     private int claudemc$timerModifyTicks(int original) {
         if (Timer.INSTANCE != null && Timer.INSTANCE.isEnabled()) {

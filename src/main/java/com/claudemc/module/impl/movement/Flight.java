@@ -55,7 +55,7 @@ public class Flight extends Module {
         if (!ab.allowFlying || !ab.flying) enableFlying(client);
 
         // Set flySpeed via reflection (field is private in MC 1.21.x yarn mappings)
-        setFlySpeed(ab, (float) Double.parseDouble(getSetting("Speed")));
+        setFlySpeed(ab, (float) parseDouble(getSetting("Speed"), 0.1));
 
         // Anti-kick: brief downward nudge every N ticks
         if (Boolean.parseBoolean(getSetting("AntiKick"))) {
@@ -98,5 +98,9 @@ public class Flight extends Module {
 
     private int parseInt(String s, int def) {
         try { return (int) Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
+    }
+
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

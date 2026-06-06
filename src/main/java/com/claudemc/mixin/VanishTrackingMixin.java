@@ -41,13 +41,12 @@ public class VanishTrackingMixin {
     private void claudemc$onEntityPosition(EntityPositionS2CPacket packet, CallbackInfo ci) {
         if (VanishDetect.INSTANCE == null || !VanishDetect.INSTANCE.isEnabled()) return;
         try {
-            // Access fields via reflection to avoid breaking on Yarn accessor name changes
-            var clazz = packet.getClass();
-            int id = getIntField(clazz, packet, "entityId", "id");
-            double x = getDoubleField(clazz, packet, "x");
-            double y = getDoubleField(clazz, packet, "y");
-            double z = getDoubleField(clazz, packet, "z");
-            VanishDetect.INSTANCE.onGhostEntityPosition(id, x, y, z);
+            // Use the public 1.21.11 accessors directly — mixin method refs are remapped at
+            // build time, so this works in production (unlike literal-name reflection). The
+            // packet's position now lives in an EntityPosition "change" component, not x/y/z fields.
+            var change = packet.change();          // net.minecraft.entity.EntityPosition
+            var pos    = change.position();        // Vec3d
+            VanishDetect.INSTANCE.onGhostEntityPosition(packet.entityId(), pos.x, pos.y, pos.z);
         } catch (Exception e) { warnOnce(e); }
     }
 
@@ -57,11 +56,12 @@ public class VanishTrackingMixin {
         if (!(packet instanceof EntityS2CPacket.MoveRelative)
          && !(packet instanceof EntityS2CPacket.RotateAndMoveRelative)) return;
         try {
-            var clazz = packet.getClass().getSuperclass(); // fields on parent
-            int id = getIntField(clazz, packet, "entityId", "id");
-            short dx = getShortField(clazz, packet, "deltaX", "dx");
-            short dy = getShortField(clazz, packet, "deltaY", "dy");
-            short dz = getShortField(clazz, packet, "deltaZ", "dz");
+            // Deltas have public getters; the entity id has no accessor, so read it reflectively
+            // with both the yarn (dev) and intermediary (prod) field names.
+            short dx = packet.getDeltaX();
+            short dy = packet.getDeltaY();
+            short dz = packet.getDeltaZ();
+            int   id = getIntField(packet.getClass().getSuperclass(), packet, "id", "entityId", "field_12310");
             VanishDetect.INSTANCE.onGhostEntityMoveRelative(id, dx, dy, dz);
         } catch (Exception e) { warnOnce(e); }
     }
@@ -77,23 +77,6 @@ public class VanishTrackingMixin {
             } catch (NoSuchFieldException ignored) {}
         }
         throw new NoSuchFieldException("int field not found");
-    }
-
-    private double getDoubleField(Class<?> clazz, Object obj, String name) throws Exception {
-        var f = findField(clazz, name);
-        f.setAccessible(true);
-        return f.getDouble(obj);
-    }
-
-    private short getShortField(Class<?> clazz, Object obj, String... names) throws Exception {
-        for (String name : names) {
-            try {
-                var f = findField(clazz, name);
-                f.setAccessible(true);
-                return f.getShort(obj);
-            } catch (NoSuchFieldException ignored) {}
-        }
-        throw new NoSuchFieldException("short field not found");
     }
 
     private java.lang.reflect.Field findField(Class<?> clazz, String name) throws NoSuchFieldException {

@@ -28,7 +28,7 @@ public class Speed extends Module {
         if (client.player.isTouchingWater() || client.player.isInLava()) return;
         if (client.player.isGliding()) return;
 
-        double spd = Double.parseDouble(getSetting("Speed"));
+        double spd = parseDouble(getSetting("Speed"), 0.3);
 
         if ("Strafe".equals(getSetting("Mode"))) {
             // Scale existing XZ momentum up to target speed without killing Y
@@ -59,5 +59,9 @@ public class Speed extends Module {
             var vel = c.player.getVelocity();
             c.player.setVelocity(0, vel.y, 0);
         }
+    }
+
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

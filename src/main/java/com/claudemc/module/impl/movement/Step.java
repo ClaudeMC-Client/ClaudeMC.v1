@@ -29,7 +29,7 @@ public class Step extends Module {
         var c = MinecraftClient.getInstance();
         if (c.player == null) return;
         savedStepHeight = getStepHeight(c.player);
-        setStepHeight(c.player, (float) Double.parseDouble(getSetting("Height")));
+        setStepHeight(c.player, parseFloat(getSetting("Height"), 1.0f));
     }
 
     @Override
@@ -41,7 +41,7 @@ public class Step extends Module {
     @Override
     public void onTick(MinecraftClient client) {
         if (client.player == null) return;
-        float h = (float) Double.parseDouble(getSetting("Height"));
+        float h = parseFloat(getSetting("Height"), 1.0f);
         if (Math.abs(getStepHeight(client.player) - h) > 0.001f) setStepHeight(client.player, h);
     }
 
@@ -73,5 +73,9 @@ public class Step extends Module {
             catch (NoSuchFieldException e) { clazz = clazz.getSuperclass(); }
         }
         throw new NoSuchFieldException(name);
+    }
+
+    private float parseFloat(String s, float def) {
+        try { return (float) Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

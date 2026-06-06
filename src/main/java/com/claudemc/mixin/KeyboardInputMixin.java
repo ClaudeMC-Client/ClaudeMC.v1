@@ -69,7 +69,10 @@ public class KeyboardInputMixin {
     }
 
     private static boolean isKeyDown(MinecraftClient client, net.minecraft.client.option.KeyBinding key) {
-        var bound = key.getDefaultKey();
+        // Use the user's actual bound key (falls back to default if the accessor is unavailable)
+        InputUtil.Key bound;
+        try { bound = ((KeyBindingAccessor) (Object) key).claudemc$getBoundKey(); }
+        catch (Throwable t) { bound = key.getDefaultKey(); }
         if (bound.getCategory() == InputUtil.Type.MOUSE)
             return org.lwjgl.glfw.GLFW.glfwGetMouseButton(client.getWindow().getHandle(), bound.getCode())
                    == org.lwjgl.glfw.GLFW.GLFW_PRESS;

@@ -39,7 +39,7 @@ public class KillAura extends Module {
         // Meteor: only attack on full cooldown charge
         if (client.player.getAttackCooldownProgress(0f) < 1.0f) return;
 
-        double range  = Double.parseDouble(getSetting("Range"));
+        double range  = parseDouble(getSetting("Range"), 4.0);
         String target = getSetting("Target");
         String sort   = getSetting("Sort");
 
@@ -94,5 +94,9 @@ public class KillAura extends Module {
         double h = Math.sqrt(d.x * d.x + d.z * d.z);
         client.player.setYaw((float) Math.toDegrees(Math.atan2(d.z, d.x)) - 90f);
         client.player.setPitch((float) -Math.toDegrees(Math.atan2(d.y, h)));
+    }
+
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

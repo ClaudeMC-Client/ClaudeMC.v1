@@ -123,10 +123,7 @@ public class AltManager {
                 );
             };
 
-            // Inject session via reflection (field is private final)
-            var field = MinecraftClient.class.getDeclaredField("session");
-            field.setAccessible(true);
-            field.set(client, newSession);
+            applySession(client, newSession);
 
             ClaudeMCMod.LOGGER.info("[AltManager] Switched to: {} ({})", alt.name, alt.type);
             return true;
@@ -141,9 +138,7 @@ public class AltManager {
         if (originalSession == null) return false;
         MinecraftClient client = MinecraftClient.getInstance();
         try {
-            var field = MinecraftClient.class.getDeclaredField("session");
-            field.setAccessible(true);
-            field.set(client, originalSession);
+            applySession(client, originalSession);
             originalSession = null;
             ClaudeMCMod.LOGGER.info("[AltManager] Restored original session: {}", originalName);
             return true;
@@ -151,6 +146,28 @@ public class AltManager {
             ClaudeMCMod.LOGGER.warn("[AltManager] Restore failed: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Swaps the client session. Prefers the mixin accessor (remap-safe in production);
+     * falls back to reflective field names if the accessor is unavailable for any reason.
+     */
+    private static void applySession(MinecraftClient client, Session session) throws Exception {
+        try {
+            ((com.claudemc.mixin.MinecraftClientAccessor) (Object) client).claudemc$setSession(session);
+            return;
+        } catch (Throwable accessorFailed) {
+            // Fall through to reflection with both yarn and intermediary names
+        }
+        for (String name : new String[]{"session", "field_1726"}) {
+            try {
+                var field = MinecraftClient.class.getDeclaredField(name);
+                field.setAccessible(true);
+                field.set(client, session);
+                return;
+            } catch (NoSuchFieldException ignored) {}
+        }
+        throw new NoSuchFieldException("MinecraftClient.session (tried accessor + reflection)");
     }
 
     public String getActiveUsername() {

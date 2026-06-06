@@ -73,9 +73,23 @@ public final class AIClient {
                 default        -> sendAnthropic(sys, prompt);
             };
         } catch (Exception e) {
-            ClaudeMCMod.LOGGER.warn("[AIClient] Request failed: {}", e.getMessage());
-            return "\0ERR:" + e.getMessage();
+            // Redact the Gemini key — IOException messages can echo the full request URL,
+            // which carries ?key=... for Gemini.
+            String msg = redactSecrets(e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[AIClient] Request failed: {}", msg);
+            return "\0ERR:" + msg;
         }
+    }
+
+    /** Strips any configured API keys out of a string before it is logged or shown. */
+    private static String redactSecrets(String s) {
+        if (s == null) return "unknown error";
+        for (String key : new String[]{AIConfig.INSTANCE.geminiKey,
+                                       AIConfig.INSTANCE.openaiKey,
+                                       AIConfig.INSTANCE.anthropicKey}) {
+            if (key != null && !key.isBlank()) s = s.replace(key, "***");
+        }
+        return s;
     }
 
     // ── Anthropic ────────────────────────────────────────────────────────
@@ -163,7 +177,8 @@ public final class AIClient {
     private String sendGemini(String sys, String prompt) throws Exception {
         String modelId = AIConfig.INSTANCE.resolvedModel();
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
-            + modelId + ":generateContent?key=" + AIConfig.INSTANCE.geminiKey;
+            + modelId + ":generateContent?key="
+            + java.net.URLEncoder.encode(AIConfig.INSTANCE.geminiKey, StandardCharsets.UTF_8);
 
         // Prepend system prompt to user turn (Gemini free tier has no system role)
         String combined = (sys == null || sys.isBlank()) ? prompt : sys + "\n\n" + prompt;

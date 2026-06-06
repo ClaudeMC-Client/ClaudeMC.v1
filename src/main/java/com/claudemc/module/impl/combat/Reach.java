@@ -48,11 +48,15 @@ public class Reach extends Module {
 
     private void apply(MinecraftClient client) {
         if (client.player == null) return;
-        double attackReach = Double.parseDouble(getSetting("AttackReach"));
-        double blockReach  = Double.parseDouble(getSetting("BlockReach"));
+        double attackReach = parseDouble(getSetting("AttackReach"), 3.0);
+        double blockReach  = parseDouble(getSetting("BlockReach"), 4.5);
         var ea = client.player.getAttributeInstance(EntityAttributes.ENTITY_INTERACTION_RANGE);
         var ba = client.player.getAttributeInstance(EntityAttributes.BLOCK_INTERACTION_RANGE);
         if (ea != null) ea.setBaseValue(attackReach);
         if (ba != null) ba.setBaseValue(blockReach);
+    }
+
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
     }
 }

@@ -36,7 +36,7 @@ public class Phase extends Module {
         if (client.player == null) return;
         client.player.noClip = true;
 
-        double speed = Double.parseDouble(getSetting("Speed"));
+        double speed = parseDouble(getSetting("Speed"), 0.2);
         var opts = client.options;
 
         float yawRad   = (float) Math.toRadians(client.player.getYaw());
@@ -58,4 +58,7 @@ public class Phase extends Module {
         }
     }
 
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
+    }
 }

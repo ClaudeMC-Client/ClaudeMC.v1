@@ -54,9 +54,10 @@ public final class CompanionServer {
     private final List<Map<String, String>> chatHistory =
         Collections.synchronizedList(new ArrayList<>());
 
-    private volatile HttpServer server;
-    private volatile boolean    started    = false;
-    private volatile int        boundPort  = PORT;
+    private volatile HttpServer      server;
+    private volatile ExecutorService executor;
+    private volatile boolean         started    = false;
+    private volatile int             boundPort  = PORT;
 
     private CompanionServer() {}
 
@@ -69,7 +70,8 @@ public final class CompanionServer {
             for (int attempt = 0; attempt < 5; attempt++, port++) {
                 try {
                     server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
-                    server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+                    executor = Executors.newVirtualThreadPerTaskExecutor();
+                    server.setExecutor(executor);
                     server.createContext("/",                   this::serveStatic);
                     server.createContext("/api/scan",           this::handleScan);
                     server.createContext("/api/shodan",         this::handleShodan);
@@ -94,6 +96,17 @@ public final class CompanionServer {
             }
             ClaudeMCMod.LOGGER.warn("[Companion] Could not bind to any port in range {}-{}", PORT, port - 1);
         });
+    }
+
+    /** Stops the embedded server and releases its executor (called on client shutdown). */
+    public void stop() {
+        if (!started) return;
+        started = false;
+        try { if (server != null) server.stop(0); } catch (Exception ignored) {}
+        try { if (executor != null) executor.shutdownNow(); } catch (Exception ignored) {}
+        server = null;
+        executor = null;
+        ClaudeMCMod.LOGGER.info("[Companion] Stopped.");
     }
 
     /** Returns the companion URL. */
@@ -166,7 +179,7 @@ public final class CompanionServer {
             JsonObject body = parseBody(ex);
             String software    = str(body, "software", "");
             String authMode    = str(body, "authMode", "");
-            int    maxResults  = body.has("maxResults") ? body.get("maxResults").getAsInt() : 50;
+            int    maxResults  = gInt(body, "maxResults", 50);
 
             StringBuilder url = new StringBuilder(
                 "https://api.mcscans.fi/public/v1/servers?live=true&sort=player&limit=" + maxResults);
@@ -182,14 +195,13 @@ public final class CompanionServer {
             for (JsonElement el : servers) {
                 JsonObject s    = el.getAsJsonObject();
                 String     ip   = str(s, "hostname", "");
-                int        port = s.has("port") ? s.get("port").getAsInt() : 25565;
+                int        port = gInt(s, "port", 25565);
                 String     sw   = str(s, "software", "unknown");
                 String     ver  = str(s, "version", "?");
                 int        online = 0;
                 if (s.has("playerStats") && s.get("playerStats").isJsonObject())
-                    online = s.getAsJsonObject("playerStats").has("onlinePlayers")
-                        ? s.getAsJsonObject("playerStats").get("onlinePlayers").getAsInt() : 0;
-                int authM = s.has("authMode") ? s.get("authMode").getAsInt() : 1;
+                    online = gInt(s.getAsJsonObject("playerStats"), "onlinePlayers", 0);
+                int authM = gInt(s, "authMode", 1);
 
                 JsonArray vulns = matchVulns(sw, ver, List.of());
                 JsonObject row = new JsonObject();
@@ -216,7 +228,7 @@ public final class CompanionServer {
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "port:25565 game:Minecraft");
-            int        page  = body.has("page") ? body.get("page").getAsInt() : 1;
+            int        page  = gInt(body, "page", 1);
             String     key   = AIConfig.INSTANCE.shodanApiKey;
 
             if (key.isBlank()) {
@@ -237,7 +249,7 @@ public final class CompanionServer {
             for (JsonElement el : matches) {
                 JsonObject m = el.getAsJsonObject();
                 String ip   = str(m, "ip_str", "");
-                int    port = m.has("port") ? m.get("port").getAsInt() : 25565;
+                int    port = gInt(m, "port", 25565);
                 // Shodan Minecraft data is in "minecraft" sub-object when available
                 String ver  = "";
                 String sw   = "";
@@ -263,7 +275,7 @@ public final class CompanionServer {
 
             JsonObject out = new JsonObject();
             out.add("results", results);
-            out.addProperty("total", shodanResp.has("total") ? shodanResp.get("total").getAsInt() : 0);
+            out.addProperty("total", gInt(shodanResp, "total", 0));
             sendJson(ex, 200, out);
         } catch (Exception e) {
             sendText(ex, 500, e.getMessage());
@@ -277,7 +289,7 @@ public final class CompanionServer {
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "services.port=25565");
-            int        perPage = body.has("perPage") ? body.get("perPage").getAsInt() : 50;
+            int        perPage = gInt(body, "perPage", 50);
             String     pat   = AIConfig.INSTANCE.censysApiKey;
 
             if (pat.isBlank()) {
@@ -331,7 +343,7 @@ public final class CompanionServer {
                     for (JsonElement svc : h.getAsJsonArray("services")) {
                         if (!svc.isJsonObject()) continue;
                         JsonObject sv = svc.getAsJsonObject();
-                        int p = sv.has("port") ? sv.get("port").getAsInt() : 0;
+                        int p = gInt(sv, "port", 0);
                         if (p == 25565 || p == 0) {
                             port    = p == 0 ? 25565 : p;
                             sw      = str(sv, "service_name", "");
@@ -371,7 +383,7 @@ public final class CompanionServer {
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "port=\"25565\" && protocol=\"minecraft\"");
-            int        size  = body.has("size") ? body.get("size").getAsInt() : 50;
+            int        size  = gInt(body, "size", 50);
             String     key   = AIConfig.INSTANCE.fofaApiKey;
 
             if (key.isBlank()) {
@@ -427,7 +439,7 @@ public final class CompanionServer {
 
             JsonObject out = new JsonObject();
             out.add("results", results);
-            out.addProperty("total", fofaResp.has("size") ? fofaResp.get("size").getAsInt() : results.size());
+            out.addProperty("total", gInt(fofaResp, "size", results.size()));
             sendJson(ex, 200, out);
         } catch (Exception e) {
             sendText(ex, 500, e.getMessage());
@@ -461,9 +473,9 @@ public final class CompanionServer {
             if (mcsrvRaw != null) {
                 try {
                     JsonObject ms = GSON.fromJson(mcsrvRaw, JsonObject.class);
-                    merged.addProperty("online",   ms.has("online") && ms.get("online").getAsBoolean());
+                    merged.addProperty("online",   gBool(ms, "online", false));
                     merged.addProperty("ip",       str(ms, "ip", address));
-                    merged.addProperty("port",     ms.has("port") ? ms.get("port").getAsInt() : 25565);
+                    merged.addProperty("port",     gInt(ms, "port", 25565));
                     merged.addProperty("software", str(ms, "software", ""));
                     merged.addProperty("version",  str(ms, "version", ""));
                     if (ms.has("motd") && ms.get("motd").isJsonObject())
@@ -471,8 +483,8 @@ public final class CompanionServer {
                             ? ms.getAsJsonObject("motd").getAsJsonArray("clean").toString() : "");
                     if (ms.has("players") && ms.get("players").isJsonObject()) {
                         JsonObject pl = ms.getAsJsonObject("players");
-                        merged.addProperty("playersOnline", pl.has("online") ? pl.get("online").getAsInt() : 0);
-                        merged.addProperty("playersMax",    pl.has("max")    ? pl.get("max").getAsInt()    : 0);
+                        merged.addProperty("playersOnline", gInt(pl, "online", 0));
+                        merged.addProperty("playersMax",    gInt(pl, "max",    0));
                         if (pl.has("list")) merged.add("playerList", pl.getAsJsonArray("list"));
                     }
                     if (ms.has("plugins")) merged.add("plugins", ms.getAsJsonArray("plugins"));
@@ -485,7 +497,7 @@ public final class CompanionServer {
                 try {
                     JsonObject mc = GSON.fromJson(mcstatRaw, JsonObject.class);
                     if (!merged.has("online"))
-                        merged.addProperty("online", mc.has("online") && mc.get("online").getAsBoolean());
+                        merged.addProperty("online", gBool(mc, "online", false));
                     if (!merged.has("software") || str(merged, "software", "").isBlank())
                         merged.addProperty("software", str(mc, "software", ""));
                     if (!merged.has("version") || str(merged, "version", "").isBlank())
@@ -542,12 +554,16 @@ public final class CompanionServer {
                 return;
             }
 
-            // Build prompt with recent history context (last 6 turns)
+            // Build prompt with recent history context (last 6 turns).
+            // Hold the list monitor for the whole compound read — size()+get(i) on a
+            // synchronizedList is otherwise racy if another /api/chat request mutates it.
             StringBuilder prompt = new StringBuilder();
-            int start = Math.max(0, chatHistory.size() - 6);
-            for (int i = start; i < chatHistory.size(); i++) {
-                Map<String, String> turn = chatHistory.get(i);
-                prompt.append(turn.get("role")).append(": ").append(turn.get("content")).append("\n");
+            synchronized (chatHistory) {
+                int start = Math.max(0, chatHistory.size() - 6);
+                for (int i = start; i < chatHistory.size(); i++) {
+                    Map<String, String> turn = chatHistory.get(i);
+                    prompt.append(turn.get("role")).append(": ").append(turn.get("content")).append("\n");
+                }
             }
             prompt.append("User: ").append(message);
 
@@ -569,8 +585,11 @@ public final class CompanionServer {
                 return;
             }
 
-            chatHistory.add(Map.of("role", "User",      "content", message));
-            chatHistory.add(Map.of("role", "Assistant", "content", reply[0]));
+            // Append both turns atomically so concurrent requests can't interleave them
+            synchronized (chatHistory) {
+                chatHistory.add(Map.of("role", "User",      "content", message));
+                chatHistory.add(Map.of("role", "Assistant", "content", reply[0]));
+            }
 
             JsonObject out = new JsonObject();
             out.addProperty("reply", reply[0]);
@@ -669,7 +688,7 @@ public final class CompanionServer {
                 if (body.has("censysApiKey")) AIConfig.INSTANCE.censysApiKey = str(body, "censysApiKey", AIConfig.INSTANCE.censysApiKey);
                 if (body.has("fofaApiKey"))   AIConfig.INSTANCE.fofaApiKey   = str(body, "fofaApiKey",   AIConfig.INSTANCE.fofaApiKey);
                 if (body.has("model"))        AIConfig.INSTANCE.model        = str(body, "model",        AIConfig.INSTANCE.model);
-                if (body.has("maxTokens"))    AIConfig.INSTANCE.maxTokens    = body.get("maxTokens").getAsInt();
+                if (body.has("maxTokens"))    AIConfig.INSTANCE.maxTokens    = gInt(body, "maxTokens", AIConfig.INSTANCE.maxTokens);
                 if (body.has("systemPrompt")) AIConfig.INSTANCE.systemPrompt = str(body, "systemPrompt", AIConfig.INSTANCE.systemPrompt);
                 AIConfig.save();
                 sendJson(ex, 200, new JsonObject());
@@ -734,7 +753,9 @@ public final class CompanionServer {
         try {
             JsonObject body = parseBody(ex);
             if (!body.has("index")) { sendText(ex, 400, "Missing index"); return; }
-            AltManager.INSTANCE.switchTo(body.get("index").getAsInt());
+            int index = gInt(body, "index", -1);
+            if (index < 0) { sendText(ex, 400, "Invalid index"); return; }
+            AltManager.INSTANCE.switchTo(index);
             sendJson(ex, 200, new JsonObject());
         } catch (Exception e) {
             sendText(ex, 500, e.getMessage());
@@ -784,7 +805,10 @@ public final class CompanionServer {
                 .header("Accept", "application/json")
                 .header("User-Agent", userAgent != null ? userAgent : UA);
             HttpResponse<String> resp = http.send(b.GET().build(), HttpResponse.BodyHandlers.ofString());
-            return resp.statusCode() == 200 ? resp.body() : null;
+            if (resp.statusCode() == 200) return resp.body();
+            // Surface 401/403/429/etc. so a bad key or rate-limit is distinguishable from a network error
+            ClaudeMCMod.LOGGER.warn("[Companion] GET {} → HTTP {}", url, resp.statusCode());
+            return null;
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[Companion] GET {} failed: {}", url, e.getMessage());
             return null;
@@ -826,6 +850,18 @@ public final class CompanionServer {
 
     private static String str(JsonObject o, String key, String def) {
         return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString() : def;
+    }
+
+    /** Null/type-safe int read — upstream APIs sometimes send a field as a string/object/null. */
+    private static int gInt(JsonObject o, String key, int def) {
+        if (o == null || !o.has(key) || o.get(key).isJsonNull() || !o.get(key).isJsonPrimitive()) return def;
+        try { return o.get(key).getAsInt(); } catch (NumberFormatException e) { return def; }
+    }
+
+    /** Null/type-safe boolean read. */
+    private static boolean gBool(JsonObject o, String key, boolean def) {
+        if (o == null || !o.has(key) || o.get(key).isJsonNull() || !o.get(key).isJsonPrimitive()) return def;
+        try { return o.get(key).getAsBoolean(); } catch (Exception e) { return def; }
     }
 
     private static String enc(String s) {

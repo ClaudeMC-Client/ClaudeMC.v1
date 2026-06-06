@@ -24,7 +24,7 @@ public class Spider extends Module {
         if (client.player == null || client.world == null) return;
         if (client.player.isOnGround()) return;
 
-        double speed = Double.parseDouble(getSetting("Speed"));
+        double speed = parseDouble(getSetting("Speed"), 0.20);
 
         // Check if there's a block adjacent to the player (touching a wall)
         var bPos = client.player.getBlockPos();
@@ -55,4 +55,7 @@ public class Spider extends Module {
                !client.world.isAir(bPos.south());
     }
 
+    private double parseDouble(String s, double def) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return def; }
+    }
 }
