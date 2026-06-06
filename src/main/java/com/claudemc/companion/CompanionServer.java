@@ -45,6 +45,18 @@ public final class CompanionServer {
     private static final Gson   GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String UA   = "ClaudeMC-Companion/1.19";
 
+    // Web console port probe — {searchTerm, displayName, xssNote}
+    private static final int[]      WEB_PORTS = {4200, 8080, 8443, 5000, 9090, 8090, 3000, 25580};
+    private static final String[][] PANEL_SIGS = {
+        {"pterodactyl",               "Pterodactyl Panel",     "Modern, well-maintained panel. Generally safe when up to date."},
+        {"mcmyadmin",                 "McMyAdmin",             "Older versions had XSS in the console log viewer. Check the panel version."},
+        {"crafty",                    "Crafty Controller",     "Versions before 4.1.0 had XSS in console output."},
+        {"application management panel", "AMP (CubeCoders)",  "Generally safe if kept up to date."},
+        {"multicraft",                "Multicraft",            "Older versions had XSS issues in the console log."},
+        {"pufferpanel",               "PufferPanel",           "Modern panel. Generally safe when up to date."},
+        {"mineos",                    "MineOS",                "Older versions may have XSS in the console output."},
+    };
+
     private final HttpClient http = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -458,11 +470,16 @@ public final class CompanionServer {
             String address = queryParam(ex.getRequestURI().getQuery(), "address");
             if (address == null || address.isBlank()) { sendText(ex, 400, "Missing address"); return; }
 
-            // Fire both lookups concurrently
-            CompletableFuture<String> mcsrvFut = CompletableFuture.supplyAsync(() ->
+            // Extract bare hostname for web console probing (strip :port)
+            String host = address.contains(":") ? address.substring(0, address.lastIndexOf(':')) : address;
+
+            // Fire all three lookups concurrently
+            CompletableFuture<String>     mcsrvFut  = CompletableFuture.supplyAsync(() ->
                 httpGet("https://api.mcsrvstat.us/3/" + enc(address), UA));
-            CompletableFuture<String> mcstatFut = CompletableFuture.supplyAsync(() ->
+            CompletableFuture<String>     mcstatFut = CompletableFuture.supplyAsync(() ->
                 httpGet("https://api.mcstatus.io/v2/status/java/" + enc(address), null));
+            CompletableFuture<JsonObject> webFut    = CompletableFuture.supplyAsync(() ->
+                probeWebConsoles(host));
 
             String mcsrvRaw  = mcsrvFut.get(12, TimeUnit.SECONDS);
             String mcstatRaw = mcstatFut.get(12, TimeUnit.SECONDS);
@@ -515,11 +532,76 @@ public final class CompanionServer {
             merged.add("vulnerabilities", matchVulns(
                 str(merged, "software", ""), str(merged, "version", ""), pluginNames));
 
+            // Web console probe result
+            JsonObject wc;
+            try { wc = webFut.get(8, TimeUnit.SECONDS); } catch (Exception e) { wc = null; }
+            if (wc == null) { wc = new JsonObject(); wc.addProperty("detected", false); }
+            merged.add("webConsole", wc);
+
             merged.addProperty("source_mcsrvstat", mcsrvRaw != null ? "ok" : "failed");
             merged.addProperty("source_mcstatus",  mcstatRaw != null ? "ok" : "failed");
             sendJson(ex, 200, merged);
         } catch (Exception e) {
             sendText(ex, 500, e.getMessage());
+        }
+    }
+
+    // ── Web console port probing ──────────────────────────────────────────
+
+    /**
+     * Concurrently probes WEB_PORTS on the given host with a 3 s HTTP timeout each.
+     * Returns the first detected panel, or {detected:false} if nothing responds.
+     */
+    private JsonObject probeWebConsoles(String host) {
+        List<CompletableFuture<JsonObject>> futures = new ArrayList<>();
+        for (int port : WEB_PORTS) {
+            final int p = port;
+            futures.add(CompletableFuture.supplyAsync(() -> probePort(host, p)));
+        }
+        long deadline = System.currentTimeMillis() + 6_000;
+        for (CompletableFuture<JsonObject> f : futures) {
+            try {
+                long rem = deadline - System.currentTimeMillis();
+                if (rem <= 0) break;
+                JsonObject r = f.get(rem, TimeUnit.MILLISECONDS);
+                if (r != null && gBool(r, "detected", false)) return r;
+            } catch (Exception ignored) {}
+        }
+        JsonObject notFound = new JsonObject();
+        notFound.addProperty("detected", false);
+        return notFound;
+    }
+
+    /** HTTP-probe a single port; returns a result object or null on connection failure. */
+    private JsonObject probePort(String host, int port) {
+        try {
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create("http://" + host + ":" + port + "/"))
+                .timeout(Duration.ofSeconds(3))
+                .header("User-Agent", UA)
+                .GET().build();
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            String body = resp.body() != null ? resp.body().toLowerCase() : "";
+
+            for (String[] sig : PANEL_SIGS) {
+                if (body.contains(sig[0])) {
+                    JsonObject r = new JsonObject();
+                    r.addProperty("detected",  true);
+                    r.addProperty("port",      port);
+                    r.addProperty("panelType", sig[1]);
+                    r.addProperty("xssNote",   sig[2]);
+                    return r;
+                }
+            }
+            // Port open but panel type unknown
+            JsonObject r = new JsonObject();
+            r.addProperty("detected",  true);
+            r.addProperty("port",      port);
+            r.addProperty("panelType", "Unknown Web Panel");
+            r.addProperty("xssNote",   "Panel type could not be identified. Custom/older panels may be vulnerable to XSS in the console log.");
+            return r;
+        } catch (Exception e) {
+            return null; // connection refused or timed out
         }
     }
 
