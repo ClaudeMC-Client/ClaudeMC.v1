@@ -3,22 +3,23 @@ package com.claudemc.module.impl.movement;
 import com.claudemc.module.Category;
 import com.claudemc.module.Module;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerAbilities;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 
 /**
- * Creative-style flight in any game mode.
- * Anti-kick technique adapted from Wurst7 FlightHack: oscillate vertical velocity
- * on a configurable interval so the server doesn't detect the player standing still
- * in mid-air (which triggers a "moved too quickly" / flying kick on many servers).
+ * Meteor Client-style Flight.
+ * Vanilla mode: sets allowFlying/flying and flySpeed directly (no reflection needed —
+ *   PlayerAbilities.flySpeed is a public field in vanilla/Fabric 1.21.x).
+ * Packet mode: additionally sends onGround=false each tick to prevent server kicks.
+ * Anti-kick: periodically drops 0.04 blocks so the server doesn't flag stationary hover.
  */
 public class Flight extends Module {
 
-    private int antiKickTimer = 0;
+    private int     antiKickTimer = 0;
     private boolean antiKickPhase = false;
 
     public Flight() {
         super("Flight", "Creative-style flight in any game mode", Category.MOVEMENT);
-        addNumber("Speed",     0.10, 0.01, 5.0, 0.01, false);
+        addNumber("Speed",     0.1, 0.01, 5.0, 0.01, false);
         addMode("Mode",        "Vanilla", "Vanilla", "Packet");
         addBool("AntiKick",    true);
         addNumber("KickTicks", 40, 5, 200, 5, true);
@@ -28,10 +29,7 @@ public class Flight extends Module {
     public void onEnable() {
         var c = MinecraftClient.getInstance();
         if (c.player == null) return;
-        var ab = c.player.getAbilities();
-        ab.allowFlying = true;
-        ab.flying = true;
-        c.player.sendAbilitiesUpdate();
+        enableFlying(c);
         antiKickTimer = 0;
         antiKickPhase = false;
     }
@@ -43,8 +41,9 @@ public class Flight extends Module {
         var ab = c.player.getAbilities();
         if (!ab.creativeMode) {
             ab.allowFlying = false;
-            ab.flying = false;
+            ab.flying      = false;
         }
+        setFlySpeed(ab, 0.05f); // restore vanilla default
         c.player.sendAbilitiesUpdate();
     }
 
@@ -53,30 +52,47 @@ public class Flight extends Module {
         if (client.player == null) return;
         var ab = client.player.getAbilities();
 
-        if (!ab.allowFlying) {
-            ab.allowFlying = true;
-            ab.flying = true;
-            client.player.sendAbilitiesUpdate();
-        }
+        if (!ab.allowFlying || !ab.flying) enableFlying(client);
 
-        // flySpeed has private access in 1.21.x — use reflection
-        try {
-            var f = ab.getClass().getDeclaredField("flySpeed");
-            f.setAccessible(true);
-            f.setFloat(ab, (float) Double.parseDouble(getSetting("Speed")));
-        } catch (Exception ignored) {}
+        // Set flySpeed via reflection (field is private in MC 1.21.x yarn mappings)
+        setFlySpeed(ab, (float) Double.parseDouble(getSetting("Speed")));
 
-        // Anti-kick: oscillate velocity slightly so the server doesn't flag stationary flight
+        // Anti-kick: brief downward nudge every N ticks
         if (Boolean.parseBoolean(getSetting("AntiKick"))) {
             int kickTicks = parseInt(getSetting("KickTicks"), 40);
-            antiKickTimer++;
-            if (antiKickTimer >= kickTicks) {
+            if (++antiKickTimer >= kickTicks) {
                 antiKickTimer = 0;
                 antiKickPhase = !antiKickPhase;
-                double nudge = antiKickPhase ? -0.04 : 0.04;
                 var vel = client.player.getVelocity();
-                client.player.setVelocity(vel.x, nudge, vel.z);
+                client.player.setVelocity(vel.x, antiKickPhase ? -0.04 : 0.0, vel.z);
             }
+        }
+
+        // Packet mode: spoof onGround=false to prevent "moved wrongly" kicks
+        if ("Packet".equals(getSetting("Mode"))) {
+            var nh = client.getNetworkHandler();
+            if (nh != null) nh.sendPacket(
+                new PlayerMoveC2SPacket.OnGroundOnly(false, client.player.horizontalCollision));
+        }
+    }
+
+    private void enableFlying(MinecraftClient c) {
+        var ab = c.player.getAbilities();
+        ab.allowFlying = true;
+        ab.flying      = true;
+        c.player.sendAbilitiesUpdate();
+    }
+
+    private static final String[] FLY_SPEED_FIELDS = {"flySpeed", "field_12643"};
+
+    private static void setFlySpeed(net.minecraft.entity.player.PlayerAbilities ab, float value) {
+        for (String name : FLY_SPEED_FIELDS) {
+            try {
+                var f = ab.getClass().getDeclaredField(name);
+                f.setAccessible(true);
+                f.setFloat(ab, value);
+                return;
+            } catch (Exception ignored) {}
         }
     }
 
