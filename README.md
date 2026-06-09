@@ -137,7 +137,7 @@ Beyond AI, ClaudeMC is a full-featured hack client: ESP through walls, projectil
 
 ### Step 3 — Install ClaudeMC
 
-1. Go to the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases).
+1. Go to the [Releases page](https://github.com/ClaudeMC-Client/ClaudeMC.v1/releases).
 2. Under the latest release, download the **`claudemc-X.X.X.jar`** file (not the Source code zip/tar.gz — those are the raw source, not a runnable mod).
 3. Place the `.jar` into `.minecraft/mods/`.
 4. Launch Minecraft with the **Fabric 1.21.11** profile.
@@ -1416,7 +1416,7 @@ If you use Iris + Sodium and want shaders, ESP boxes will not render through wal
 
 ## Building from Source
 
-> **You don't need to do this to use the mod.** Just download the `.jar` from the [Releases page](https://github.com/l0azathkamil/ClaudeMC.v1/releases) and drop it in `mods/`. The steps below are only needed if you want to modify the code and compile it yourself.
+> **You don't need to do this to use the mod.** Just download the `.jar` from the [Releases page](https://github.com/ClaudeMC-Client/ClaudeMC.v1/releases) and drop it in `mods/`. The steps below are only needed if you want to modify the code and compile it yourself.
 
 ### What you need
 
@@ -1443,7 +1443,7 @@ You should see `openjdk 21`.
 **2. Clone the repo and switch branch**
 
 ```bash
-git clone https://github.com/l0azathkamil/ClaudeMC.v1.git
+git clone https://github.com/ClaudeMC-Client/ClaudeMC.v1.git
 cd ClaudeMC.v1
 git checkout claude/serene-volta-eY5Oe
 ```

@@ -83,7 +83,7 @@ async function fetchLatestRelease() {
   //   [data-release="version"]  → tag_name (e.g. "v1.20.10")
   //   [data-release="download"] → href of the first .jar asset, or /releases/latest fallback
   //   [data-release="date"]     → human-readable publish date
-  const REPO = 'l0azathkamil/claudemc.v1';
+  const REPO = 'ClaudeMC-Client/claudemc.v1';
   try {
     const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
       headers: { Accept: 'application/vnd.github+json' }
