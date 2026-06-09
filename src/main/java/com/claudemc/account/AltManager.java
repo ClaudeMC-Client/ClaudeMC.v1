@@ -8,9 +8,17 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.session.Session;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.security.SecureRandom;
 import java.util.*;
 
 /**
@@ -26,7 +34,14 @@ import java.util.*;
  *             Lets you switch between real Microsoft accounts without restarting.
  *             Obtain tokens via external auth tools; paste them in here.
  *
- * Saved to .minecraft/config/claudemc/alts.json (tokens stored — keep this file private).
+ * Saved to .minecraft/config/claudemc/alts.json. Session accessTokens are encrypted at rest
+ * (AES-256-GCM) with a locally generated key kept in a sibling file, and both files are
+ * restricted to owner-only permissions where the OS supports it.
+ *
+ * NOTE: This protects tokens against casual disk access, backups, other user accounts, and
+ * naive scrapers. It cannot fully defend against malware already running as the same OS user,
+ * which can read the key file too — defeating that requires an OS keystore (DPAPI/Keychain/
+ * libsecret). Treat session tokens as sensitive regardless.
  */
 public class AltManager {
 
@@ -35,7 +50,15 @@ public class AltManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH =
         FabricLoader.getInstance().getConfigDir().resolve("claudemc/alts.json");
+    private static final Path KEY_PATH =
+        FabricLoader.getInstance().getConfigDir().resolve("claudemc/.alts.key");
     private static final Type LIST_TYPE = new TypeToken<List<AltEntry>>() {}.getType();
+
+    // AES-GCM at-rest encryption for session tokens.
+    private static final String ENC_PREFIX = "enc:v1:"; // marks an encrypted token field
+    private static final int    GCM_TAG_BITS = 128;
+    private static final int    GCM_IV_BYTES = 12;
+    private static final SecureRandom RNG = new SecureRandom();
 
     public enum AltType { OFFLINE, SESSION }
 
@@ -61,7 +84,11 @@ public class AltManager {
         if (!Files.exists(CONFIG_PATH)) return;
         try (Reader r = Files.newBufferedReader(CONFIG_PATH)) {
             List<AltEntry> loaded = GSON.fromJson(r, LIST_TYPE);
-            if (loaded != null) { alts.clear(); alts.addAll(loaded); }
+            if (loaded != null) {
+                for (AltEntry a : loaded) a.accessToken = decryptToken(a.accessToken);
+                alts.clear();
+                alts.addAll(loaded);
+            }
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[AltManager] Load failed: {}", e.getMessage());
         }
@@ -70,9 +97,78 @@ public class AltManager {
     public void save() {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
-            try (Writer w = Files.newBufferedWriter(CONFIG_PATH)) { GSON.toJson(alts, w); }
+            // Serialise a copy with tokens encrypted; never write plaintext tokens to disk.
+            List<AltEntry> encrypted = new ArrayList<>(alts.size());
+            for (AltEntry a : alts) {
+                encrypted.add(new AltEntry(a.name, a.type, a.uuid, encryptToken(a.accessToken)));
+            }
+            try (Writer w = Files.newBufferedWriter(CONFIG_PATH)) { GSON.toJson(encrypted, w); }
+            restrictToOwner(CONFIG_PATH);
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[AltManager] Save failed: {}", e.getMessage());
+        }
+    }
+
+    // ── At-rest token encryption ──────────────────────────────────────────
+
+    private static String encryptToken(String plain) {
+        if (plain == null || plain.isBlank()) return plain;
+        if (plain.startsWith(ENC_PREFIX)) return plain; // already encrypted
+        try {
+            SecretKey key = localKey();
+            byte[] iv = new byte[GCM_IV_BYTES];
+            RNG.nextBytes(iv);
+            Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+            c.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_BITS, iv));
+            byte[] ct = c.doFinal(plain.getBytes(StandardCharsets.UTF_8));
+            byte[] out = new byte[iv.length + ct.length];
+            System.arraycopy(iv, 0, out, 0, iv.length);
+            System.arraycopy(ct, 0, out, iv.length, ct.length);
+            return ENC_PREFIX + Base64.getEncoder().encodeToString(out);
+        } catch (Exception e) {
+            // If encryption is impossible, fail closed: drop the token rather than store plaintext.
+            ClaudeMCMod.LOGGER.warn("[AltManager] Token encryption failed, token not persisted: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    private static String decryptToken(String stored) {
+        if (stored == null || stored.isBlank()) return stored;
+        if (!stored.startsWith(ENC_PREFIX)) return stored; // legacy plaintext — read as-is
+        try {
+            byte[] all = Base64.getDecoder().decode(stored.substring(ENC_PREFIX.length()));
+            byte[] iv  = Arrays.copyOfRange(all, 0, GCM_IV_BYTES);
+            byte[] ct  = Arrays.copyOfRange(all, GCM_IV_BYTES, all.length);
+            Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+            c.init(Cipher.DECRYPT_MODE, localKey(), new GCMParameterSpec(GCM_TAG_BITS, iv));
+            return new String(c.doFinal(ct), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            ClaudeMCMod.LOGGER.warn("[AltManager] Token decryption failed (wrong/missing key?): {}", e.getMessage());
+            return "";
+        }
+    }
+
+    /** Loads the local AES key, generating and persisting one (owner-only) on first use. */
+    private static synchronized SecretKey localKey() throws Exception {
+        if (Files.exists(KEY_PATH)) {
+            byte[] raw = Base64.getDecoder().decode(Files.readString(KEY_PATH).trim());
+            return new SecretKeySpec(raw, "AES");
+        }
+        KeyGenerator kg = KeyGenerator.getInstance("AES");
+        kg.init(256);
+        SecretKey key = kg.generateKey();
+        Files.createDirectories(KEY_PATH.getParent());
+        Files.writeString(KEY_PATH, Base64.getEncoder().encodeToString(key.getEncoded()));
+        restrictToOwner(KEY_PATH);
+        return key;
+    }
+
+    /** Best-effort owner-only file permissions (POSIX rw-------; no-op on filesystems without it). */
+    private static void restrictToOwner(Path path) {
+        try {
+            Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException | IOException ignored) {
+            // Non-POSIX (e.g. Windows) — falls back to default user-profile ACLs.
         }
     }
 

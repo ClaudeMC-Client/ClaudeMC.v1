@@ -84,19 +84,19 @@ public final class CompanionServer {
                     server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
                     executor = Executors.newVirtualThreadPerTaskExecutor();
                     server.setExecutor(executor);
-                    server.createContext("/",                   this::serveStatic);
-                    server.createContext("/api/scan",           this::handleScan);
-                    server.createContext("/api/shodan",         this::handleShodan);
-                    server.createContext("/api/censys",         this::handleCensys);
-                    server.createContext("/api/fofa",           this::handleFofa);
-                    server.createContext("/api/lookup",         this::handleLookup);
-                    server.createContext("/api/vulndb",         this::handleVulnDb);
-                    server.createContext("/api/chat",           this::handleChat);
-                    server.createContext("/api/analyze",        this::handleAnalyze);
-                    server.createContext("/api/settings",       this::handleSettings);
-                    server.createContext("/api/alts",           this::handleAlts);
-                    server.createContext("/api/alts/switch",    this::handleAltSwitch);
-                    server.createContext("/api/alts/restore",   this::handleAltRestore);
+                    server.createContext("/",                   secured(this::serveStatic));
+                    server.createContext("/api/scan",           secured(this::handleScan));
+                    server.createContext("/api/shodan",         secured(this::handleShodan));
+                    server.createContext("/api/censys",         secured(this::handleCensys));
+                    server.createContext("/api/fofa",           secured(this::handleFofa));
+                    server.createContext("/api/lookup",         secured(this::handleLookup));
+                    server.createContext("/api/vulndb",         secured(this::handleVulnDb));
+                    server.createContext("/api/chat",           secured(this::handleChat));
+                    server.createContext("/api/analyze",        secured(this::handleAnalyze));
+                    server.createContext("/api/settings",       secured(this::handleSettings));
+                    server.createContext("/api/alts",           secured(this::handleAlts));
+                    server.createContext("/api/alts/switch",    secured(this::handleAltSwitch));
+                    server.createContext("/api/alts/restore",   secured(this::handleAltRestore));
                     server.start();
                     boundPort = port;
                     started   = true;
@@ -167,6 +167,69 @@ public final class CompanionServer {
                 ClaudeMCMod.LOGGER.warn("[Companion] Cannot open browser: {}", e.getMessage());
             }
         });
+    }
+
+    // ── Request guard (anti-DNS-rebinding / anti-cross-origin) ─────────────
+
+    /**
+     * Wraps a handler so every request must originate from a genuine localhost client.
+     *
+     * Two checks defeat the browser-based attack surface:
+     *   - Host header must be localhost / 127.0.0.1 / [::1]. A DNS-rebinding page reaches us
+     *     with its own domain in Host (e.g. "evil.com:8080"), so this rejects it outright.
+     *   - If an Origin header is present it must also be a localhost origin, blocking ordinary
+     *     cross-origin fetches from any website the user happens to have open.
+     *
+     * The companion page is same-origin to this server, so legitimate requests always pass.
+     */
+    private HttpHandler secured(HttpHandler delegate) {
+        return ex -> {
+            if (!isLocalRequest(ex)) {
+                ClaudeMCMod.LOGGER.warn("[Companion] Rejected request: Host='{}' Origin='{}'",
+                    ex.getRequestHeaders().getFirst("Host"),
+                    ex.getRequestHeaders().getFirst("Origin"));
+                sendText(ex, 403, "Forbidden: requests must come from localhost.");
+                return;
+            }
+            delegate.handle(ex);
+        };
+    }
+
+    private boolean isLocalRequest(HttpExchange ex) {
+        String host = ex.getRequestHeaders().getFirst("Host");
+        if (!isLocalHostHeader(host)) return false;
+
+        // Origin is sent on cross-origin requests (and CORS preflights); if present, pin it.
+        String origin = ex.getRequestHeaders().getFirst("Origin");
+        if (origin != null && !origin.isBlank() && !"null".equalsIgnoreCase(origin)) {
+            try {
+                URI u = URI.create(origin);
+                if (!isLoopbackName(u.getHost())) return false;
+            } catch (Exception bad) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isLocalHostHeader(String host) {
+        if (host == null || host.isBlank()) return false;
+        // Strip port. IPv6 literals arrive as "[::1]:8080".
+        String name;
+        if (host.startsWith("[")) {
+            int close = host.indexOf(']');
+            name = close > 0 ? host.substring(1, close) : host;
+        } else {
+            int colon = host.lastIndexOf(':');
+            name = colon > 0 ? host.substring(0, colon) : host;
+        }
+        return isLoopbackName(name);
+    }
+
+    private static boolean isLoopbackName(String name) {
+        if (name == null) return false;
+        String n = name.toLowerCase();
+        return n.equals("localhost") || n.equals("127.0.0.1") || n.equals("::1") || n.equals("0:0:0:0:0:0:0:1");
     }
 
     // ── Static file ───────────────────────────────────────────────────────
@@ -747,14 +810,16 @@ public final class CompanionServer {
 
     private void handleSettings(HttpExchange ex) throws IOException {
         if (ex.getRequestMethod().equals("GET")) {
+            // Never echo secret key material back over the wire. Report only whether each
+            // key is set so the UI can show a "saved" state; the values stay server-side.
             JsonObject out = new JsonObject();
-            out.addProperty("provider",     AIConfig.INSTANCE.provider);
-            out.addProperty("anthropicKey", AIConfig.INSTANCE.anthropicKey);
-            out.addProperty("openaiKey",    AIConfig.INSTANCE.openaiKey);
-            out.addProperty("geminiKey",    AIConfig.INSTANCE.geminiKey);
-            out.addProperty("shodanApiKey",  AIConfig.INSTANCE.shodanApiKey);
-            out.addProperty("censysApiKey",  AIConfig.INSTANCE.censysApiKey);
-            out.addProperty("fofaApiKey",    AIConfig.INSTANCE.fofaApiKey);
+            out.addProperty("provider",        AIConfig.INSTANCE.provider);
+            out.addProperty("anthropicKeySet", !AIConfig.INSTANCE.anthropicKey.isBlank());
+            out.addProperty("openaiKeySet",    !AIConfig.INSTANCE.openaiKey.isBlank());
+            out.addProperty("geminiKeySet",    !AIConfig.INSTANCE.geminiKey.isBlank());
+            out.addProperty("shodanKeySet",    !AIConfig.INSTANCE.shodanApiKey.isBlank());
+            out.addProperty("censysKeySet",    !AIConfig.INSTANCE.censysApiKey.isBlank());
+            out.addProperty("fofaKeySet",      !AIConfig.INSTANCE.fofaApiKey.isBlank());
             out.addProperty("model",        AIConfig.INSTANCE.model);
             out.addProperty("maxTokens",    AIConfig.INSTANCE.maxTokens);
             out.addProperty("systemPrompt", AIConfig.INSTANCE.systemPrompt);
@@ -763,12 +828,14 @@ public final class CompanionServer {
             try {
                 JsonObject body = parseBody(ex);
                 if (body.has("provider"))     AIConfig.INSTANCE.provider     = str(body, "provider",     AIConfig.INSTANCE.provider);
-                if (body.has("anthropicKey")) AIConfig.INSTANCE.anthropicKey = str(body, "anthropicKey", AIConfig.INSTANCE.anthropicKey);
-                if (body.has("openaiKey"))    AIConfig.INSTANCE.openaiKey    = str(body, "openaiKey",    AIConfig.INSTANCE.openaiKey);
-                if (body.has("geminiKey"))    AIConfig.INSTANCE.geminiKey    = str(body, "geminiKey",    AIConfig.INSTANCE.geminiKey);
-                if (body.has("shodanApiKey")) AIConfig.INSTANCE.shodanApiKey = str(body, "shodanApiKey", AIConfig.INSTANCE.shodanApiKey);
-                if (body.has("censysApiKey")) AIConfig.INSTANCE.censysApiKey = str(body, "censysApiKey", AIConfig.INSTANCE.censysApiKey);
-                if (body.has("fofaApiKey"))   AIConfig.INSTANCE.fofaApiKey   = str(body, "fofaApiKey",   AIConfig.INSTANCE.fofaApiKey);
+                // Key fields are only updated when a non-blank value is supplied, so the UI can
+                // omit them (or send blank) to keep the existing stored key untouched.
+                if (hasValue(body, "anthropicKey")) AIConfig.INSTANCE.anthropicKey = str(body, "anthropicKey", AIConfig.INSTANCE.anthropicKey);
+                if (hasValue(body, "openaiKey"))    AIConfig.INSTANCE.openaiKey    = str(body, "openaiKey",    AIConfig.INSTANCE.openaiKey);
+                if (hasValue(body, "geminiKey"))    AIConfig.INSTANCE.geminiKey    = str(body, "geminiKey",    AIConfig.INSTANCE.geminiKey);
+                if (hasValue(body, "shodanApiKey")) AIConfig.INSTANCE.shodanApiKey = str(body, "shodanApiKey", AIConfig.INSTANCE.shodanApiKey);
+                if (hasValue(body, "censysApiKey")) AIConfig.INSTANCE.censysApiKey = str(body, "censysApiKey", AIConfig.INSTANCE.censysApiKey);
+                if (hasValue(body, "fofaApiKey"))   AIConfig.INSTANCE.fofaApiKey   = str(body, "fofaApiKey",   AIConfig.INSTANCE.fofaApiKey);
                 if (body.has("model"))        AIConfig.INSTANCE.model        = str(body, "model",        AIConfig.INSTANCE.model);
                 if (body.has("maxTokens"))    AIConfig.INSTANCE.maxTokens    = gInt(body, "maxTokens", AIConfig.INSTANCE.maxTokens);
                 if (body.has("systemPrompt")) AIConfig.INSTANCE.systemPrompt = str(body, "systemPrompt", AIConfig.INSTANCE.systemPrompt);
@@ -932,6 +999,11 @@ public final class CompanionServer {
 
     private static String str(JsonObject o, String key, String def) {
         return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString() : def;
+    }
+
+    /** True only when the key is present and holds a non-blank string. */
+    private static boolean hasValue(JsonObject o, String key) {
+        return o.has(key) && o.get(key).isJsonPrimitive() && !o.get(key).getAsString().isBlank();
     }
 
     /** Null/type-safe int read — upstream APIs sometimes send a field as a string/object/null. */

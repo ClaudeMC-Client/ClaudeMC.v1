@@ -1463,16 +1463,32 @@ async function loadSettings() {
   const providerRadio = document.querySelector(`input[name="provider"][value="${data.provider}"]`);
   if (providerRadio) providerRadio.checked = true;
 
-  // Keys
-  if (data.anthropicKey)  document.getElementById('key-anthropic').value  = data.anthropicKey;
-  if (data.openaiKey)     document.getElementById('key-openai').value     = data.openaiKey;
-  if (data.geminiKey)     document.getElementById('key-gemini').value     = data.geminiKey;
-  if (data.shodanApiKey)  document.getElementById('key-shodan').value     = data.shodanApiKey;
-  if (data.censysApiKey)  document.getElementById('key-censys').value     = data.censysApiKey;
-  if (data.fofaApiKey)    document.getElementById('key-fofa').value       = data.fofaApiKey;
+  // Keys are never sent back by the server. Show a "saved" placeholder when one is stored;
+  // leave the field empty so the user only types a value when they want to change it.
+  applyKeyState('key-anthropic', data.anthropicKeySet, 'sk-ant-…');
+  applyKeyState('key-openai',    data.openaiKeySet,    'sk-…');
+  applyKeyState('key-gemini',    data.geminiKeySet,    'AIza…');
+  applyKeyState('key-shodan',    data.shodanKeySet,    'Your Shodan key');
+  applyKeyState('key-censys',    data.censysKeySet,    'Bearer token from app.censys.io');
+  applyKeyState('key-fofa',      data.fofaKeySet,      'Your FOFA API key');
+
   if (data.model)         document.getElementById('setting-model').value  = data.model;
   if (data.maxTokens)     document.getElementById('setting-maxtokens').value = data.maxTokens;
   if (data.systemPrompt)  document.getElementById('setting-sysprompt').value = data.systemPrompt;
+}
+
+/** Reflect stored-key state: empty value, placeholder shows whether a key is saved. */
+function applyKeyState(id, isSet, emptyPlaceholder) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = '';
+  el.placeholder = isSet ? '•••••••••• saved — type to replace' : emptyPlaceholder;
+}
+
+/** Add a key field to the payload only if the input has a non-blank value. */
+function addKeyIfTyped(payload, field, inputId) {
+  const v = (document.getElementById(inputId).value || '').trim();
+  if (v) payload[field] = v;
 }
 
 // Load settings the first time the tab is opened
@@ -1485,16 +1501,17 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
   const providerEl = document.querySelector('input[name="provider"]:checked');
   const payload = {
     provider:     providerEl ? providerEl.value : 'anthropic',
-    anthropicKey: document.getElementById('key-anthropic').value,
-    openaiKey:    document.getElementById('key-openai').value,
-    geminiKey:    document.getElementById('key-gemini').value,
-    shodanApiKey: document.getElementById('key-shodan').value,
-    censysApiKey: document.getElementById('key-censys').value,
-    fofaApiKey:   document.getElementById('key-fofa').value,
     model:        document.getElementById('setting-model').value,
     maxTokens:    parseInt(document.getElementById('setting-maxtokens').value) || null,
     systemPrompt: document.getElementById('setting-sysprompt').value,
   };
+  // Only include a key when the user actually typed one — blank means "keep existing".
+  addKeyIfTyped(payload, 'anthropicKey', 'key-anthropic');
+  addKeyIfTyped(payload, 'openaiKey',    'key-openai');
+  addKeyIfTyped(payload, 'geminiKey',    'key-gemini');
+  addKeyIfTyped(payload, 'shodanApiKey', 'key-shodan');
+  addKeyIfTyped(payload, 'censysApiKey', 'key-censys');
+  addKeyIfTyped(payload, 'fofaApiKey',   'key-fofa');
 
   const { error } = await apiFetch('/api/settings', {
     method: 'POST',
