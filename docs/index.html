@@ -16,6 +16,15 @@
       text-align: center;
       position: relative;
       overflow: hidden;
+      min-height: 520px;
+    }
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
     }
     .hero::before {
       content: '';
@@ -201,47 +210,47 @@
     <p class="section-subtitle">From passive recon to active exploitation — all wrapped in a clean in-game GUI.</p>
 
     <div class="features-grid">
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0">
         <div class="feature-icon">🤖</div>
         <h3>AI Assistant</h3>
         <p>Ask questions in-game with <code>!ai &lt;question&gt;</code>. Works with Anthropic Claude, OpenAI, or Gemini. Includes AI-powered smart replies, exploit advisor, and packet narration.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.08">
         <div class="feature-icon">🔍</div>
         <h3>Server Scanner</h3>
         <p>Companion web app at <code>localhost:25580</code> — scans servers for known CVEs, version fingerprinting, online players, plugin detection, and web console panels.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.16">
         <div class="feature-icon">💥</div>
         <h3>Exploit Modules</h3>
         <p>ForceOP, CMD-Block, OP-Sign, NocomCrash, WebConsoleXSS, MiniMessageExploit, AuthMeBypass, and more — all for authorised testing.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.24">
         <div class="feature-icon">👁</div>
         <h3>Render & ESP</h3>
         <p>OreESP, XRay, TracerESP, Chams, HoleESP, NewChunks, StorageESP, PlayerFinder — visualise anything through walls.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.32">
         <div class="feature-icon">🏃</div>
         <h3>Movement</h3>
         <p>35 movement modules: Flight, Speed, Jesus, NoClip, PacketFly, Scaffold, Jesus, ElytraFlight, and more.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.40">
         <div class="feature-icon">⚔️</div>
         <h3>Combat</h3>
         <p>KillAura, AutoCrystal, AimAssist, Velocity, Criticals, AutoTotem, and 20+ more combat modules.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.48">
         <div class="feature-icon">🖥</div>
         <h3>Companion App</h3>
         <p>Browser-based dashboard. Scan servers, view CVE matches, enrich server details, filter by web panel detection, download exploit scripts.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.56">
         <div class="feature-icon">🔒</div>
         <h3>RecordProof</h3>
         <p>Hides the Minecraft window from Discord and OBS window-capture using Windows' <code>SetWindowDisplayAffinity</code> API. Windows 10 v2004+ only.</p>
       </div>
-      <div class="card feature-card">
+      <div class="card feature-card" data-anim data-anim-delay="0.64">
         <div class="feature-icon">👤</div>
         <h3>Alt Manager</h3>
         <p>Store and switch between multiple Minecraft accounts in-game. Compatible with cracked and premium accounts.</p>
@@ -332,5 +341,7 @@
 </footer>
 
 <script src="script.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script src="hero-3d.js"></script>
 </body>
 </html>

@@ -465,6 +465,32 @@ footer a:hover { color: var(--accent); }
 .mt-4 { margin-top: 1rem; }
 .mb-2 { margin-bottom: .5rem; }
 .mb-4 { margin-bottom: 1rem; }
+/* ── Scroll-entrance animations ───────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+  animation: fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;
+}
+.fade-up.delay-1 { animation-delay: .08s; }
+.fade-up.delay-2 { animation-delay: .16s; }
+.fade-up.delay-3 { animation-delay: .24s; }
+.fade-up.delay-4 { animation-delay: .32s; }
+
+/* JS adds .is-visible to trigger the animation */
+[data-anim] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity .55s cubic-bezier(.22,1,.36,1),
+              transform .55s cubic-bezier(.22,1,.36,1);
+}
+[data-anim].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
 .hidden { display: none !important; }
 .text-accent { color: var(--accent); }
 .text-muted  { color: var(--muted2); }

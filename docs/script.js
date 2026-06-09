@@ -113,9 +113,28 @@ async function fetchLatestRelease() {
   }
 }
 
+/* ── Scroll-entrance IntersectionObserver ──────────────────────────── */
+function initScrollAnims() {
+  const els = document.querySelectorAll('[data-anim]');
+  if (!els.length || !('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (!e.isIntersecting) return;
+      const delay = parseFloat(e.target.dataset.animDelay || 0);
+      setTimeout(() => e.target.classList.add('is-visible'), delay * 1000);
+      io.unobserve(e.target);
+    });
+  }, { threshold: 0.12 });
+  els.forEach(el => io.observe(el));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initModuleSearch();
   initGuideSearch();
   initTSSearch();
   fetchLatestRelease();
+  initScrollAnims();
 });
