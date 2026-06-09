@@ -89,7 +89,7 @@ public final class VulnDbUpdater {
                 "PLUGIN|SEVERITY|AFFECTED_VERSIONS|DESCRIPTION|PATCHED_IN\n" +
                 "SEVERITY must be CRITICAL, HIGH, or MEDIUM. " +
                 "Output nothing else — no headers, no blank lines, no explanation.\n\n" +
-                "Web results:\n" + webCtx;
+                "Web results:\n<web_results>\n" + webCtx + "\n</web_results>";
 
             CountDownLatch latch   = new CountDownLatch(1);
             List<String>   aiLines = new ArrayList<>();

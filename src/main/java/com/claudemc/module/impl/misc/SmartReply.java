@@ -69,8 +69,8 @@ public class SmartReply extends Module {
         }
 
         waiting.set(true);
-        String prompt = "A player in Minecraft sent me this message: \"" + raw + "\"\n"
-            + "Reply naturally as a human Minecraft player would.";
+        String sanitized = sanitize(raw);
+        String prompt = "Reply to this Minecraft player message:\n<user_message>" + sanitized + "</user_message>";
 
         AIClient.INSTANCE.ask(REPLY_SYSTEM, prompt,
             reply -> {
@@ -82,6 +82,13 @@ public class SmartReply extends Module {
                 waiting.set(false);
             }
         );
+    }
+
+    private static String sanitize(String s) {
+        if (s == null) return "";
+        s = s.replaceAll("[\\x00-\\x1F\\x7F]", " ").trim();
+        if (s.length() > 256) s = s.substring(0, 256);
+        return s;
     }
 
     private void scheduleReply(String reply) {
