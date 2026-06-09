@@ -113,6 +113,26 @@ async function fetchLatestRelease() {
   }
 }
 
+/* ── Table row stagger (modules page) ─────────────────────────────── */
+function initTableRowAnims() {
+  const rows = document.querySelectorAll('tbody tr[data-cat]');
+  if (!rows.length || !('IntersectionObserver' in window)) return;
+
+  const io = new IntersectionObserver((entries) => {
+    let batch = 0;
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const tr = e.target;
+      tr.style.animationDelay = `${batch * 28}ms`;
+      tr.classList.add('row-anim');
+      io.unobserve(tr);
+      batch++;
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -30px 0px' });
+
+  rows.forEach(r => io.observe(r));
+}
+
 /* ── Scroll-entrance IntersectionObserver ──────────────────────────── */
 function initScrollAnims() {
   const els = document.querySelectorAll('[data-anim]');
@@ -137,4 +157,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initTSSearch();
   fetchLatestRelease();
   initScrollAnims();
+  initTableRowAnims();
 });

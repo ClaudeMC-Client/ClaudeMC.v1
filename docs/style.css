@@ -465,6 +465,43 @@ footer a:hover { color: var(--accent); }
 .mt-4 { margin-top: 1rem; }
 .mb-2 { margin-bottom: .5rem; }
 .mb-4 { margin-bottom: 1rem; }
+/* ── Subpage hero glow ────────────────────────────────────────────────── */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 60% at 50% -10%, rgba(74,222,128,.09) 0%, transparent 70%);
+  pointer-events: none;
+  animation: heroGlow 5s ease-in-out infinite alternate;
+}
+.page-hero > * { position: relative; z-index: 1; }
+
+@keyframes heroGlow {
+  from { opacity: .6; transform: scale(1); }
+  to   { opacity: 1;  transform: scale(1.08); }
+}
+
+/* ── Table row entrance ───────────────────────────────────────────────── */
+@keyframes rowSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+tbody tr.row-anim {
+  animation: rowSlide .35s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Accordion item entrance ──────────────────────────────────────────── */
+details.ts-item[data-anim],
+.guide-item[data-anim] {
+  transition-property: opacity, transform;
+  transition-duration: .5s;
+  transition-timing-function: cubic-bezier(.22,1,.36,1);
+}
+
 /* ── Scroll-entrance animations ───────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }

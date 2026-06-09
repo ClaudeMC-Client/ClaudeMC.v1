@@ -41,13 +41,13 @@
     <p class="section-subtitle">All modules available in ClaudeMC. Every module works on Minecraft 1.21.11 with Fabric unless noted otherwise.</p>
   </div>
 
-  <div class="callout callout-red" style="margin-bottom:1.5rem;">
+  <div class="callout callout-red" style="margin-bottom:1.5rem;" data-anim data-anim-delay="0">
     <span class="callout-icon">⚠️</span>
     <p><strong>Exploit modules</strong> (ForceOP, CMD-Block, OP-Sign, WebConsoleXSS, NocomCrash, etc.) are for authorised penetration testing only. Always have explicit server-owner permission before using them.</p>
   </div>
 
   <!-- Search & filters -->
-  <div class="search-bar">
+  <div class="search-bar" data-anim data-anim-delay="0.1">
     <input type="text" id="modSearch" placeholder="Search modules…" autocomplete="off">
     <button class="filter-btn active" data-cat="all">All <span class="mod-count" id="modCount"></span></button>
     <button class="filter-btn" data-cat="chat">Chat</button>
@@ -256,13 +256,13 @@
           <td class="name-cell">NocomCrash</td>
           <td><span class="badge badge-exploit">Exploit</span></td>
           <td class="muted">Sends malformed commands to crash vulnerable Spigot/CraftBukkit servers</td>
-          <td><span class="badge badge-danger req-tag">Auth required · Unpatched server</span></td>
+          <td><span class="badge badge-danger req-tag">Auth required · Unpatched Spigot/CraftBukkit</span></td>
         </tr>
         <tr data-cat="exploit">
           <td class="name-cell">OP-Sign</td>
           <td><span class="badge badge-exploit">Exploit</span></td>
           <td class="muted">Attempts to grant OP via sign command exploitation on misconfigured servers</td>
-          <td><span class="badge badge-danger req-tag">Auth required · Vulnerable server</span></td>
+          <td><span class="badge badge-danger req-tag">Auth required · Misconfigured server</span></td>
         </tr>
         <tr data-cat="exploit">
           <td class="name-cell">WebConsoleXSS</td>
@@ -330,7 +330,7 @@
           <td class="name-cell">BookDupe</td>
           <td><span class="badge badge-misc">Misc</span></td>
           <td class="muted">Duplicates signed books via packet spam on vulnerable servers</td>
-          <td><span class="badge badge-danger req-tag">Vulnerable server</span></td>
+          <td><span class="badge badge-danger req-tag">Server missing BookDupe patch</span></td>
         </tr>
         <tr data-cat="misc">
           <td class="name-cell">ChatSpammer</td>
@@ -396,7 +396,7 @@
           <td class="name-cell">MiniMessageExploit</td>
           <td><span class="badge badge-misc">Misc</span></td>
           <td class="muted">Injects MiniMessage tags via chat, team prefixes, or item names on vulnerable Paper/Velocity servers</td>
-          <td><span class="badge badge-danger req-tag">Unpatched MiniMessage server</span></td>
+          <td><span class="badge badge-danger req-tag">Paper/Velocity with MiniMessage parsing on</span></td>
         </tr>
         <tr data-cat="misc">
           <td class="name-cell">NoPacketKick</td>
@@ -408,7 +408,7 @@
           <td class="name-cell">ServerCrash</td>
           <td><span class="badge badge-misc">Misc</span></td>
           <td class="muted">Sends crash-inducing packets to vulnerable Spigot/CraftBukkit servers</td>
-          <td><span class="badge badge-danger req-tag">Auth required · Unpatched server</span></td>
+          <td><span class="badge badge-danger req-tag">Auth required · Unpatched Spigot/CraftBukkit</span></td>
         </tr>
         <tr data-cat="misc">
           <td class="name-cell">ServerFinder</td>

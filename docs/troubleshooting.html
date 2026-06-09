@@ -47,14 +47,14 @@
     <p class="section-subtitle">Common issues and how to fix them. Click any item to expand.</p>
   </div>
 
-  <div style="margin-bottom:1.5rem;">
+  <div style="margin-bottom:1.5rem;" data-anim data-anim-delay="0">
     <input type="text" id="tsSearch" placeholder="Search issues…" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;color:var(--text);font-size:.9rem;outline:none;width:100%;max-width:400px;">
   </div>
 
   <!-- ── Installation ────────────────────────────────────────────────── -->
   <div class="ts-section-title">Installation</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>🧩 Minecraft crashes on startup or ClaudeMC doesn't load</summary>
     <div class="details-body">
       <p><strong>Check your Fabric version.</strong> ClaudeMC requires <strong>Fabric Loader 0.16+</strong> and <strong>Minecraft 1.21.11</strong> exactly. Using 1.21 or 1.21.4 will not work.</p>
@@ -64,7 +64,7 @@
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>📂 I can't find my mods folder</summary>
     <div class="details-body">
       <pre><code>Windows:  Press Win+R, type: %APPDATA%\.minecraft\mods
@@ -77,7 +77,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── ClickGUI ────────────────────────────────────────────────────── -->
   <div class="ts-section-title">ClickGUI</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ The GUI won't open (pressing . does nothing)</summary>
     <div class="details-body">
       <p>The GUI only opens when <strong>no screen is currently open</strong> (no inventory, chat, pause menu, etc.). Press <code>Escape</code> first if any screen is showing.</p>
@@ -88,7 +88,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>📐 Panels are overlapping or off-screen after an update</summary>
     <div class="details-body">
       <p>Delete the GUI layout file to reset panel positions:</p>
@@ -100,7 +100,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── AI ─────────────────────────────────────────────────────────── -->
   <div class="ts-section-title">AI (AIAssist / SmartReply / ExploitAdvisor)</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ "No API key configured — open [AI] in the ClickGUI"</summary>
     <div class="details-body">
       <p>You haven't set up an API key yet. Open the ClickGUI (<code>.</code>), click <strong>[AI]</strong>, select a provider, paste your API key, and click Save.</p>
@@ -108,7 +108,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ Gemini error: "rate limit reached" or "429"</summary>
     <div class="details-body">
       <p>There are two common causes:</p>
@@ -120,7 +120,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ Anthropic / OpenAI: "authentication failed (HTTP 401)"</summary>
     <div class="details-body">
       <p>Your API key is invalid or has been revoked. Check:</p>
@@ -133,7 +133,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ "!ai" sends but nothing happens / response never arrives</summary>
     <div class="details-body">
       <p>The AI request runs asynchronously — it can take 5–30 seconds depending on the provider and model. Wait a moment before concluding it failed.</p>
@@ -149,7 +149,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── RecordProof ────────────────────────────────────────────────── -->
   <div class="ts-section-title">RecordProof</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ "Windows 10 v2004 (20H1) or newer required"</summary>
     <div class="details-body">
       <p><code>SetWindowDisplayAffinity</code> with <code>WDA_EXCLUDEFROMCAPTURE</code> was added in Windows 10 version 2004 (build 19041). Check your Windows version:</p>
@@ -158,7 +158,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ RecordProof is on but Discord/OBS can still see my screen</summary>
     <div class="details-body">
       <p>RecordProof only works against <strong>window-level capture</strong>. If the other person is capturing your entire screen/desktop, there's nothing this module can do.</p>
@@ -170,7 +170,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ RecordProof fails after re-enabling it</summary>
     <div class="details-body">
       <p>This was a known bug in older versions (the PowerShell <code>Add-Type</code> call failed when the type was already compiled in the same PowerShell session). It is fixed in <strong>v1.20.9+</strong>.</p>
@@ -181,7 +181,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── Companion ──────────────────────────────────────────────────── -->
   <div class="ts-section-title">Companion App</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❌ localhost:25580 won't load in the browser</summary>
     <div class="details-body">
       <p>The Companion HTTP server starts automatically when Minecraft launches. If it won't load:</p>
@@ -195,7 +195,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Scan results show "PATCHED" badge — is the server vulnerable?</summary>
     <div class="details-body">
       <p>No. <strong>PATCHED</strong> entries in the vulnerability database are informational — they indicate that the server software (e.g. Paper, Velocity) has patches applied for specific exploits. These are <strong>not vulnerabilities on that server</strong>.</p>
@@ -203,7 +203,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Web Panel detection shows nothing, but I know the server has one</summary>
     <div class="details-body">
       <p>The web console detection probes these ports: <code>4200, 8080, 8443, 5000, 9090, 8090, 3000, 25580</code>.</p>
@@ -215,7 +215,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── Modules ────────────────────────────────────────────────────── -->
   <div class="ts-section-title">Modules not working</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ ForceOP isn't doing anything</summary>
     <div class="details-body">
       <p>ForceOP has very specific requirements:</p>
@@ -229,7 +229,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ WebConsoleXSS module — nothing is happening on the server</summary>
     <div class="details-body">
       <p>WebConsoleXSS requires all of the following to be true simultaneously:</p>
@@ -243,14 +243,14 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ ItemGenerator module doesn't generate items</summary>
     <div class="details-body">
       <p>ItemGenerator only works when your player is in <strong>Creative mode</strong>. It uses the creative inventory's "pick item" packet. On a survival server, this won't do anything unless you have creative mode granted.</p>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Flight / Speed / NoClip gets cancelled immediately</summary>
     <div class="details-body">
       <p>The server likely has an anti-cheat plugin (e.g. NoCheatPlus, Grim, Spartan, Matrix). Anti-cheat can detect and cancel movement hacks.</p>
@@ -264,7 +264,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ KillAura / AimAssist isn't targeting players on a specific server</summary>
     <div class="details-body">
       <p>Some servers use plugin-spawned entities or NPCs that look like players but are flagged differently in the packet data. Make sure <strong>AntiBot</strong> is enabled — it filters suspicious bot-like entities from combat targeting.</p>
@@ -275,7 +275,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── Chat ───────────────────────────────────────────────────────── -->
   <div class="ts-section-title">Chat issues</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Pressing Enter in chat sends the message but the chat bar stays open</summary>
     <div class="details-body">
       <p>This was a known bug in versions before <strong>v1.20.8</strong> where pressing T while the vanilla ChatScreen was open would activate the Chat Overlay simultaneously. This caused a double-enter situation.</p>
@@ -283,7 +283,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Chat Overlay doesn't open when pressing T</summary>
     <div class="details-body">
       <p>The Chat Overlay's T key only fires when a screen is already open (e.g. you have an inventory open). If no screen is open, pressing T opens the vanilla chat — the overlay is designed to work as an overlay <em>on top of</em> other open GUIs.</p>
@@ -294,7 +294,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
   <!-- ── Other ──────────────────────────────────────────────────────── -->
   <div class="ts-section-title">Other</div>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Panic module — what does it do exactly?</summary>
     <div class="details-body">
       <p>Enabling <strong>Panic</strong> (Utility) does two things instantly:</p>
@@ -306,7 +306,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ Module settings aren't saving between sessions</summary>
     <div class="details-body">
       <p>Module states and settings are saved to <code>.minecraft/config/claudemc/modules.json</code>. If this file is missing or has a syntax error, settings won't persist.</p>
@@ -314,7 +314,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ RecordProof, ForceOP, or another module shows an error on macOS/Linux</summary>
     <div class="details-body">
       <p>Several modules are <strong>Windows-only</strong>:</p>
@@ -325,7 +325,7 @@ Linux:    ~/.minecraft/mods/</code></pre>
     </div>
   </details>
 
-  <details class="ts-item">
+  <details class="ts-item" data-anim data-anim-delay="0.05">
     <summary>❓ How do I report a bug or get more help?</summary>
     <div class="details-body">
       <p>Open an issue on the <a href="https://github.com/ClaudeMC-Client/claudemc.v1/issues">GitHub Issues page</a>. Include:</p>
