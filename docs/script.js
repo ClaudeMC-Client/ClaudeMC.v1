@@ -77,8 +77,45 @@ function initTSSearch() {
   });
 }
 
+/* ── GitHub latest release (auto-updates version + download links) ─── */
+async function fetchLatestRelease() {
+  // Elements updated by this function use these selectors:
+  //   [data-release="version"]  → tag_name (e.g. "v1.20.10")
+  //   [data-release="download"] → href of the first .jar asset, or /releases/latest fallback
+  //   [data-release="date"]     → human-readable publish date
+  const REPO = 'l0azathkamil/claudemc.v1';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json' }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const tag  = data.tag_name || '';
+    const date = data.published_at
+      ? new Date(data.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '';
+    const jar  = (data.assets || []).find(a => a.name.endsWith('.jar'));
+    const dlUrl = jar ? jar.browser_download_url
+                      : `https://github.com/${REPO}/releases/latest`;
+
+    document.querySelectorAll('[data-release="version"]').forEach(el => {
+      el.textContent = tag;
+    });
+    document.querySelectorAll('[data-release="download"]').forEach(el => {
+      el.href = dlUrl;
+    });
+    document.querySelectorAll('[data-release="date"]').forEach(el => {
+      el.textContent = date ? `Released ${date}` : '';
+    });
+  } catch (_) {
+    // Network unavailable or rate-limited — static fallback text already in HTML
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initModuleSearch();
   initGuideSearch();
   initTSSearch();
+  fetchLatestRelease();
 });
