@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troubleshooting – ClaudeMC</title>
+  <meta name="description" content="Fix common ClaudeMC issues: AI errors, RecordProof, GUI problems, Companion not loading, module not working, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 3rem 0 2rem; }
+    .page-hero h1 { font-size: 2.2rem; margin-bottom: .5rem; }
+    .ts-section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin: 2rem 0 .75rem;
+      padding-bottom: .4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .details-body ul { padding-left: 1.2rem; margin: .5rem 0; }
+    .details-body li { margin-bottom: .35rem; color: var(--muted2); }
+    .details-body strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>ClaudeMC</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="modules.html">Modules</a></li>
+    <li><a href="guides.html">Guides</a></li>
+    <li><a href="troubleshooting.html">Troubleshooting</a></li>
+  </ul>
+</nav>
+
+<div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
+
+  <div class="page-hero">
+    <div class="section-label">Help</div>
+    <h1>Troubleshooting</h1>
+    <p class="section-subtitle">Common issues and how to fix them. Click any item to expand.</p>
+  </div>
+
+  <div style="margin-bottom:1.5rem;">
+    <input type="text" id="tsSearch" placeholder="Search issues…" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;color:var(--text);font-size:.9rem;outline:none;width:100%;max-width:400px;">
+  </div>
+
+  <!-- ── Installation ────────────────────────────────────────────────── -->
+  <div class="ts-section-title">Installation</div>
+
+  <details class="ts-item">
+    <summary>🧩 Minecraft crashes on startup or ClaudeMC doesn't load</summary>
+    <div class="details-body">
+      <p><strong>Check your Fabric version.</strong> ClaudeMC requires <strong>Fabric Loader 0.16+</strong> and <strong>Minecraft 1.21.1</strong> exactly. Using 1.21 or 1.21.4 will not work.</p>
+      <p><strong>Check Fabric API.</strong> You must have the Fabric API mod installed alongside ClaudeMC. Download it from Modrinth and put it in your <code>mods/</code> folder.</p>
+      <p><strong>Check Java version.</strong> Minecraft 1.21.1 requires <strong>Java 21</strong>. The official Minecraft launcher bundles this — if you're using a third-party launcher, make sure Java 21 is selected.</p>
+      <p><strong>Check for mod conflicts.</strong> Remove other mods to test if one is conflicting. OptiFine is not compatible with Fabric — use Sodium instead.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>📂 I can't find my mods folder</summary>
+    <div class="details-body">
+      <pre><code>Windows:  Press Win+R, type: %APPDATA%\.minecraft\mods
+macOS:    ~/Library/Application Support/minecraft/mods/
+Linux:    ~/.minecraft/mods/</code></pre>
+      <p>If the <code>mods</code> folder doesn't exist, create it.</p>
+    </div>
+  </details>
+
+  <!-- ── ClickGUI ────────────────────────────────────────────────────── -->
+  <div class="ts-section-title">ClickGUI</div>
+
+  <details class="ts-item">
+    <summary>❌ The GUI won't open (pressing . does nothing)</summary>
+    <div class="details-body">
+      <p>The GUI only opens when <strong>no screen is currently open</strong> (no inventory, chat, pause menu, etc.). Press <code>Escape</code> first if any screen is showing.</p>
+      <p>If that doesn't work, check that the GUI key hasn't been rebound. Look in <code>.minecraft/config/claudemc/keybinds.json</code>:</p>
+      <pre><code>{ "gui": 46, ... }</code></pre>
+      <p>Key <code>46</code> is the period (<code>.</code>) key. GLFW key codes: <a href="https://www.glfw.org/docs/latest/group__keys.html" target="_blank">GLFW Key Reference</a>.</p>
+      <p>To reset to defaults, delete the file — it will be recreated with defaults on next launch.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>📐 Panels are overlapping or off-screen after an update</summary>
+    <div class="details-body">
+      <p>Delete the GUI layout file to reset panel positions:</p>
+      <pre><code>.minecraft/config/claudemc/gui.json</code></pre>
+      <p>Restart Minecraft. Panels will reset to the default 7-column non-overlapping layout.</p>
+    </div>
+  </details>
+
+  <!-- ── AI ─────────────────────────────────────────────────────────── -->
+  <div class="ts-section-title">AI (AIAssist / SmartReply / ExploitAdvisor)</div>
+
+  <details class="ts-item">
+    <summary>❌ "No API key configured — open [AI] in the ClickGUI"</summary>
+    <div class="details-body">
+      <p>You haven't set up an API key yet. Open the ClickGUI (<code>.</code>), click <strong>[AI]</strong>, select a provider, paste your API key, and click Save.</p>
+      <p>See the <a href="guides.html#ai-setup">AI Setup guide</a> for step-by-step instructions.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❌ Gemini error: "rate limit reached" or "429"</summary>
+    <div class="details-body">
+      <p>There are two common causes:</p>
+      <ul>
+        <li><strong>Empty or missing API key</strong> — if the key field is blank, requests go through Gemini's anonymous quota which is exhausted immediately. Open <strong>[AI]</strong> and make sure a key is pasted in.</li>
+        <li><strong>Generative Language API not enabled</strong> — Go to your Google Cloud console, open the project linked to your key, and enable the <em>Generative Language API</em>.</li>
+        <li><strong>Actual rate limit hit</strong> — Gemini free tier allows only ~60 requests/minute. Wait a minute and try again, or upgrade to a paid tier.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❌ Anthropic / OpenAI: "authentication failed (HTTP 401)"</summary>
+    <div class="details-body">
+      <p>Your API key is invalid or has been revoked. Check:</p>
+      <ul>
+        <li>You copied the <strong>full key</strong> — Anthropic keys start with <code>sk-ant-</code>, OpenAI keys start with <code>sk-</code></li>
+        <li>You haven't accidentally added a space at the beginning or end</li>
+        <li>The key hasn't been deleted from the provider's dashboard</li>
+        <li>Your account has billing set up (OpenAI requires a payment method even for free credits)</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❌ "!ai" sends but nothing happens / response never arrives</summary>
+    <div class="details-body">
+      <p>The AI request runs asynchronously — it can take 5–30 seconds depending on the provider and model. Wait a moment before concluding it failed.</p>
+      <p>If it's been more than 60 seconds, check:</p>
+      <ul>
+        <li>Your internet connection is working</li>
+        <li>The provider isn't having an outage (check status.openai.com / status.anthropic.com)</li>
+        <li>The model name is valid — an unknown model returns an error message in chat</li>
+      </ul>
+    </div>
+  </details>
+
+  <!-- ── RecordProof ────────────────────────────────────────────────── -->
+  <div class="ts-section-title">RecordProof</div>
+
+  <details class="ts-item">
+    <summary>❌ "Windows 10 v2004 (20H1) or newer required"</summary>
+    <div class="details-body">
+      <p><code>SetWindowDisplayAffinity</code> with <code>WDA_EXCLUDEFROMCAPTURE</code> was added in Windows 10 version 2004 (build 19041). Check your Windows version:</p>
+      <pre><code>Press Win+R → type: winver → press Enter</code></pre>
+      <p>If your build is below 19041, you'll need to update Windows. If you're on Windows 11, this should always work.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❌ RecordProof is on but Discord/OBS can still see my screen</summary>
+    <div class="details-body">
+      <p>RecordProof only works against <strong>window-level capture</strong>. If the other person is capturing your entire screen/desktop, there's nothing this module can do.</p>
+      <ul>
+        <li><strong>Discord:</strong> Tell them to use <strong>"Window"</strong> or <strong>"Application Window"</strong> share — not <strong>"Screen"</strong> or <strong>"Desktop"</strong>.</li>
+        <li><strong>OBS:</strong> The <strong>"Window Capture"</strong> source type will be blocked. Display Capture and Monitor Capture capture at the OS level and bypass it.</li>
+      </ul>
+      <p>The module confirms success in chat: <em>"Window hidden. Use Discord 'Window' capture, not 'Screen' capture."</em></p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❌ RecordProof fails after re-enabling it</summary>
+    <div class="details-body">
+      <p>This was a known bug in older versions (the PowerShell <code>Add-Type</code> call failed when the type was already compiled in the same PowerShell session). It is fixed in <strong>v1.20.9+</strong>.</p>
+      <p>Update to the latest release from the <a href="https://github.com/l0azathkamil/claudemc.v1/releases/latest">GitHub Releases page</a>.</p>
+    </div>
+  </details>
+
+  <!-- ── Companion ──────────────────────────────────────────────────── -->
+  <div class="ts-section-title">Companion App</div>
+
+  <details class="ts-item">
+    <summary>❌ localhost:25580 won't load in the browser</summary>
+    <div class="details-body">
+      <p>The Companion HTTP server starts automatically when Minecraft launches. If it won't load:</p>
+      <ul>
+        <li>Make sure <strong>Minecraft is running</strong> with ClaudeMC loaded</li>
+        <li>Check that port 25580 isn't blocked by your firewall or antivirus</li>
+        <li>Try <code>http://127.0.0.1:25580</code> instead of <code>localhost</code></li>
+        <li>Check the Minecraft log for errors like <em>"CompanionServer failed to start"</em></li>
+        <li>Port 25580 might already be in use — restart Minecraft</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ Scan results show "PATCHED" badge — is the server vulnerable?</summary>
+    <div class="details-body">
+      <p>No. <strong>PATCHED</strong> entries in the vulnerability database are informational — they indicate that the server software (e.g. Paper, Velocity) has patches applied for specific exploits. These are <strong>not vulnerabilities on that server</strong>.</p>
+      <p>The Companion filters PATCHED entries out of the badge display automatically (fixed in v1.20.10). Only active vulnerabilities (Critical, High, Medium, Low severity) appear as badges.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ Web Panel detection shows nothing, but I know the server has one</summary>
+    <div class="details-body">
+      <p>The web console detection probes these ports: <code>4200, 8080, 8443, 5000, 9090, 8090, 3000, 25580</code>.</p>
+      <p>If the server's panel is on a different port (e.g. <code>8888</code>), it won't be detected automatically. You can check manually by opening <code>http://&lt;server-ip&gt;:&lt;port&gt;</code> in a browser.</p>
+      <p>Also, some panels require HTTPS — if the panel is on HTTPS only and returns a certificate error, the probe may not fingerprint it correctly.</p>
+    </div>
+  </details>
+
+  <!-- ── Modules ────────────────────────────────────────────────────── -->
+  <div class="ts-section-title">Modules not working</div>
+
+  <details class="ts-item">
+    <summary>❓ ForceOP isn't doing anything</summary>
+    <div class="details-body">
+      <p>ForceOP has very specific requirements:</p>
+      <ul>
+        <li>The server must be in <strong>offline mode</strong> (cracked) — ForceOP won't work on premium (online-mode) servers</li>
+        <li>The server must be using <strong>AuthMe</strong> as the auth plugin — not NLogin, FastLogin, or any other plugin</li>
+        <li>You must be logged in under the same username as an admin account via AltManager</li>
+        <li>The admin must be using a <strong>common/weak password</strong> — ForceOP only tries a built-in wordlist</li>
+      </ul>
+      <p>If the server kicks you quickly after enabling ForceOP, it likely has a rate-limit on failed /login attempts.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ WebConsoleXSS module — nothing is happening on the server</summary>
+    <div class="details-body">
+      <p>WebConsoleXSS requires all of the following to be true simultaneously:</p>
+      <ul>
+        <li>The server has a <strong>web console panel</strong> (e.g. Pterodactyl, AMP, Multicraft) running with the game console visible in a browser</li>
+        <li>An <strong>admin must have that panel open in a browser</strong> when the payload is sent — if nobody is watching the console, there's no XSS execution</li>
+        <li>The panel must be <strong>vulnerable to XSS via the game chat</strong> — many modern panels sanitise output</li>
+        <li>The XSS payload needs to work for the specific panel software version</li>
+      </ul>
+      <p>This module does <strong>not</strong> work on Aternos or similar managed hosting where the console is handled server-side with proper sanitisation.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ ItemGenerator module doesn't generate items</summary>
+    <div class="details-body">
+      <p>ItemGenerator only works when your player is in <strong>Creative mode</strong>. It uses the creative inventory's "pick item" packet. On a survival server, this won't do anything unless you have creative mode granted.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ Flight / Speed / NoClip gets cancelled immediately</summary>
+    <div class="details-body">
+      <p>The server likely has an anti-cheat plugin (e.g. NoCheatPlus, Grim, Spartan, Matrix). Anti-cheat can detect and cancel movement hacks.</p>
+      <p>Try these alternatives:</p>
+      <ul>
+        <li><strong>PacketFly</strong> — a more subtle fly that alternates ground-state packets and bypasses some basic anti-cheat</li>
+        <li><strong>Glide</strong> — very slow, hard to detect</li>
+        <li><strong>Jesus</strong> — walking on water is less commonly flagged than outright flying</li>
+      </ul>
+      <p>There is no guaranteed bypass for all anti-cheat implementations.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ KillAura / AimAssist isn't targeting players on a specific server</summary>
+    <div class="details-body">
+      <p>Some servers use plugin-spawned entities or NPCs that look like players but are flagged differently in the packet data. Make sure <strong>AntiBot</strong> is enabled — it filters suspicious bot-like entities from combat targeting.</p>
+      <p>If you're not in a PvP zone and PvP is disabled by the server, combat modules won't deal damage even if they rotate and swing correctly.</p>
+    </div>
+  </details>
+
+  <!-- ── Chat ───────────────────────────────────────────────────────── -->
+  <div class="ts-section-title">Chat issues</div>
+
+  <details class="ts-item">
+    <summary>❓ Pressing Enter in chat sends the message but the chat bar stays open</summary>
+    <div class="details-body">
+      <p>This was a known bug in versions before <strong>v1.20.8</strong> where pressing T while the vanilla ChatScreen was open would activate the Chat Overlay simultaneously. This caused a double-enter situation.</p>
+      <p>It is fixed in <strong>v1.20.8+</strong>. Update to the latest release.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ Chat Overlay doesn't open when pressing T</summary>
+    <div class="details-body">
+      <p>The Chat Overlay's T key only fires when a screen is already open (e.g. you have an inventory open). If no screen is open, pressing T opens the vanilla chat — the overlay is designed to work as an overlay <em>on top of</em> other open GUIs.</p>
+      <p>To use it: open the ClickGUI (<code>.</code>), then press <code>T</code> to toggle the chat overlay without closing the GUI.</p>
+    </div>
+  </details>
+
+  <!-- ── Other ──────────────────────────────────────────────────────── -->
+  <div class="ts-section-title">Other</div>
+
+  <details class="ts-item">
+    <summary>❓ Panic module — what does it do exactly?</summary>
+    <div class="details-body">
+      <p>Enabling <strong>Panic</strong> (Utility) does two things instantly:</p>
+      <ul>
+        <li>Disables <strong>all currently enabled modules</strong></li>
+        <li>Disconnects from the current server</li>
+      </ul>
+      <p>Bind it to a key (e.g. <code>End</code>) for quick emergency exit if a staff member is checking.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ Module settings aren't saving between sessions</summary>
+    <div class="details-body">
+      <p>Module states and settings are saved to <code>.minecraft/config/claudemc/modules.json</code>. If this file is missing or has a syntax error, settings won't persist.</p>
+      <p>If the problem keeps occurring, check that your <code>.minecraft</code> folder is writable (not in a read-only location).</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ RecordProof, ForceOP, or another module shows an error on macOS/Linux</summary>
+    <div class="details-body">
+      <p>Several modules are <strong>Windows-only</strong>:</p>
+      <ul>
+        <li><strong>RecordProof</strong> — uses a Windows-only API (<code>SetWindowDisplayAffinity</code>)</li>
+      </ul>
+      <p>These modules will automatically disable themselves on non-Windows platforms with an error message in chat.</p>
+    </div>
+  </details>
+
+  <details class="ts-item">
+    <summary>❓ How do I report a bug or get more help?</summary>
+    <div class="details-body">
+      <p>Open an issue on the <a href="https://github.com/l0azathkamil/claudemc.v1/issues">GitHub Issues page</a>. Include:</p>
+      <ul>
+        <li>ClaudeMC version (shown in the GUI title bar)</li>
+        <li>Minecraft and Fabric Loader version</li>
+        <li>Operating system</li>
+        <li>Steps to reproduce the issue</li>
+        <li>Relevant log output from <code>.minecraft/logs/latest.log</code></li>
+      </ul>
+    </div>
+  </details>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p><strong>ClaudeMC</strong> — for authorised pentesting only</p>
+    <p style="margin-top:.4rem;">
+      <a href="index.html">Home</a> ·
+      <a href="modules.html">Modules</a> ·
+      <a href="guides.html">Guides</a> ·
+      <a href="troubleshooting.html">Troubleshooting</a>
+    </p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guides – ClaudeMC</title>
+  <meta name="description" content="Step-by-step tutorials for ClaudeMC: installation, GUI, AI setup, Companion, ForceOP, RecordProof, server scanning and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 3rem 0 2rem; }
+    .page-hero h1 { font-size: 2.2rem; margin-bottom: .5rem; }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: calc(var(--nav-h) + 1rem);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .sidebar-title {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      padding: 0 .5rem .5rem;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: .45rem .75rem;
+      border-radius: 6px;
+      font-size: .875rem;
+      color: var(--muted2);
+      text-decoration: none;
+      transition: color .12s, background .12s;
+    }
+
+    .sidebar a:hover { color: var(--text); background: var(--bg3); }
+    .sidebar a.active { color: var(--accent); background: var(--accent-dim); }
+
+    .guides-content { min-width: 0; }
+
+    .guide-item {
+      margin-bottom: 2.5rem;
+      scroll-margin-top: calc(var(--nav-h) + 1rem);
+    }
+
+    .guide-item h2 {
+      font-size: 1.5rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .75rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .guide-item h3 {
+      font-size: 1rem;
+      color: var(--text);
+      margin: 1.25rem 0 .5rem;
+    }
+
+    .guide-item p, .guide-item li { color: var(--muted2); }
+
+    .guide-num {
+      width: 2rem; height: 2rem;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(74,222,128,.2);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 760px) {
+      .guide-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>ClaudeMC</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="modules.html">Modules</a></li>
+    <li><a href="guides.html">Guides</a></li>
+    <li><a href="troubleshooting.html">Troubleshooting</a></li>
+  </ul>
+</nav>
+
+<div class="container" style="padding-top:2.5rem; padding-bottom:4rem;">
+
+  <div class="page-hero">
+    <div class="section-label">Tutorials</div>
+    <h1>Guides</h1>
+    <p class="section-subtitle">Everything you need to set up and use ClaudeMC — from installation to advanced modules.</p>
+  </div>
+
+  <div style="margin-bottom:1.5rem;">
+    <input type="text" id="guideSearch" placeholder="Search guides…" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;color:var(--text);font-size:.9rem;outline:none;width:100%;max-width:400px;">
+  </div>
+
+  <div class="guide-grid">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Contents</div>
+      <a href="#installation">1. Installation</a>
+      <a href="#clickgui">2. Using the ClickGUI</a>
+      <a href="#keybinds">3. Keybinds &amp; Macros</a>
+      <a href="#ai-setup">4. AI Setup</a>
+      <a href="#companion">5. Companion App</a>
+      <a href="#forceop">6. ForceOP</a>
+      <a href="#recordproof">7. RecordProof</a>
+      <a href="#scanning">8. Server Scanning</a>
+      <a href="#altmanager">9. Alt Manager</a>
+      <a href="#exploitadvisor">10. Exploit Advisor</a>
+    </aside>
+
+    <!-- Content -->
+    <div class="guides-content">
+
+      <!-- ── 1. Installation ──────────────────────────────────────────── -->
+      <div class="guide-item" id="installation">
+        <h2><span class="guide-num">1</span> Installation</h2>
+
+        <div class="callout callout-blue">
+          <span class="callout-icon">ℹ️</span>
+          <p>ClaudeMC is a Fabric mod for Minecraft 1.21.1. You need Fabric Loader and Fabric API installed first.</p>
+        </div>
+
+        <h3>Prerequisites</h3>
+        <ul class="steps">
+          <li>Install <strong>Minecraft Java Edition 1.21.1</strong> via the official launcher.</li>
+          <li>Install <strong>Fabric Loader 0.16+</strong> from <code>fabricmc.net</code> — run the installer and select version <code>1.21.1</code>.</li>
+          <li>Download <strong>Fabric API</strong> from Modrinth or CurseForge and place the JAR in your <code>mods</code> folder.</li>
+          <li>Download the latest <strong>ClaudeMC JAR</strong> from the <a href="https://github.com/l0azathkamil/claudemc.v1/releases/latest">GitHub Releases page</a>.</li>
+          <li>Place the ClaudeMC JAR in your <code>.minecraft/mods</code> folder alongside Fabric API.</li>
+          <li>Launch Minecraft with the <strong>fabric-loader-1.21.1</strong> profile.</li>
+        </ul>
+
+        <h3>Mods folder location</h3>
+        <pre><code>Windows:  %APPDATA%\.minecraft\mods\
+macOS:    ~/Library/Application Support/minecraft/mods/
+Linux:    ~/.minecraft/mods/</code></pre>
+
+        <div class="callout callout-green">
+          <span class="callout-icon">✅</span>
+          <p>If installed correctly, you'll see a log line like <em>"ClaudeMC v2 initialised"</em> in the Minecraft log on startup.</p>
+        </div>
+      </div>
+
+      <!-- ── 2. ClickGUI ──────────────────────────────────────────────── -->
+      <div class="guide-item" id="clickgui">
+        <h2><span class="guide-num">2</span> Using the ClickGUI</h2>
+
+        <p>The ClickGUI is your main control panel. It opens as an overlay showing all module categories as draggable panels.</p>
+
+        <h3>Opening the GUI</h3>
+        <p>Press <code>.</code> (period key) while in-game with no screen open. This is the default keybind — you can change it in <code>config/claudemc/keybinds.json</code>.</p>
+
+        <h3>Enabling / disabling modules</h3>
+        <ul class="steps">
+          <li>Click a module name to <strong>toggle it on/off</strong>. Enabled modules glow green.</li>
+          <li><strong>Right-click</strong> a module to open its <strong>settings panel</strong> (if it has configurable options).</li>
+          <li>Drag the panel header to <strong>reposition</strong> any category panel.</li>
+          <li>Click the <strong>category header</strong> to collapse/expand that panel.</li>
+        </ul>
+
+        <h3>Module settings</h3>
+        <p>Right-clicking a module opens an inline settings drawer. Settings can include:</p>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li><strong>Sliders</strong> — drag left/right to adjust numeric values</li>
+          <li><strong>Toggles</strong> — click to flip boolean options</li>
+          <li><strong>Text fields</strong> — click to type values</li>
+          <li><strong>Keybind</strong> — click the bind field and press a key to assign a hotkey</li>
+        </ul>
+
+        <h3>Special GUI screens</h3>
+        <p>The following special panels are accessible from the GUI:</p>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li><strong>[AI]</strong> — configure AI provider, API key, model, system prompt</li>
+          <li><strong>[Server Info]</strong> — view detected exploits for the current server</li>
+          <li><strong>[Alts]</strong> — manage alternate accounts</li>
+          <li><strong>[Macros]</strong> — create/edit chat macros with keybinds</li>
+        </ul>
+      </div>
+
+      <!-- ── 3. Keybinds & Macros ──────────────────────────────────────── -->
+      <div class="guide-item" id="keybinds">
+        <h2><span class="guide-num">3</span> Keybinds &amp; Macros</h2>
+
+        <h3>Module hotkeys</h3>
+        <ul class="steps">
+          <li>Right-click a module in the ClickGUI and look for the <strong>Bind</strong> field at the bottom of the settings drawer.</li>
+          <li>Click the field and press a key to bind it. Press <strong>Escape</strong> to unbind.</li>
+          <li>The hotkey works while no GUI screen is open.</li>
+        </ul>
+
+        <h3>Chat Overlay</h3>
+        <p>Press <code>T</code> while any GUI screen is open (except the vanilla chat screen) to toggle the Chat Overlay — a lightweight chat bar that sends messages without closing the GUI.</p>
+
+        <h3>Macros</h3>
+        <ul class="steps">
+          <li>Open the ClickGUI and click <strong>[Macros]</strong>.</li>
+          <li>Click <strong>New</strong> to create a macro.</li>
+          <li>Enter the command or message text. Prefix with <code>/</code> to send as a command.</li>
+          <li>Assign a keybind to trigger it instantly.</li>
+        </ul>
+
+        <h3>BlockESP quick-add</h3>
+        <p>While in-game with no screen open, look at a block and press <code>B</code> to add/remove it from the BlockESP target list. Useful for quickly tracking custom block types.</p>
+      </div>
+
+      <!-- ── 4. AI Setup ───────────────────────────────────────────────── -->
+      <div class="guide-item" id="ai-setup">
+        <h2><span class="guide-num">4</span> AI Setup</h2>
+
+        <p>ClaudeMC supports three AI providers: <strong>Anthropic (Claude)</strong>, <strong>OpenAI</strong>, and <strong>Google Gemini</strong>. You need an API key from at least one.</p>
+
+        <h3>Getting an API key</h3>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2.2;">
+          <li><strong>Anthropic:</strong> Create an account at console.anthropic.com → API Keys → Create Key</li>
+          <li><strong>OpenAI:</strong> Create an account at platform.openai.com → API Keys → Create new secret key</li>
+          <li><strong>Gemini:</strong> Go to aistudio.google.com → Get API Key → Create API key in new project</li>
+        </ul>
+
+        <div class="callout callout-yellow">
+          <span class="callout-icon">⚠️</span>
+          <p>Gemini's free tier has a low quota. If you see a <strong>429 rate limit error</strong> on a fresh key, check that your Google Cloud project has the Generative Language API enabled, and that your key is correctly pasted (not blank).</p>
+        </div>
+
+        <h3>Configuring the AI in-game</h3>
+        <ul class="steps">
+          <li>Open the ClickGUI (<code>.</code>) and click <strong>[AI]</strong>.</li>
+          <li>Select your provider (Anthropic / OpenAI / Gemini).</li>
+          <li>Paste your API key into the key field.</li>
+          <li>Choose a model — leave blank for the default (<code>claude-sonnet-4-6</code> / <code>gpt-4o</code> / <code>gemini-1.5-flash</code>).</li>
+          <li>Optionally set a custom system prompt to give the AI a persona.</li>
+          <li>Click <strong>Save</strong>.</li>
+        </ul>
+
+        <h3>Using AIAssist</h3>
+        <p>Enable the <strong>AIAssist</strong> module (Misc category), then in any chat window type:</p>
+        <pre><code>!ai what plugins does this server have?</code></pre>
+        <p>The message is intercepted before reaching the server and sent to your configured AI. The reply appears in local chat only — the server never sees your question.</p>
+
+        <h3>Packet Narration</h3>
+        <p>Enable <strong>PacketLogger</strong> (Utility), then in AIAssist settings enable <strong>PacketNarration</strong>. Every N ticks (configurable), the last 20 logged packets are sent to the AI and it explains what the server is doing in plain English.</p>
+      </div>
+
+      <!-- ── 5. Companion App ──────────────────────────────────────────── -->
+      <div class="guide-item" id="companion">
+        <h2><span class="guide-num">5</span> Companion App</h2>
+
+        <p>The Companion is a built-in web dashboard that runs on <code>http://localhost:25580</code> whenever Minecraft is open.</p>
+
+        <h3>Opening the Companion</h3>
+        <p>While Minecraft is running, open a browser and navigate to:</p>
+        <pre><code>http://localhost:25580</code></pre>
+
+        <h3>Server Scanner</h3>
+        <ul class="steps">
+          <li>Enter a server IP or hostname in the scan bar and click <strong>Scan</strong>.</li>
+          <li>The scanner queries real-time server status, version, online players, and player list.</li>
+          <li>Detected plugins/version are matched against the built-in CVE database.</li>
+          <li>Results appear in a table with vulnerability badges per server.</li>
+        </ul>
+
+        <h3>Enrichment (detailed view)</h3>
+        <p>Click the <strong>🔍 Enrich</strong> button on any scanned server row to get:</p>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li><strong>Status pill</strong> — Online / Offline with ping</li>
+          <li><strong>Stats</strong> — players online, version, latency</li>
+          <li><strong>MOTD</strong> — server message (colour codes stripped)</li>
+          <li><strong>Player chips</strong> — names of online players</li>
+          <li><strong>Plugin chips</strong> — detected plugins (highlighted orange if they have known CVEs)</li>
+          <li><strong>Vulnerability list</strong> — each CVE with severity badge and description</li>
+          <li><strong>Web Console</strong> — whether an admin web panel was detected on common ports</li>
+        </ul>
+
+        <h3>Filters</h3>
+        <p>Use the filter buttons above the table to show:</p>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li><strong>🔴 Vulnerable</strong> — servers with confirmed CVEs</li>
+          <li><strong>🖥 Web Panel</strong> — servers where a web admin panel was detected</li>
+        </ul>
+
+        <div class="callout callout-yellow">
+          <span class="callout-icon">⚠️</span>
+          <p>The web console detection only probes common ports (4200, 8080, 8443, 5000, 9090, 8090, 3000, 25580). It may miss panels on custom ports.</p>
+        </div>
+      </div>
+
+      <!-- ── 6. ForceOP ────────────────────────────────────────────────── -->
+      <div class="guide-item" id="forceop">
+        <h2><span class="guide-num">6</span> ForceOP</h2>
+
+        <div class="callout callout-red">
+          <span class="callout-icon">🔴</span>
+          <p><strong>Authorised use only.</strong> ForceOP targets a specific server vulnerability. Only use this on servers you own or have written permission to test.</p>
+        </div>
+
+        <h3>What it does</h3>
+        <p>ForceOP attempts to gain operator privileges on servers running <strong>AuthMe</strong> as their login plugin on a <strong>cracked (offline-mode) server</strong>. It does this by switching to an admin account (via AltManager) and then brute-forcing the AuthMe password with a list of common passwords using <code>/login &lt;password&gt;</code>.</p>
+
+        <h3>Requirements</h3>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li>Server must be running in <strong>offline mode</strong> (cracked server)</li>
+          <li>Server must use <strong>AuthMe</strong> as the authentication plugin</li>
+          <li>You must know (or guess) a <strong>target admin's username</strong></li>
+          <li>The admin must be using a weak/common password</li>
+        </ul>
+
+        <h3>How to use</h3>
+        <ul class="steps">
+          <li>Open <strong>[Alts]</strong> in the ClickGUI and add an account with the same username as a server admin.</li>
+          <li>Switch to that account using the AltManager.</li>
+          <li>Connect to the target server.</li>
+          <li>Enable the <strong>ForceOP</strong> module (Misc). It will automatically begin trying common passwords.</li>
+          <li>If a match is found, it logs in and you will have OP-level access.</li>
+        </ul>
+
+        <div class="callout callout-yellow">
+          <span class="callout-icon">💡</span>
+          <p>This only works if the admin uses a weak password like <code>123456</code>, <code>password</code>, <code>admin</code>, etc. Servers with rate-limiting on <code>/login</code> will kick you after a few failed attempts.</p>
+        </div>
+      </div>
+
+      <!-- ── 7. RecordProof ────────────────────────────────────────────── -->
+      <div class="guide-item" id="recordproof">
+        <h2><span class="guide-num">7</span> RecordProof</h2>
+
+        <h3>What it does</h3>
+        <p>RecordProof hides the Minecraft window from software that captures specific windows. It uses the Windows API call <code>SetWindowDisplayAffinity(HWND, WDA_EXCLUDEFROMCAPTURE)</code> to mark the window as excluded from window-level capture.</p>
+
+        <h3>Requirements</h3>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li><strong>Windows 10 version 2004 (20H1) or newer</strong>, or Windows 11</li>
+          <li>Does <strong>not</strong> work on macOS or Linux</li>
+        </ul>
+
+        <h3>What it blocks</h3>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li>✅ Discord — <strong>Window Capture / Application Window</strong> mode</li>
+          <li>✅ OBS — <strong>Window Capture</strong> source</li>
+          <li>❌ Discord — <strong>Screen / Desktop</strong> capture (bypasses at the OS level)</li>
+          <li>❌ OBS — <strong>Display Capture / Monitor Capture</strong></li>
+          <li>❌ Any capture that records the entire screen</li>
+        </ul>
+
+        <h3>How to use</h3>
+        <ul class="steps">
+          <li>Enable the <strong>RecordProof</strong> module (Utility category).</li>
+          <li>You'll see a confirmation message in chat if it worked.</li>
+          <li>In Discord, make sure to use <strong>"Window"</strong> or <strong>"Application Window"</strong> capture, not "Screen" or "Desktop".</li>
+          <li>In OBS, use a <strong>"Window Capture"</strong> source targeting Minecraft, not a display capture.</li>
+          <li>Disable the module to restore normal window capture behaviour.</li>
+        </ul>
+
+        <div class="callout callout-yellow">
+          <span class="callout-icon">⚠️</span>
+          <p>If you see <em>"Windows 10 v2004 (20H1) or newer required"</em> in chat, your Windows version is too old. Update Windows or use a different method.</p>
+        </div>
+      </div>
+
+      <!-- ── 8. Server Scanning ─────────────────────────────────────────── -->
+      <div class="guide-item" id="scanning">
+        <h2><span class="guide-num">8</span> Server Scanning</h2>
+
+        <h3>In-game: ExploitAdvisor</h3>
+        <p>While connected to a server, enable <strong>ExploitAdvisor</strong> (Misc). It reads the server's software and plugin list (from the current connection) and queries the AI to suggest applicable exploits and penetration testing steps specific to that configuration.</p>
+        <p>Requires an AI API key configured in <strong>[AI]</strong>.</p>
+
+        <h3>In-game: Server Info panel</h3>
+        <p>Open the ClickGUI and click <strong>[Server Info]</strong>. This shows the CVE matches for the server you're currently connected to, based on the built-in vulnerability database.</p>
+
+        <h3>Companion: bulk scanning</h3>
+        <ul class="steps">
+          <li>Open <code>http://localhost:25580</code> in a browser.</li>
+          <li>Type a server IP or domain in the scan field.</li>
+          <li>Click <strong>Scan</strong> — results appear within a few seconds.</li>
+          <li>Click <strong>🔍 Enrich</strong> on any row for the detailed view (plugins, CVEs, web panel detection).</li>
+          <li>Use <strong>🔴 Vulnerable</strong> filter to show only servers with confirmed CVEs.</li>
+          <li>Use <strong>🖥 Web Panel</strong> filter to show servers where a web admin panel was found.</li>
+        </ul>
+
+        <h3>ServerFinder module</h3>
+        <p>Enable <strong>ServerFinder</strong> (Misc) to fetch a list of known vulnerable or P2W servers from mcscans.fi. Results are shown in local chat. Useful for finding test targets.</p>
+
+        <div class="callout callout-red">
+          <span class="callout-icon">⚠️</span>
+          <p>Only scan servers you are authorised to test. Scanning without permission may be illegal in your jurisdiction.</p>
+        </div>
+      </div>
+
+      <!-- ── 9. Alt Manager ─────────────────────────────────────────────── -->
+      <div class="guide-item" id="altmanager">
+        <h2><span class="guide-num">9</span> Alt Manager</h2>
+
+        <p>The Alt Manager lets you store and switch between multiple Minecraft accounts without restarting the game.</p>
+
+        <h3>Adding an account</h3>
+        <ul class="steps">
+          <li>Open the ClickGUI and click <strong>[Alts]</strong>.</li>
+          <li>Click <strong>Add</strong>.</li>
+          <li>For a <strong>premium account</strong>: enter the Microsoft account email and password.</li>
+          <li>For a <strong>cracked account</strong>: enter just the username (no password needed).</li>
+          <li>Click <strong>Save</strong>.</li>
+        </ul>
+
+        <h3>Switching accounts</h3>
+        <p>Click any account in the list and click <strong>Login</strong>. The game will switch accounts in-session. You'll need to reconnect to any server after switching.</p>
+
+        <div class="callout callout-yellow">
+          <span class="callout-icon">💡</span>
+          <p>Cracked accounts only work on servers running in offline mode (cracked servers). Premium accounts work on all servers.</p>
+        </div>
+      </div>
+
+      <!-- ── 10. Exploit Advisor ────────────────────────────────────────── -->
+      <div class="guide-item" id="exploitadvisor">
+        <h2><span class="guide-num">10</span> Exploit Advisor</h2>
+
+        <p>ExploitAdvisor combines the built-in server fingerprinter with AI analysis to generate specific, actionable exploit steps for the server you're currently connected to.</p>
+
+        <h3>Requirements</h3>
+        <ul style="list-style:disc; padding-left:1.25rem; color:var(--muted2); line-height:2;">
+          <li>AI API key configured in <strong>[AI]</strong></li>
+          <li>Must be connected to a server</li>
+        </ul>
+
+        <h3>How to use</h3>
+        <ul class="steps">
+          <li>Connect to the target server.</li>
+          <li>Enable <strong>ExploitAdvisor</strong> (Misc category).</li>
+          <li>Wait a few seconds for the server info to be collected and the AI query to complete.</li>
+          <li>The AI's analysis appears in local chat — it won't be visible to the server.</li>
+          <li>Follow up with <code>!ai</code> questions to dig deeper into specific vulnerabilities.</li>
+        </ul>
+
+        <div class="callout callout-green">
+          <span class="callout-icon">💡</span>
+          <p>Combine ExploitAdvisor with the Companion's CVE view for a full picture: the Companion gives raw CVE data; ExploitAdvisor gives AI-generated exploit paths.</p>
+        </div>
+      </div>
+
+    </div><!-- /guides-content -->
+  </div><!-- /guide-grid -->
+</div>
+
+<footer>
+  <div class="container">
+    <p><strong>ClaudeMC</strong> — for authorised pentesting only</p>
+    <p style="margin-top:.4rem;">
+      <a href="index.html">Home</a> ·
+      <a href="modules.html">Modules</a> ·
+      <a href="guides.html">Guides</a> ·
+      <a href="troubleshooting.html">Troubleshooting</a>
+    </p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('.guide-item');
+  const links = document.querySelectorAll('.sidebar a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const match = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-60px 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

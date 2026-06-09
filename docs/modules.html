@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modules – ClaudeMC</title>
+  <meta name="description" content="Full module reference for ClaudeMC — 150+ modules across 9 categories with requirements, descriptions and compatibility notes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 3rem 0 2rem; }
+    .page-hero h1 { font-size: 2.2rem; margin-bottom: .5rem; }
+    .req-tag { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; }
+    .name-cell { font-weight: 600; color: var(--text); }
+    .mod-count {
+      font-size: .82rem;
+      color: var(--muted2);
+      margin-left: .5rem;
+    }
+    .req-col { min-width: 160px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>ClaudeMC</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="modules.html">Modules</a></li>
+    <li><a href="guides.html">Guides</a></li>
+    <li><a href="troubleshooting.html">Troubleshooting</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-hero">
+    <div class="section-label">Reference</div>
+    <h1>Module List</h1>
+    <p class="section-subtitle">All modules available in ClaudeMC. Every module works on Minecraft 1.21.1 with Fabric unless noted otherwise.</p>
+  </div>
+
+  <div class="callout callout-red" style="margin-bottom:1.5rem;">
+    <span class="callout-icon">⚠️</span>
+    <p><strong>Exploit modules</strong> (ForceOP, CMD-Block, OP-Sign, WebConsoleXSS, NocomCrash, etc.) are for authorised penetration testing only. Always have explicit server-owner permission before using them.</p>
+  </div>
+
+  <!-- Search & filters -->
+  <div class="search-bar">
+    <input type="text" id="modSearch" placeholder="Search modules…" autocomplete="off">
+    <button class="filter-btn active" data-cat="all">All <span class="mod-count" id="modCount"></span></button>
+    <button class="filter-btn" data-cat="chat">Chat</button>
+    <button class="filter-btn" data-cat="combat">Combat</button>
+    <button class="filter-btn" data-cat="exploit">Exploit</button>
+    <button class="filter-btn" data-cat="misc">Misc</button>
+    <button class="filter-btn" data-cat="movement">Movement</button>
+    <button class="filter-btn" data-cat="player">Player</button>
+    <button class="filter-btn" data-cat="render">Render</button>
+    <button class="filter-btn" data-cat="utility">Utility</button>
+    <button class="filter-btn" data-cat="world">World</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th class="req-col">Requirements</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- ── CHAT ─────────────────────────────────────────────── -->
+        <tr data-cat="chat">
+          <td class="name-cell">AutoComplete</td>
+          <td><span class="badge badge-chat">Chat</span></td>
+          <td class="muted">Auto-completes and cycles through tab-completion suggestions</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="chat">
+          <td class="name-cell">FancyChat</td>
+          <td><span class="badge badge-chat">Chat</span></td>
+          <td class="muted">Adds decorative formatting to chat messages</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="chat">
+          <td class="name-cell">InfiniChat</td>
+          <td><span class="badge badge-chat">Chat</span></td>
+          <td class="muted">Sends repeated chat messages with anti-spam bypass</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="chat">
+          <td class="name-cell">NameProtect</td>
+          <td><span class="badge badge-chat">Chat</span></td>
+          <td class="muted">Replaces own name with 'Player' in chat (client-side privacy)</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── COMBAT ────────────────────────────────────────────── -->
+        <tr data-cat="combat">
+          <td class="name-cell">AimAssist</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Smoothly rotates toward the nearest valid target</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">AnchorAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Detonates Respawn Anchors near enemies</td>
+          <td><span class="badge badge-warn req-tag">Nether only</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">AntiBot</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Filters out bot entities from combat module targeting</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">ArrowDMG</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Increases arrow damage by manipulating velocity packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">AutoCrystal</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Auto-places and explodes end crystals on nearby players</td>
+          <td><span class="badge badge-warn req-tag">End crystals in hotbar</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">AutoTotem</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Keeps a Totem of Undying in your offhand automatically</td>
+          <td><span class="badge badge-warn req-tag">Totems in inventory</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">BlockHit</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Blocks with shield while attacking (sword+shield combo)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">BonemealAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Automatically uses bonemeal on nearby crops and saplings</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">BowAimbot</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Auto-aims bow at entities with arrow drop correction</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">ClickAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Attacks nearest entity on left-click</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">Criticals</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Makes every melee attack a critical hit by sending fake fall packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">FeedAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Automatically feeds and breeds nearby animals</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">KillAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Automatically attacks nearby entities</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">KillauraLegit</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Human-like KillAura with smooth rotation and attack timing to avoid detection</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">MaceDMG</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Increases mace smash damage by faking fall height</td>
+          <td><span class="badge badge-warn req-tag">MC 1.21+ (mace)</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">MultiAura</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Attacks all entities in range simultaneously each tick</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">Reach</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Extends melee attack and block interaction range</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">Surround</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Places obsidian around your feet to protect against crystal damage</td>
+          <td><span class="badge badge-warn req-tag">Obsidian in inventory</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">TriggerBot</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Attacks automatically when your crosshair is on a valid target</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">TrollPotion</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Throws potions at nearby players automatically</td>
+          <td><span class="badge badge-warn req-tag">Potions in hotbar</span></td>
+        </tr>
+        <tr data-cat="combat">
+          <td class="name-cell">Velocity</td>
+          <td><span class="badge badge-combat">Combat</span></td>
+          <td class="muted">Reduces knockback from hits and explosions</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── EXPLOIT ────────────────────────────────────────────── -->
+        <tr data-cat="exploit">
+          <td class="name-cell">CMD-Block</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Executes commands via command block exploitation on misconfigured servers</td>
+          <td><span class="badge badge-danger req-tag">Auth required</span></td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">ForcePush</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Pushes nearby entities away by simulating velocity changes</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">ItemGenerator</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Generates items via creative inventory manipulation</td>
+          <td><span class="badge badge-danger req-tag">Creative mode only</span></td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">MassTPA</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Sends /tpa to all online players simultaneously</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">NocomCrash</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Sends malformed commands to crash vulnerable Spigot/CraftBukkit servers</td>
+          <td><span class="badge badge-danger req-tag">Auth required · Unpatched server</span></td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">OP-Sign</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">Attempts to grant OP via sign command exploitation on misconfigured servers</td>
+          <td><span class="badge badge-danger req-tag">Auth required · Vulnerable server</span></td>
+        </tr>
+        <tr data-cat="exploit">
+          <td class="name-cell">WebConsoleXSS</td>
+          <td><span class="badge badge-exploit">Exploit</span></td>
+          <td class="muted">ForceOP via XSS in vulnerable server web console panels — injects JS payload via chat</td>
+          <td><span class="badge badge-danger req-tag">Admin must have web console open</span></td>
+        </tr>
+
+        <!-- ── MISC ──────────────────────────────────────────────── -->
+        <tr data-cat="misc">
+          <td class="name-cell">AIAssist</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">In-game AI chat assistant — type <code>!ai &lt;question&gt;</code>. Also includes periodic packet narration.</td>
+          <td><span class="badge badge-key req-tag">🔑 API key required</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AntiAFK</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Detects staff (vanish/TP/DM) and responds with human-like behaviour to avoid AFK detection</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AntiSpam</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Hides duplicate and repetitive chat messages</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AuctionDupe</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Automates auction-house dupe exploits (WindowClose / DoubleCancel / Reconnect)</td>
+          <td><span class="badge badge-danger req-tag">Server with auction plugin</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AuthMeBypass</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Bypasses AuthMe on cracked BungeeCord servers by jumping to a backend before auth completes</td>
+          <td><span class="badge badge-danger req-tag">Cracked BungeeCord + AuthMe</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AutoAuth</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Auto-registers/logs in on cracked servers (AuthMe, NLogin, etc.)</td>
+          <td><span class="badge badge-warn req-tag">Cracked server</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AutoMine</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Human-like strip miner with staff-aware evasion</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">AutoReply</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Auto-replies to chat messages matching staff AFK-check patterns</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">BookColors</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Converts &amp;x colour codes to §x in books while writing</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">BookDupe</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Duplicates signed books via packet spam on vulnerable servers</td>
+          <td><span class="badge badge-danger req-tag">Vulnerable server</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ChatSpammer</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Sends a chat message on a configurable interval</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">Derp</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Makes your head spin wildly (cosmetic troll)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ExploitAdvisor</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">AI + web search — analyses current server's software/plugins and generates exploit steps</td>
+          <td><span class="badge badge-key req-tag">🔑 API key required</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">FakePlayer</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Spawns a fake client-side player entity at your position (testing/distraction)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ForceCreative</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Attempts to switch to Creative mode on misconfigured servers</td>
+          <td><span class="badge badge-danger req-tag">Misconfigured server</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ForceOP</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Cracks AuthMe by trying common passwords with /login. Switch to target admin account via AltManager first.</td>
+          <td><span class="badge badge-danger req-tag">Cracked server + AuthMe</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ForeachCmd</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Runs a command for each player (%player%) or N times (%i%). Toggle to send queued commands.</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">HeadRoll</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Rolls your player's head in a continuous motion (cosmetic)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">Headless</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Makes your player appear headless to others (cosmetic)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">MileyCyrus</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Swings arms wildly (cosmetic troll)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">MiniMessageExploit</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Injects MiniMessage tags via chat, team prefixes, or item names on vulnerable Paper/Velocity servers</td>
+          <td><span class="badge badge-danger req-tag">Unpatched MiniMessage server</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">NoPacketKick</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Prevents being kicked for certain invalid packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ServerCrash</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Sends crash-inducing packets to vulnerable Spigot/CraftBukkit servers</td>
+          <td><span class="badge badge-danger req-tag">Auth required · Unpatched server</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">ServerFinder</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Scans mcscans.fi for live vulnerable / P2W servers. Results shown in local chat.</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">SmartReply</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">AI-generated replies to AFK checks and DMs — sounds genuinely human</td>
+          <td><span class="badge badge-key req-tag">🔑 API key required</span></td>
+        </tr>
+        <tr data-cat="misc">
+          <td class="name-cell">VanishDetect</td>
+          <td><span class="badge badge-misc">Misc</span></td>
+          <td class="muted">Tracks vanished/invisible players via tab-list and packet-leak detection</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── MOVEMENT ─────────────────────────────────────────────── -->
+        <tr data-cat="movement">
+          <td class="name-cell">AntiCactus</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents taking damage from cacti</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">AntiEntityPush</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents entities from pushing the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">AntiFire</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents fire damage and removes fire visual</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">AntiWaterPush</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Water currents won't push the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">AntiWobble</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Disables screen wobble and view bobbing</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">AutoWalk</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Automatically walks forward</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Blink</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Buffers movement packets then sends all at once — creates a teleport effect</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">BoatFly</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Allows flying while riding a boat</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">BunnyHop</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Auto-jumps every time you land to maintain sprint speed</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">CameraNoClip</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Camera passes through walls like spectator mode (client-side only)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Dolphin</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Swim faster in water</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">ElytraFlight</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Boost and control elytra flight manually</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">ExtraElytra</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Boosts elytra flight without requiring fireworks</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Flight</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Creative-style flight in any game mode</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Glide</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Glide slowly when falling instead of taking fall damage</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">HighJump</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Jump higher than normal</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">InventoryMove</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Allows WASD movement while inventory and GUIs are open</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Jesus</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Walk on water and lava surfaces</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Jetpack</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Fly upward with Space, descend with Shift</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">MountBypass</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Attempts to ride mounts without server permission</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">NoClip</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Phase through blocks (may be detected by anti-cheat)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">NoFall</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents fall damage by sending on-ground packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">NoSlowdown</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents slowdown from items, cobwebs, and powder snow</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">NoWeb</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents cobwebs from slowing the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">PacketFly</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Bypasses basic anti-fly via alternating ground-state packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Parkour</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Auto-jumps at block edges to avoid falling off</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Phase</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Walk through blocks by toggling NoClip</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">SafeWalk</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Prevents walking off edges (like always sneaking)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Scaffold</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Automatically places blocks beneath you as you move</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Sneak</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Always sneak / auto-sneak</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">SnowShoe</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Walk on powder snow without sinking</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Speed</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Move faster horizontally</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Spider</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Climb any wall surface like a spider</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Sprint</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Always sprint, even sideways and backwards</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="movement">
+          <td class="name-cell">Step</td>
+          <td><span class="badge badge-movement">Movement</span></td>
+          <td class="muted">Step up full blocks without jumping</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── PLAYER ──────────────────────────────────────────────── -->
+        <tr data-cat="player">
+          <td class="name-cell">AirPlace</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Allows placing blocks in mid-air without needing a surface</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AntiBlind</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes blindness effect visually</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AntiHunger</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Slows hunger depletion by avoiding sprint exhaustion</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AntiPotion</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Prevents certain negative potion effects from applying</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoArmor</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically equips the best available armor from inventory</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoDrop</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically drops configured item types from inventory</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoEat</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically eats food when hunger drops below threshold</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoFarm</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Auto-harvests mature crops and replants seeds nearby</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoFish</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically reels in and recasts the fishing rod when a fish bites</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoLeave</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically leaves the server when health drops below a threshold</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoPotion</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically uses potions when conditions are met</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoSign</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically signs signs with configured text</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoSoup</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically eats mushroom soup when health is low</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoSwim</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically swims upward in water</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoSwitch</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Switches to best tool for the block being mined</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoSword</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Switches to sword automatically when attacking entities</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">AutoTool</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Auto-equips best tool for the block targeted by crosshair</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">ChestStealer</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically steals all items from open containers</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">FastBow</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Instant bow charge — fire at full power immediately</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">FastBreak</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes block-breaking animation delay</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">FastEat</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Eat food faster than normal</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">FastLadder</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Climb ladders faster</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">FastPlace</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes the block placement delay for instant placement</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">InvManager</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Auto-sorts inventory and drops low-value junk automatically</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">Liquids</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Allows placing blocks inside liquid blocks</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoBackground</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes GUI background overlay for cleaner view</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoHurtcam</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Disables red damage screen and camera shake on hit</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoLevitation</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Prevents levitation effect from moving the player upward</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoMiningFatigue</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes Mining Fatigue effect client-side</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoPumpkin</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes pumpkin head overlay when wearing a carved pumpkin</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoShieldOverlay</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes shield overlay visual from view</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">NoVignette</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Removes vignette (dark corner overlay)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">PotionSaver</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Prevents wasting potions on already-buffed targets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">Protect</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Moves toward a specified player to protect them</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">Regen</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Regenerates health faster via saturation tricks</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">Restock</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Automatically restocks items from open chests</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">SkinDerp</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Randomizes skin pose (cosmetic)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="player">
+          <td class="name-cell">Throw</td>
+          <td><span class="badge badge-player">Player</span></td>
+          <td class="muted">Auto-throws throwable items (pearls, potions) from inventory</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── RENDER ──────────────────────────────────────────────── -->
+        <tr data-cat="render">
+          <td class="name-cell">AntiInvis</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">See invisible and vanished players as semi-transparent outlines</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">BarrierESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights invisible barrier blocks</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">BaseFinder</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights player base blocks (chests, furnaces, crafting tables) in the wild</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">BlockESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights shulkers, chests, spawners through walls. Press B to add a block by looking at it.</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Breadcrumbs</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Draws a line trail behind you to retrace your path</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">CaveFinder</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights cave air pockets underground</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Chams</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Renders entity hitboxes through walls with solid colour fill</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">ESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Draw coloured boxes around entities through walls</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">FreeCam</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Detach your camera from your player body to look around freely</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Fullbright</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Makes everything fully lit regardless of light level</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">HealthTags</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Shows health bars above entity heads</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">HoleESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights safe holes (surrounded by bedrock/obsidian) around you</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">ItemESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights dropped item entities through walls</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">LSD</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Shifts colors on screen for a psychedelic visual effect</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">LogoutSpots</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Shows where players logged out during the current session</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">MobSpawnESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights blocks where mobs can spawn (dark surfaces)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Nametags</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Shows player health, ping and distance above their heads</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">NewChunks</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights newly generated chunks (useful for finding bases)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">NoRender</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Hides selected HUD and world elements</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">OpenWaterESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights open water surface areas</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">OreESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights ores through walls (X-ray scanner)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Overlay</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Renders a colored overlay on screen</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">PlayerFinder</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Finds players on the server and shows their coordinates</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">PortalESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights Nether and End portal blocks through walls</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">ProphuntESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights players disguised as props in PropHunt servers</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Radar</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">HUD minimap showing nearby players and mobs as dots</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">RainbowUI</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Makes GUI elements cycle through rainbow colors</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">RemoteView</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">View from another entity's perspective (spectator-like camera)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Search</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights specific blocks by name in a configurable radius</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">StorageESP</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Shows container contents indicator through walls</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">TimeChanger</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Locks client-side time to a fixed value (visual only, no server effect)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Tracers</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Draw lines from crosshair to entities</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Trajectories</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Predicts arrow and throwable item flight paths</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">TrueSight</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Reveals invisible entities with a translucent outline</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">WeatherChanger</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Locks client-side weather to a chosen state (visual only)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">XRay</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Highlights ores and valuable blocks at extended range</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="render">
+          <td class="name-cell">Zoom</td>
+          <td><span class="badge badge-render">Render</span></td>
+          <td class="muted">Zooms the camera while the module is active (like a spyglass)</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── UTILITY ──────────────────────────────────────────────── -->
+        <tr data-cat="utility">
+          <td class="name-cell">AutoReconnect</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Auto-reconnects to the server after disconnect, optionally switching alt</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">AutoRespawn</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Automatically respawns on death</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">NameSpoof</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Shows a spoofed name above your character (client-side only — others see your real name)</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">PacketLogger</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Logs incoming message packets to chat and mod logger — used by AIAssist packet narration</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">Panic</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Disables all active modules and disconnects from the server immediately</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">RecordProof</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Hides the Minecraft window from Discord/OBS Window Capture using Windows' SetWindowDisplayAffinity API. Does NOT work with Screen/Desktop capture.</td>
+          <td><span class="badge badge-win req-tag">🪟 Windows 10 v2004+ only</span></td>
+        </tr>
+        <tr data-cat="utility">
+          <td class="name-cell">Timer</td>
+          <td><span class="badge badge-utility">Utility</span></td>
+          <td class="muted">Speed up or slow down game time client-side</td>
+          <td>—</td>
+        </tr>
+
+        <!-- ── WORLD ──────────────────────────────────────────────── -->
+        <tr data-cat="world">
+          <td class="name-cell">AutoBuild</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Auto-places blocks to build a floor or bridge under the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">BuildRandom</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Places random blocks from hotbar near the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Excavator</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Mines all blocks in a rectangular area automatically</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Follow</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Follows a named player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">InstaBuild</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Places multiple blocks per tick at max speed</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">InstantBunker</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Instantly creates a 3×3 bunker around the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Kaboom</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Places and ignites TNT from hotbar rapidly</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Navigator</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Navigates toward target coordinates automatically</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">NukerLegit</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Mines blocks one at a time at realistic speed</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Nuker</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Automatically breaks all blocks around you</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">PacketMine</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Attempts instant mining via simultaneous start/stop packets</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">SpeedNuker</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Mines blocks in a sphere at very high speed</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">Tillaura</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Automatically tills soil blocks around the player</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">TreeBot</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Cuts down entire trees by breaking all connected logs</td>
+          <td>—</td>
+        </tr>
+        <tr data-cat="world">
+          <td class="name-cell">VeinMiner</td>
+          <td><span class="badge badge-world">World</span></td>
+          <td class="muted">Mines an entire ore vein at once when you break one block</td>
+          <td>—</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1rem; font-size:.82rem; color:var(--muted);">
+    All modules target Minecraft 1.21.1 with Fabric. Modules marked with requirements need specific conditions to function.
+    <strong style="color:var(--danger);">Exploit modules require explicit server-owner permission.</strong>
+  </p>
+</div>
+
+<footer>
+  <div class="container">
+    <p><strong>ClaudeMC</strong> — for authorised pentesting only</p>
+    <p style="margin-top:.4rem;">
+      <a href="index.html">Home</a> ·
+      <a href="modules.html">Modules</a> ·
+      <a href="guides.html">Guides</a> ·
+      <a href="troubleshooting.html">Troubleshooting</a>
+    </p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
