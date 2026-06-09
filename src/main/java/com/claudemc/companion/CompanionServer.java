@@ -292,7 +292,8 @@ public final class CompanionServer {
 
             sendJson(ex, 200, results);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -353,7 +354,8 @@ public final class CompanionServer {
             out.addProperty("total", gInt(shodanResp, "total", 0));
             sendJson(ex, 200, out);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -447,7 +449,8 @@ public final class CompanionServer {
             out.addProperty("total", results.size());
             sendJson(ex, 200, out);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -517,7 +520,8 @@ public final class CompanionServer {
             out.addProperty("total", gInt(fofaResp, "size", results.size()));
             sendJson(ex, 200, out);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -535,6 +539,11 @@ public final class CompanionServer {
 
             // Extract bare hostname for web console probing (strip :port)
             String host = address.contains(":") ? address.substring(0, address.lastIndexOf(':')) : address;
+
+            if (!isAllowedLookupTarget(host)) {
+                sendText(ex, 400, "Private, loopback, or link-local addresses are not allowed.");
+                return;
+            }
 
             // Fire all three lookups concurrently
             CompletableFuture<String>     mcsrvFut  = CompletableFuture.supplyAsync(() ->
@@ -605,7 +614,8 @@ public final class CompanionServer {
             merged.addProperty("source_mcstatus",  mcstatRaw != null ? "ok" : "failed");
             sendJson(ex, 200, merged);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -734,13 +744,15 @@ public final class CompanionServer {
             synchronized (chatHistory) {
                 chatHistory.add(Map.of("role", "User",      "content", message));
                 chatHistory.add(Map.of("role", "Assistant", "content", reply[0]));
+                while (chatHistory.size() > 40) chatHistory.remove(0);
             }
 
             JsonObject out = new JsonObject();
             out.addProperty("reply", reply[0]);
             sendJson(ex, 200, out);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -750,12 +762,15 @@ public final class CompanionServer {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
         try {
             JsonObject body    = parseBody(ex);
-            String     ip      = str(body, "ip",       "unknown");
-            String     software = str(body, "software", "unknown");
-            String     version = str(body, "version",  "unknown");
+            String     ip      = sanitizeField(str(body, "ip",       "unknown"), 64);
+            String     software = sanitizeField(str(body, "software", "unknown"), 64);
+            String     version = sanitizeField(str(body, "version",  "unknown"), 32);
             JsonArray  pArr    = body.has("plugins") ? body.getAsJsonArray("plugins") : new JsonArray();
             List<String> plugins = new ArrayList<>();
-            for (JsonElement p : pArr) plugins.add(p.getAsString());
+            for (JsonElement p : pArr) {
+                String pname = sanitizeField(p.isJsonPrimitive() ? p.getAsString() : "", 64);
+                if (!pname.isBlank()) plugins.add(pname);
+            }
 
             // Collect matching VulnDb entries
             JsonArray vulns = matchVulns(software, version, plugins);
@@ -773,9 +788,10 @@ public final class CompanionServer {
             String vulnSummary = new StringBuilder().append("Known vulnerabilities:\n")
                 .append(vulns.toString()).toString();
 
-            String prompt = "A Minecraft server at " + ip + " runs " + software + " " + version +
-                " with plugins: " + String.join(", ", plugins) + ".\n" + vulnSummary +
-                "\n\nProvide a concise numbered list of exploits that likely work on this server. " +
+            String prompt = "Analyse this Minecraft server:\n<server_info>\n" +
+                "IP: " + ip + "\nSoftware: " + software + " " + version +
+                "\nPlugins: " + String.join(", ", plugins) + "\n" + vulnSummary +
+                "\n</server_info>\n\nProvide a concise numbered list of exploits that likely work on this server. " +
                 "For each: name, what it achieves, exact commands/steps. " +
                 "Focus on the most impactful exploits first. Use markdown.";
 
@@ -802,7 +818,8 @@ public final class CompanionServer {
             out.addProperty("aiAnalysis", analysis[0]);
             sendJson(ex, 200, out);
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -842,7 +859,8 @@ public final class CompanionServer {
                 AIConfig.save();
                 sendJson(ex, 200, new JsonObject());
             } catch (Exception e) {
-                sendText(ex, 500, e.getMessage());
+                ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
             }
         } else {
             ex.sendResponseHeaders(405, -1);
@@ -893,7 +911,8 @@ public final class CompanionServer {
                 ex.sendResponseHeaders(405, -1);
             }
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -907,7 +926,8 @@ public final class CompanionServer {
             AltManager.INSTANCE.switchTo(index);
             sendJson(ex, 200, new JsonObject());
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -917,7 +937,8 @@ public final class CompanionServer {
             AltManager.INSTANCE.restore();
             sendJson(ex, 200, new JsonObject());
         } catch (Exception e) {
-            sendText(ex, 500, e.getMessage());
+            ClaudeMCMod.LOGGER.warn("[Companion] Handler error: {}", e.getMessage());
+            sendText(ex, 500, "Internal server error");
         }
     }
 
@@ -1016,6 +1037,26 @@ public final class CompanionServer {
     private static boolean gBool(JsonObject o, String key, boolean def) {
         if (o == null || !o.has(key) || o.get(key).isJsonNull() || !o.get(key).isJsonPrimitive()) return def;
         try { return o.get(key).getAsBoolean(); } catch (Exception e) { return def; }
+    }
+
+    private static String sanitizeField(String s, int maxLen) {
+        if (s == null) return "";
+        s = s.replaceAll("[\\x00-\\x1F\\x7F]", " ").trim();
+        if (s.length() > maxLen) s = s.substring(0, maxLen);
+        return s;
+    }
+
+    private static boolean isAllowedLookupTarget(String host) {
+        try {
+            java.net.InetAddress addr = java.net.InetAddress.getByName(host);
+            return !addr.isLoopbackAddress()
+                && !addr.isSiteLocalAddress()
+                && !addr.isLinkLocalAddress()
+                && !addr.isAnyLocalAddress()
+                && !addr.isMulticastAddress();
+        } catch (Exception e) {
+            return true; // hostname (not bare IP) — let the external API resolve it
+        }
     }
 
     private static String enc(String s) {

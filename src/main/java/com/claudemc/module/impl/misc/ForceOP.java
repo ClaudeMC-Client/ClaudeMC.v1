@@ -6,9 +6,11 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
+import net.fabricmc.loader.api.FabricLoader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -214,7 +216,14 @@ public class ForceOP extends Module {
             return;
         }
         try {
-            List<String> lines = Files.readAllLines(Paths.get(listSetting), StandardCharsets.UTF_8);
+            Path base     = FabricLoader.getInstance().getGameDir().resolve("wordlists").toAbsolutePath().normalize();
+            Path resolved = base.resolve(listSetting).toAbsolutePath().normalize();
+            if (!resolved.startsWith(base)) {
+                msg("§c[!] Path traversal blocked: " + listSetting + " — using default list.");
+                passwords = DEFAULT_PASSWORDS;
+                return;
+            }
+            List<String> lines = Files.readAllLines(resolved, StandardCharsets.UTF_8);
             passwords = lines.stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.startsWith("#"))

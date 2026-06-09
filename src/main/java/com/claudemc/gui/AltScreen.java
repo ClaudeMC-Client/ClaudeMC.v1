@@ -119,7 +119,8 @@ public class AltScreen extends Screen {
 
     private String field(int idx, String label, String val) {
         boolean sel = addField == idx;
-        return (sel ? "§b" : "§8") + label + ": §f" + val + (sel ? "§b|" : "");
+        String display = (idx == 2 && !val.isEmpty()) ? "•".repeat(Math.min(val.length(), 16)) : val;
+        return (sel ? "§b" : "§8") + label + ": §f" + display + (sel ? "§b|" : "");
     }
 
     private void drawBtn(DrawContext ctx, int mx, int my, int x, int y, int w, int h,

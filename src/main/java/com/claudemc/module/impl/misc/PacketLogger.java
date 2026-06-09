@@ -40,6 +40,7 @@ public class PacketLogger extends Module {
     }
 
     private void logPacket(String entry) {
+        entry = entry.replace("\n", "\\n").replace("\r", "\\r");
         recentPackets.addLast(entry);
         while (recentPackets.size() > MAX_LOG) recentPackets.pollFirst();
 

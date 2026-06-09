@@ -51,6 +51,7 @@ public class ForeachCmd extends Module {
             if (client.getNetworkHandler() != null) {
                 for (PlayerListEntry e : client.getNetworkHandler().getPlayerList()) {
                     String name = e.getProfile().name();
+                    if (name == null || !name.matches("[A-Za-z0-9_]{1,16}")) continue;
                     queue.add(cmd.replace("%player%", name));
                 }
             }

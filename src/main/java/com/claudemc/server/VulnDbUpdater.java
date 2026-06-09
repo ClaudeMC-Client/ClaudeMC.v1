@@ -165,6 +165,7 @@ public final class VulnDbUpdater {
             String patch  = p[4].trim();
 
             if (plugin.isBlank() || desc.isBlank()) continue;
+            if (!plugin.matches("[A-Za-z0-9_\\-]{1,64}")) continue;
             if (!sevStr.equals("CRITICAL") && !sevStr.equals("HIGH") && !sevStr.equals("MEDIUM"))
                 continue;
             if (existing.contains(plugin.toLowerCase())) continue;
@@ -177,6 +178,7 @@ public final class VulnDbUpdater {
             if (saveCache)
                 cacheLines.add(plugin + "|" + sevStr + "|" + vers + "|" + desc + "|" + patch);
             added++;
+            if (added >= 50) break;
         }
 
         if (added > 0) {

@@ -67,11 +67,14 @@ public final class AIClient {
     private String sendSync(String sysOverride, String prompt) {
         try {
             String sys = sysOverride != null ? sysOverride : AIConfig.INSTANCE.systemPrompt;
-            return switch (AIConfig.INSTANCE.provider.toLowerCase()) {
+            String result = switch (AIConfig.INSTANCE.provider.toLowerCase()) {
                 case "openai"  -> sendOpenAI(sys, prompt);
                 case "gemini"  -> sendGemini(sys, prompt);
                 default        -> sendAnthropic(sys, prompt);
             };
+            if (result != null && !result.startsWith("\0ERR:") && result.length() > 4000)
+                result = result.substring(0, 4000) + "\n[response truncated]";
+            return result;
         } catch (Exception e) {
             // Redact the Gemini key — IOException messages can echo the full request URL,
             // which carries ?key=... for Gemini.

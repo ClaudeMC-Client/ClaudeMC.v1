@@ -69,8 +69,16 @@ public final class ModuleConfig {
             Path p = path();
             Files.createDirectories(p.getParent());
             try (Writer w = Files.newBufferedWriter(p)) { GSON.toJson(data, w); }
+            restrictToOwner(p);
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[ModuleConfig] Failed to save module settings: {}", e.getMessage());
         }
+    }
+
+    private static void restrictToOwner(Path p) {
+        try {
+            java.nio.file.Files.setPosixFilePermissions(p,
+                java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException | java.io.IOException ignored) {}
     }
 }

@@ -9,6 +9,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 
 /**
@@ -52,9 +53,17 @@ public class MacroManager {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer w = Files.newBufferedWriter(CONFIG_PATH)) { GSON.toJson(macros, w); }
+            restrictToOwner(CONFIG_PATH);
         } catch (Exception e) {
             ClaudeMCMod.LOGGER.warn("[MacroManager] Save failed: {}", e.getMessage());
         }
+    }
+
+    private static void restrictToOwner(Path path) {
+        try {
+            Files.setPosixFilePermissions(path,
+                PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException | java.io.IOException ignored) {}
     }
 
     public List<Macro> getMacros() { return macros; }
