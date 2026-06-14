@@ -5,6 +5,8 @@
 </p>
 
 > A Minecraft Fabric hack client built entirely by AI. Features 200+ modules, AI-powered exploit analysis, server scanning (MCScans/Shodan/Censys/FOFA), web console XSS detection, real-time vanish tracking, AltManager, ForceOP, AutoDupe, RecordProof, and a Meteor-style ClickGUI with companion browser app.
+> 
+⚠️STILL UNDER DEVELOPMENT SO MAY CONTAIN GLITCHES AND BUGS⚠️
 
 ⚠️ **EDUCATIONAL DISCLAIMER**
 
