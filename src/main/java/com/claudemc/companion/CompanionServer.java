@@ -71,6 +71,14 @@ public final class CompanionServer {
     private volatile boolean         started    = false;
     private volatile int             boundPort  = PORT;
 
+    // Per-session CSRF token — embedded in the companion page at serve time
+    private final String csrfToken = generateCsrfToken();
+
+    // Sliding-window rate limiter — shared across all proxied third-party API endpoints
+    private static final int RATE_LIMIT_RPM = 30;
+    private final java.util.concurrent.ConcurrentLinkedDeque<Long> apiRateWindow =
+        new java.util.concurrent.ConcurrentLinkedDeque<>();
+
     private CompanionServer() {}
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -191,6 +199,15 @@ public final class CompanionServer {
                 sendText(ex, 403, "Forbidden: requests must come from localhost.");
                 return;
             }
+            // Require X-ClaudeMC-Token on state-changing requests to block CSRF
+            String reqMethod = ex.getRequestMethod();
+            if (reqMethod.equals("POST") || reqMethod.equals("DELETE") || reqMethod.equals("PUT")) {
+                String tok = ex.getRequestHeaders().getFirst("X-ClaudeMC-Token");
+                if (!csrfToken.equals(tok)) {
+                    sendText(ex, 403, "Forbidden");
+                    return;
+                }
+            }
             delegate.handle(ex);
         };
     }
@@ -238,7 +255,11 @@ public final class CompanionServer {
         if (!ex.getRequestMethod().equals("GET")) { ex.sendResponseHeaders(405, -1); return; }
         try (InputStream is = getClass().getResourceAsStream("/assets/claudemc/companion.html")) {
             if (is == null) { sendText(ex, 404, "Companion page not found"); return; }
-            byte[] bytes = is.readAllBytes();
+            String html = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            // Inject per-session CSRF token so companion.html JS can read window.__csrf
+            html = html.replace("</head>",
+                "<script>window.__csrf='" + csrfToken + "';</script></head>");
+            byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
             ex.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
             ex.sendResponseHeaders(200, bytes.length);
             ex.getResponseBody().write(bytes);
@@ -301,6 +322,7 @@ public final class CompanionServer {
 
     private void handleShodan(HttpExchange ex) throws IOException {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        if (isRateLimited()) { sendText(ex, 429, "Too many requests — try again shortly."); return; }
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "port:25565 game:Minecraft");
@@ -363,6 +385,7 @@ public final class CompanionServer {
 
     private void handleCensys(HttpExchange ex) throws IOException {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        if (isRateLimited()) { sendText(ex, 429, "Too many requests — try again shortly."); return; }
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "services.port=25565");
@@ -458,6 +481,7 @@ public final class CompanionServer {
 
     private void handleFofa(HttpExchange ex) throws IOException {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        if (isRateLimited()) { sendText(ex, 429, "Too many requests — try again shortly."); return; }
         try {
             JsonObject body  = parseBody(ex);
             String     query = str(body, "query", "port=\"25565\" && protocol=\"minecraft\"");
@@ -690,6 +714,7 @@ public final class CompanionServer {
             o.addProperty("affectedVersions",e.affectedVersions());
             o.addProperty("description",     e.description());
             o.addProperty("patchedIn",       e.patchedIn());
+            o.addProperty("verified",        !VulnDb.isAiSourced(e));
             arr.add(o);
         }
         sendJson(ex, 200, arr);
@@ -699,6 +724,7 @@ public final class CompanionServer {
 
     private void handleChat(HttpExchange ex) throws IOException {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        if (isRateLimited()) { sendText(ex, 429, "Too many requests — try again shortly."); return; }
         try {
             JsonObject body = parseBody(ex);
             String message  = str(body, "message", "").trim();
@@ -760,6 +786,7 @@ public final class CompanionServer {
 
     private void handleAnalyze(HttpExchange ex) throws IOException {
         if (!ex.getRequestMethod().equals("POST")) { ex.sendResponseHeaders(405, -1); return; }
+        if (isRateLimited()) { sendText(ex, 429, "Too many requests — try again shortly."); return; }
         try {
             JsonObject body    = parseBody(ex);
             String     ip      = sanitizeField(str(body, "ip",       "unknown"), 64);
@@ -960,6 +987,7 @@ public final class CompanionServer {
             o.addProperty("severity",    e.severity().name());
             o.addProperty("description", e.description());
             o.addProperty("patchedIn",   e.patchedIn());
+            o.addProperty("verified",    !VulnDb.isAiSourced(e));
             arr.add(o);
         }
         return arr;
@@ -1074,5 +1102,19 @@ public final class CompanionServer {
             } catch (Exception ignored) {}
         }
         return null;
+    }
+
+    private boolean isRateLimited() {
+        long now = System.currentTimeMillis();
+        apiRateWindow.removeIf(t -> t < now - 60_000);
+        if (apiRateWindow.size() >= RATE_LIMIT_RPM) return true;
+        apiRateWindow.addLast(now);
+        return false;
+    }
+
+    private static String generateCsrfToken() {
+        byte[] bytes = new byte[24];
+        new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

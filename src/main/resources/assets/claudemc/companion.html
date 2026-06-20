@@ -922,8 +922,11 @@
  */
 async function apiFetch(path, options = {}) {
   try {
+    const method = (options.method || 'GET').toUpperCase();
+    const csrfHeader = (method !== 'GET' && window.__csrf)
+      ? { 'X-ClaudeMC-Token': window.__csrf } : {};
     const res = await fetch(path, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      headers: { 'Content-Type': 'application/json', ...csrfHeader, ...(options.headers || {}) },
       ...options,
     });
     const text = await res.text();
@@ -1039,8 +1042,10 @@ function buildBadges(vulns) {
     const sev    = typeof v === 'string' ? v : (v.severity || 'UNKNOWN');
     const plugin = typeof v === 'string' ? '' : (v.plugin   || '');
     const desc   = typeof v === 'string' ? '' : (v.description || '');
-    const tip    = plugin ? ` title="${esc(plugin)}${desc ? ': ' + esc(desc.substring(0, 80)) : ''}"` : '';
-    return `<span class="badge badge-${esc(sev)}"${tip}>${esc(sev)}</span>`;
+    const unverified = (v.verified === false);
+    const uTip   = unverified ? ' (AI-sourced — not manually verified)' : '';
+    const tip    = plugin ? ` title="${esc(plugin)}${desc ? ': ' + esc(desc.substring(0, 80)) : ''}${uTip}"` : '';
+    return `<span class="badge badge-${esc(sev)}"${tip}>${esc(sev)}${unverified ? ' <span style="font-size:9px">⚠</span>' : ''}</span>`;
   }).join('');
 }
 
@@ -1256,7 +1261,7 @@ function renderEnrichCard(data, address) {
         ${vulns.map(v => `<div class="enrich-vuln-row">
           <span class="badge badge-${esc(v.severity || 'UNKNOWN')}">${esc(v.severity || '?')}</span>
           <div class="enrich-vuln-body">
-            <div><strong>${esc(v.plugin || '?')}</strong> — ${esc(v.description || '')}</div>
+            <div><strong>${esc(v.plugin || '?')}</strong> — ${esc(v.description || '')}${v.verified === false ? ' <span style="font-size:10px;color:var(--text-muted)">(⚠ AI-sourced, unverified)</span>' : ''}</div>
             ${v.patchedIn ? `<div style="font-size:11px;color:var(--text-muted)">Patched in: ${esc(v.patchedIn)}</div>` : ''}
           </div>
         </div>`).join('')}
@@ -1659,7 +1664,7 @@ function renderVulnDb() {
     const sevClass = `sev-${esc(entry.severity || 'PATCHED')}`;
     tr.innerHTML = `
       <td><strong>${esc(entry.plugin || '—')}</strong></td>
-      <td class="${sevClass}">${esc(entry.severity || '—')}</td>
+      <td class="${sevClass}">${esc(entry.severity || '—')}${entry.verified === false ? ' <span title="AI-sourced, not manually verified" style="opacity:0.7;font-size:10px">⚠</span>' : ''}</td>
       <td>${esc(entry.affectedVersions || '—')}</td>
       <td class="vulndb-desc">${esc(entry.description || '—')}</td>
       <td>${esc(entry.patchedIn || '—')}</td>`;

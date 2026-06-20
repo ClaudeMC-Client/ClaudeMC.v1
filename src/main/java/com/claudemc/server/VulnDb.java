@@ -238,6 +238,9 @@ public class VulnDb {
             "sanitise incoming Discord messages before MiniMessage parsing", null)
     ));
 
+    // Tracks plugin names added by VulnDbUpdater (AI/web-sourced) vs the curated baseline.
+    private static final Set<String> AI_SOURCED_PLUGINS = Collections.synchronizedSet(new HashSet<>());
+
     /** Adds a dynamically discovered entry. Ignored if pluginName already exists in DB. */
     public static synchronized void addDynamic(VulnEntry entry) {
         String lower = entry.pluginName().toLowerCase();
@@ -245,6 +248,12 @@ public class VulnDb {
             if (e.pluginName().toLowerCase().equals(lower)) return;
         }
         DB.add(entry);
+        AI_SOURCED_PLUGINS.add(lower);
+    }
+
+    /** Returns true when the entry was added by VulnDbUpdater (AI/web-sourced), not the curated baseline. */
+    public static boolean isAiSourced(VulnEntry e) {
+        return AI_SOURCED_PLUGINS.contains(e.pluginName().toLowerCase());
     }
 
     /** Returns all matching entries for a given plugin/brand name (case-insensitive). */
